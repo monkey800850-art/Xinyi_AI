@@ -183,6 +183,11 @@
   - `fail_subject`：`EXPENSE_REIMBURSEMENT_PAYMENT`（`debit_subject_code=999999`）-> HTTP 400, `subject_not_found:999999`
   - `fail_period`：`BANK_FEE`（关闭账期 2025-02）-> HTTP 400, `会计期间已结账`
   - 非落账验证：实测脚本输出 `voucher_count 0`
+- 本轮复测结果（2026-02-28）：
+  - 回归命令：`python3 -m unittest -v tests/test_step28_b_t1_template_preview.py`
+  - 回归结果：`Ran 4 tests in 0.555s`，`OK`
+  - API复测：`ok_preview=200`、`ok_suggest=200`、`fail_subject=400(subject_not_found:999999)`、`fail_period=400(会计期间已结账)`
+  - 非落账复核：`voucher_count=0`
 
 ## 11. 第二批增量完成记录（2026-02-28）
 - 平台能力核查（只读）：
