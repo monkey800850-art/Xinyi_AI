@@ -67,12 +67,21 @@ def get_asset_ledger(params: Dict[str, str]) -> Dict[str, object]:
             raise AssetReportError("validation_error", [{"field": "dep_month", "message": "月份非法"}])
         dep_end_date = _period_to_date(dep_year, dep_month)
 
+    params_sql: Dict[str, object] = {"book_id": book_id}
+
+    sum_expr = "CASE WHEN db.id IS NOT NULL"
+    if dep_end_date:
+        sum_expr += " AND (db.period_year < :dep_year OR (db.period_year = :dep_year AND db.period_month <= :dep_month))"
+        params_sql["dep_year"] = dep_year
+        params_sql["dep_month"] = dep_month
+    sum_expr += " THEN dl.monthly_amount ELSE 0 END"
+
     sql = (
         "SELECT fa.id, fa.asset_code, fa.asset_name, fa.original_value, fa.status, "
         "fa.start_use_date, fa.department_id, fa.person_id, fa.depreciation_method, "
         "fa.useful_life_months, fa.location, ac.name AS category_name, d.name AS department_name, "
         "p.name AS person_name, lc.change_type AS last_change_type, lc.change_date AS last_change_date, "
-        "COALESCE(SUM(dl.monthly_amount), 0) AS accum_depr "
+        f"COALESCE(SUM({sum_expr}), 0) AS accum_depr "
         "FROM fixed_assets fa "
         "JOIN asset_categories ac ON ac.id = fa.category_id "
         "LEFT JOIN departments d ON d.id = fa.department_id "
@@ -87,8 +96,6 @@ def get_asset_ledger(params: Dict[str, str]) -> Dict[str, object]:
         ") lc ON lc.asset_id = fa.id "
         "WHERE fa.book_id=:book_id"
     )
-    params_sql: Dict[str, object] = {"book_id": book_id}
-
     if asset_code:
         sql += " AND fa.asset_code LIKE :asset_code"
         params_sql["asset_code"] = f"%{asset_code}%"
@@ -113,10 +120,7 @@ def get_asset_ledger(params: Dict[str, str]) -> Dict[str, object]:
     if start_use_to:
         sql += " AND fa.start_use_date <= :start_use_to"
         params_sql["start_use_to"] = start_use_to
-    if dep_end_date:
-        sql += " AND (db.period_year < :dep_year OR (db.period_year = :dep_year AND db.period_month <= :dep_month))"
-        params_sql["dep_year"] = dep_year
-        params_sql["dep_month"] = dep_month
+    # dep_end_date is applied inside SUM expression to avoid filtering NULL rows
 
     sql += " GROUP BY fa.id ORDER BY fa.asset_code ASC"
 

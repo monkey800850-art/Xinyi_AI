@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Dict, List, Tuple
 
 from sqlalchemy import bindparam, text
+from sqlalchemy.exc import IntegrityError
 
 from app.db import get_engine
 from app.services.voucher_service import VoucherValidationError, save_voucher
@@ -571,6 +572,8 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
             )
 
         # audit hook placeholder: voucher generated
+    except IntegrityError:
+        raise DepreciationError("本期已计提")
     except VoucherValidationError as err:
         if batch_id:
             with engine.begin() as conn:
