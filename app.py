@@ -94,6 +94,7 @@ from app.services.tax_service import (
 )
 from app.services.trial_balance_service import TrialBalanceError, get_trial_balance
 from app.services.voucher_service import VoucherValidationError, save_voucher
+from app.services.voucher_template_service import VoucherTemplateError, build_template_preview
 from app.services.voucher_status_service import VoucherStatusError, change_voucher_status
 
 
@@ -1079,6 +1080,26 @@ def create_app() -> Flask:
             return jsonify({"error": str(err), "errors": err.errors}), 400
         except Exception:
             app.logger.exception("voucher_save_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/vouchers/template-preview")
+    def api_voucher_template_preview():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = build_template_preview(
+                payload.get("book_id"),
+                payload.get("template_code"),
+                payload.get("params") or {},
+                operator=operator,
+                role=role,
+            )
+            status = 200 if result.get("success") else 400
+            return jsonify(result), status
+        except VoucherTemplateError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+        except Exception:
+            app.logger.exception("voucher_template_preview_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
 
     @app.post("/api/vouchers/<int:voucher_id>/approve")

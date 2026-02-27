@@ -1,4 +1,4 @@
-# STEP28 执行计划与首个交付（Kickoff）
+# STEP28 执行计划（主线重排：STEP28-A + STEP28-B）
 
 ## 1. 输入依据
 - `docs/release/STEP27_SIGNOFF.md`
@@ -7,82 +7,149 @@
 - `docs/ops/STEP27_INCIDENT_MONITORING_PLAN.md`
 - `docs/release/STEP27_FINAL_PRECHECK_AND_DRILL.md`
 
-## 2. STEP28 首要目标
-在不回滚 STEP27 工作的前提下，优先把“人工可执行流程”升级为“可重复执行的最小自动化检查能力”，降低试运行值守成本与漏检风险。
+## 2. STEP28 主线定义
 
-## 3. 任务分解（小步交付）
+### 2.1 STEP28-A（已落地）：运维能力增强（最小自动化）
+目标：将 STEP27 手工流程固化为可重复执行入口，降低发布窗口漏检风险。
 
-### T1（优先级 P1）：自动化健康检查脚本
-- 目标：将 STEP27-D 的关键健康检查固化为单脚本执行。
-- 输出：`scripts/ops/health_check.sh`
-- 验收：脚本可对 `/`、`/dashboard`、`/api/system/roles`、`/api/assets/changes`、`/api/assets/ledger` 输出 PASS/FAIL 并返回退出码。
+### 2.2 STEP28-B（新增主线）：会计凭证录入 AI 增强（规则 + AI）
+目标：采用递进路线提升凭证录入效率与准确率，**先规则后 AI**，避免直接跳端到端自动记账。
 
-### T2（优先级 P1）：数据库备份脚本化
-- 目标：将手工 `mysqldump` 流程标准化。
-- 预期输出：`scripts/ops/db_backup.sh` + 备份留痕模板。
-- 验收：一条命令完成备份文件落盘并输出元信息（时间、库名、大小）。
+## 3. STEP28-A 与 STEP28-B 关系说明
+- STEP28-A 提供稳定底座（健康检查、备份、最小回归），保障发布与试运行过程可控。
+- STEP28-B 在该底座上推进“凭证录入增强”，先确定性规则，再引入 AI 识别与建议。
+- 两者并行但不冲突：A 负责可用性与运维确定性，B 负责业务录入效率与智能化。
 
-### T3（优先级 P2）：关键链路最小回归自动化
-- 目标：固化 S4->S6 / S5 核心链路的最小校验。
-- 预期输出：可复用的测试命令入口（如 unittest 目标与执行说明）。
-- 验收：可在发布窗口前快速复跑，输出明确通过/失败。
+## 4. STEP28-A 现状（已完成）
 
-## 4. 执行顺序
-1. T1 健康检查脚本（先落地，立刻能用）
-2. T2 备份脚本化（降低人工失误）
-3. T3 最小回归自动化（补齐发布前快速校验）
+### A-T1 自动化健康检查脚本（完成）
+- 交付物：`scripts/ops/health_check.sh`
+- 验收：关键健康接口 PASS/FAIL 输出与退出码。
+- 实测：`pass=6 fail=0`。
 
-## 5. 首个子任务交付（本次完成）
+### A-T2 数据库备份脚本化（完成）
+- 交付物：`scripts/ops/db_backup.sh`
+- 验收：时间戳备份文件落盘、失败非0、支持 `.env`/环境变量/参数覆盖。
+- 实测：`/tmp/step28_backups/xinyi_ai_20260227_230952.sql`，`size_bytes=586084`，`exit=0`。
 
-### 5.1 交付物
-- `scripts/ops/health_check.sh`
+### A-T3 关键链路最小回归（完成）
+- 交付物：`scripts/ops/min_regression.sh`
+- 覆盖：S5 与 S4->S6。
+- 实测：`pass_count=8 fail_count=0 blocked_count=0`，`exit=0`。
 
-### 5.2 使用方式
-```bash
-# 默认参数执行
-scripts/ops/health_check.sh
+## 5. STEP28-B：会计凭证录入 AI 增强（规则优先 + AI增强）
 
-# 自定义环境
-BASE_URL=http://127.0.0.1:5000 BOOK_ID=9 DEP_YEAR=2025 DEP_MONTH=2 scripts/ops/health_check.sh
-```
+## 阶段1：凭证模板库 / 规则引擎优先（最小可用、最高确定性）
 
-### 5.3 判定规则
-- 任一检查失败时返回非 0 退出码。
-- 输出包含每项检查结果（PASS/FAIL）与总计汇总。
+### 目标
+- 建立/增强凭证模板库（按业务类型、票据类型、交易场景）。
+- 支持模板参数化字段：摘要、金额、日期、对方单位、税额等。
+- 增强规则校验：借贷平衡、科目合法性、期间合法性、辅助核算必填。
+- 在不依赖 AI 的前提下先提升录入效率与准确率。
 
-## 6. 文档留痕
-- 本文件作为 STEP28 kickoff 记录，不重复复述 STEP27 结论。
-- 后续每个子任务完成后在本文件追加“执行结果与证据路径”。
+### 交付物
+- 文档：`docs/ai/STEP28B_PHASE1_TEMPLATE_RULES.md`
+- 配置：`config/voucher_templates.json`（或同等结构化模板库）
+- 服务/API：凭证草稿生成与规则校验入口（复用现有 `api/vouchers` 能力，新增最小规则封装）
+- 页面（可选最小）：凭证录入页模板选择器（如仅后端先行则记录为后续）
 
-## 7. T2 执行结果（本次完成）
+### 最小验收标准
+- 至少 3 类业务场景模板可用（示例：费用报销、固定资产折旧、税费计提）。
+- 模板生成分录后，规则校验可明确返回通过/失败原因。
+- 人工修改后可正常保存凭证，且审计链不受影响。
 
-### 7.1 交付物
-- `scripts/ops/db_backup.sh`
+## 阶段2：AI识别层（输入结构化）
 
-### 7.2 能力说明（最小版）
-- 读取方式：优先读取环境变量，缺省时从项目根目录 `.env` 补齐 `DB_*`。
-- 支持参数覆盖：`--host --port --db --user --password --backup-dir`。
-- 支持可选压缩：`--gzip`（输出 `.sql.gz`）。
-- 备份命名：`<db_name>_YYYYmmdd_HHMMSS.sql[.gz]`。
-- 错误处理：缺配置、命令不存在、目录不可写、连接/导出失败均返回非 0。
+### 目标
+- 面向电子发票、语音文本、账单、合同等非结构化输入。
+- AI 仅做字段提取：金额、税额、日期、交易方、票据类型、业务关键词。
+- **不直接做最终记账决策**。
 
-### 7.3 使用示例
-```bash
-# 默认读取 .env 与默认输出目录
-scripts/ops/db_backup.sh
+### 交付物
+- 文档：`docs/ai/STEP28B_PHASE2_EXTRACTION_SPEC.md`
+- 接口：`/api/ai/extract`（示意）返回结构化字段 + 置信度 + 原文片段映射
+- 样本集：最小脱敏样本与提取结果对照清单
 
-# 指定输出目录
-BACKUP_DIR=/tmp/step28_backups scripts/ops/db_backup.sh
+### 最小验收标准
+- 对既定样本集，关键字段提取成功率达到预设阈值（阈值在文档中定义）。
+- 低置信字段明确标记，不自动落账。
+- 失败样本可追溯到原始输入与提取日志。
 
-# 参数覆盖 + gzip
-scripts/ops/db_backup.sh --host 127.0.0.1 --port 3306 --db xinyi_ai --user <user> --password <password> --backup-dir /tmp/step28_backups --gzip
-```
+## 阶段3：AI+规则生成“凭证建议”（人审后入账）
 
-### 7.4 实测证据（2026-02-27）
-- 命令：`BACKUP_DIR=/tmp/step28_backups scripts/ops/db_backup.sh`
-- 结果：`exit=0`
-- 输出摘要：
-  - `file=/tmp/step28_backups/xinyi_ai_20260227_230952.sql`
-  - `size_bytes=586084`
-  - `db=xinyi_ai host=127.0.0.1 port=3306`
-- 说明：在受限沙箱中会因 TCP 限制失败；提权后可正常完成备份导出。
+### 目标
+- AI 输出建议：业务类型、科目建议、借贷方向、摘要建议、金额拆分、置信度。
+- 规则层继续校验并约束最终结果。
+- 人工审核确认后生成正式凭证。
+- 强化可审计：保留原始材料、识别结果、建议分录、人工修改记录。
+
+### 交付物
+- 文档：`docs/ai/STEP28B_PHASE3_SUGGESTION_FLOW.md`
+- 接口：建议生成/采纳流程 API（草稿态）
+- 审计字段扩展方案：建议版本号、人工修订痕迹
+
+### 最小验收标准
+- 建议分录可被人工一键采纳或修订后采纳。
+- 采纳前必须经过规则校验。
+- 审计日志可回放“原始输入 -> AI建议 -> 人工最终分录”。
+
+## 阶段4：反馈闭环（先做规则学习，不急于模型训练）
+
+### 目标
+- 记录 AI 建议与最终入账差异。
+- 统计高频修正项，优先优化模板和规则优先级。
+- 为后续模型增强积累高质量数据。
+
+### 交付物
+- 文档：`docs/ai/STEP28B_PHASE4_FEEDBACK_LOOP.md`
+- 统计报表：建议采纳率、人工修订热点、规则命中率
+- 数据规范：差异样本标注字段定义
+
+### 最小验收标准
+- 至少形成一版“高频修正项 TOP 列表”。
+- 模板/规则优化能反映在下一轮建议质量变化中。
+- 闭环数据可用于后续模型训练评估（本阶段不要求训练）。
+
+## 6. 风险与边界（STEP28-B）
+- AI 不直接替代会计判断，不允许自动最终入账。
+- 最终入账必须人工确认，并可追溯修改行为。
+- 低置信度建议必须提示并阻断自动采纳。
+- 规则校验优先级高于 AI 建议。
+
+## 7. 与现有凭证/审计/权限体系衔接点
+- 凭证体系：复用现有凭证保存与状态流转链路（不破坏现有 `voucher` 主流程）。
+- 审计体系：沿用并扩展审计日志，记录 AI 建议与人工修订轨迹。
+- 权限体系：建议查看/采纳/覆盖需区分角色权限（录入、复核、会计主管）。
+
+## 8. 执行顺序（STEP28 后续）
+1. STEP28-B 阶段1（模板与规则先行）
+2. STEP28-B 阶段2（AI识别输入结构化）
+3. STEP28-B 阶段3（AI建议 + 人审采纳）
+4. STEP28-B 阶段4（反馈闭环与规则优化）
+
+## 9. STEP28-B 首个可执行子任务建议（仅建议，不执行）
+- 建议任务：`B1-T2 模板扩展与辅助核算校验补强`。
+- 最小动作：
+  1. 扩展模板参数（department/project/person）并补齐可选维度占位。
+  2. 新增辅助核算必填规则（按科目属性）和更细粒度错误码。
+  3. 增补模板预览接口示例与前端联调字段说明。
+- 交付验收：模板预览在“参数完整/缺失/维度不合法”三类场景下均有清晰可读回包。
+
+## 10. STEP28-B B1-T1 完成记录（2026-02-27）
+- 交付物：
+  - `app/services/voucher_template_service.py`
+  - `app.py`（新增 `POST /api/vouchers/template-preview`）
+- API 路径：`POST /api/vouchers/template-preview`
+- 已支持模板类型（最小 3 类）：
+  - `BANK_FEE`（银行手续费）
+  - `ASSET_DEPRECIATION`（固定资产折旧）
+  - `EXPENSE_REIMBURSEMENT_PAYMENT`（费用报销付款）
+- 能力范围：
+  - 模板参数替换：`amount` / `biz_date` / `summary_text` / `counterparty`
+  - 规则校验：借贷平衡、科目合法性、期间合法性（含账期开放检查）
+  - 结果结构：`success/template_info/voucher_draft/validations/errors/warnings/audit_hint`
+- 最近一次实测摘要（book_id=13，enterprise）：
+  - `BANK_FEE` 成功：HTTP 200，`success=true`
+  - `ASSET_DEPRECIATION` 成功：HTTP 200，`success=true`
+  - 非法科目失败：HTTP 400，`subject_not_found:999999`
+  - 缺少金额失败：HTTP 400，`amount required`
