@@ -47,11 +47,13 @@
 - 本轮实测（成功）：
   - 前置：本地启动 `python3 app.py`
   - 命令：`scripts/ops/min_regression.sh`
+  - 复核输出样例：`TEST_PREFIX=STEP28R_072913`
   - 结果：`pass_count=8 fail_count=0 blocked_count=0`
   - 关键通过项：`s4-depreciation-run`、`s5-change-create`、`s5-change-list`、`s4-to-s6-ledger-linkage`
   - 退出码：`exit=0`
 - 本轮实测（异常）：
   - 命令：`BASE_URL=http://127.0.0.1:59999 scripts/ops/min_regression.sh`
+  - 复核输出样例：`TEST_PREFIX=STEP28R_072858`
   - 结果：`blocked_count=3`（含 `sample-book-create` 等阻断）
   - 退出码：`exit=1`
 
