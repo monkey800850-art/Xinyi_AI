@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>税务汇总与预警</title>
+    <link rel="stylesheet" href="/static/css/tax.css" />
+  </head>
+  <body>
+    <div class="tax-page">
+      <header class="tax-header">
+        <div>
+          <h1>税务汇总与预警</h1>
+          <p>汇总/校验/风险提示</p>
+        </div>
+      </header>
+
+      <section class="tax-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="tax-book-id" value="1" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="tax-summary">生成汇总</button>
+          <button class="btn secondary" id="tax-validate">运行校验</button>
+          <button class="btn secondary" id="tax-alerts">生成预警</button>
+          <button class="btn secondary" id="tax-export">导出汇总</button>
+        </div>
+        <div id="tax-summary-error" class="tax-error hidden"></div>
+      </section>
+
+      <section class="tax-card">
+        <h2>税务汇总</h2>
+        <table id="tax-summary-table">
+          <thead>
+            <tr>
+              <th>类别</th>
+              <th>金额</th>
+              <th>税额</th>
+            </tr>
+          </thead>
+          <tbody id="tax-summary-body"></tbody>
+        </table>
+      </section>
+
+      <section class="tax-card">
+        <h2>校验结果</h2>
+        <table id="tax-validate-table">
+          <thead>
+            <tr>
+              <th>发票ID</th>
+              <th>问题</th>
+            </tr>
+          </thead>
+          <tbody id="tax-validate-body"></tbody>
+        </table>
+      </section>
+
+      <section class="tax-card">
+        <h2>风险预警</h2>
+        <table id="tax-alert-table">
+          <thead>
+            <tr>
+              <th>级别</th>
+              <th>类型</th>
+              <th>提示</th>
+              <th>引用ID</th>
+            </tr>
+          </thead>
+          <tbody id="tax-alert-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/tax_summary.js"></script>
+  </body>
+</html>

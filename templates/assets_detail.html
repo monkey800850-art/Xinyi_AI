@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>资产卡片</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>资产卡片</h1>
+          <p>建档/编辑/查看</p>
+        </div>
+        <div class="asset-actions">
+          <a class="btn" href="/assets">返回列表</a>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <h2>基础信息</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="fa-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>资产编号</label>
+            <input type="text" class="field-input" id="fa-code" />
+          </div>
+          <div class="field">
+            <label>资产名称</label>
+            <input type="text" class="field-input" id="fa-name" />
+          </div>
+          <div class="field">
+            <label>资产类别</label>
+            <select class="field-input" id="fa-category"></select>
+          </div>
+          <div class="field">
+            <label>状态</label>
+            <select class="field-input" id="fa-status">
+              <option value="DRAFT">DRAFT</option>
+              <option value="ACTIVE">ACTIVE</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>启用</label>
+            <select class="field-input" id="fa-enabled">
+              <option value="1">启用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="asset-card">
+        <h2>折旧参数</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>原值</label>
+            <input type="number" class="field-input" id="fa-original" step="0.01" />
+          </div>
+          <div class="field">
+            <label>残值率(%)</label>
+            <input type="number" class="field-input" id="fa-residual-rate" step="0.01" />
+          </div>
+          <div class="field">
+            <label>残值</label>
+            <input type="number" class="field-input" id="fa-residual-value" step="0.01" />
+          </div>
+          <div class="field">
+            <label>使用年限(月)</label>
+            <input type="number" class="field-input" id="fa-life" />
+          </div>
+          <div class="field">
+            <label>折旧方法</label>
+            <select class="field-input" id="fa-method">
+              <option value="STRAIGHT_LINE">直线法</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="asset-card">
+        <h2>归属信息</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>开始使用日期</label>
+            <input type="date" class="field-input" id="fa-start-date" />
+          </div>
+          <div class="field">
+            <label>入账日期</label>
+            <input type="date" class="field-input" id="fa-cap-date" />
+          </div>
+          <div class="field">
+            <label>部门ID</label>
+            <input type="number" class="field-input" id="fa-dept" />
+          </div>
+          <div class="field">
+            <label>负责人ID</label>
+            <input type="number" class="field-input" id="fa-person" />
+          </div>
+          <div class="field">
+            <label>备注</label>
+            <input type="text" class="field-input" id="fa-note" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="fa-save">保存</button>
+        </div>
+        <div id="fa-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>资产变动</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>变动日期</label>
+            <input type="date" class="field-input" id="fa-change-date" />
+          </div>
+          <div class="field">
+            <label>新部门ID(转移)</label>
+            <input type="number" class="field-input" id="fa-change-dept" />
+          </div>
+          <div class="field">
+            <label>新责任人ID(转移)</label>
+            <input type="number" class="field-input" id="fa-change-person" />
+          </div>
+          <div class="field">
+            <label>备注</label>
+            <input type="text" class="field-input" id="fa-change-note" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn secondary" id="fa-transfer">转移</button>
+          <button class="btn secondary" id="fa-dispose">处置</button>
+          <button class="btn secondary" id="fa-scrap">报废</button>
+          <a class="btn" href="/assets/changes">查看变动记录</a>
+        </div>
+        <div id="fa-change-error" class="asset-error hidden"></div>
+      </section>
+
+      <input type="hidden" id="fa-id" value="{{ asset_id }}" />
+    </div>
+
+    <script src="/static/js/assets_cards.js"></script>
+  </body>
+</html>

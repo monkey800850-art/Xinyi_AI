@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Autocomplete Demo</title>
+    <link rel="stylesheet" href="/static/css/autocomplete.css" />
+  </head>
+  <body>
+    <div class="demo-page">
+      <header class="demo-header">
+        <h1>全局联想组件演示</h1>
+        <p>示例：科目（type=subject）</p>
+      </header>
+
+      <section class="demo-card">
+        <label class="demo-label" for="ac-subject">科目联想</label>
+        <div class="ac-root" id="ac-subject-root">
+          <input
+            id="ac-subject"
+            class="ac-input"
+            type="text"
+            placeholder="输入科目编码或名称"
+          />
+          <div class="ac-dropdown"></div>
+        </div>
+        <div class="demo-selected" id="ac-subject-selected">未选择</div>
+      </section>
+
+      <footer class="demo-footer">
+        <p>接口：/api/autocomplete</p>
+      </footer>
+    </div>
+
+    <script src="/static/js/autocomplete.js"></script>
+    <script>
+      (function () {
+        var input = document.getElementById("ac-subject");
+        var root = document.getElementById("ac-subject-root");
+        var selected = document.getElementById("ac-subject-selected");
+
+        var ac = new AutocompleteInput(root, {
+          type: "subject",
+          bookId: 1,
+          placeholder: "输入科目编码或名称",
+          onSelect: function (item) {
+            selected.textContent = item.display_text + " (id=" + item.id + ")";
+          },
+        });
+
+        input.addEventListener("input", function () {
+          if (!input.value) {
+            selected.textContent = "未选择";
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>科目明细账</title>
+    <link rel="stylesheet" href="/static/css/subject_ledger.css" />
+  </head>
+  <body>
+    <div class="ledger-page">
+      <nav class="breadcrumb">发生余额表 &gt; 明细账 &gt; 凭证详情</nav>
+
+      <header class="ledger-header">
+        <div>
+          <h1>科目明细账</h1>
+          <p id="ledger-title">请选择科目与期间</p>
+        </div>
+        <div class="ledger-actions">
+          <a class="btn" href="/reports/trial_balance">返回发生余额表</a>
+        </div>
+      </header>
+
+      <section class="ledger-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="ledger-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>科目编码</label>
+            <input type="text" class="field-input" id="ledger-subject-code" placeholder="如 1001" />
+          </div>
+          <div class="field">
+            <label>开始日期</label>
+            <input type="date" class="field-input" id="ledger-start-date" />
+          </div>
+          <div class="field">
+            <label>结束日期</label>
+            <input type="date" class="field-input" id="ledger-end-date" />
+          </div>
+          <div class="field">
+            <label>摘要包含</label>
+            <input type="text" class="field-input" id="ledger-summary" />
+          </div>
+          <div class="field">
+            <label>方向</label>
+            <select class="field-input" id="ledger-direction">
+              <option value="">全部</option>
+              <option value="DEBIT">借方</option>
+              <option value="CREDIT">贷方</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="ledger-query-btn">查询</button>
+          <button class="btn secondary" id="ledger-export-btn">导出</button>
+        </div>
+      </section>
+
+      <section class="ledger-card">
+        <div id="ledger-error" class="ledger-error hidden"></div>
+        <table id="ledger-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>凭证号</th>
+              <th>行号</th>
+              <th>摘要</th>
+              <th class="amount">借方</th>
+              <th class="amount">贷方</th>
+              <th>备注</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-body"></tbody>
+        </table>
+      </section>
+
+      <section class="ledger-card" id="voucher-detail" style="display:none;">
+        <h2>凭证详情</h2>
+        <div class="voucher-meta" id="voucher-meta"></div>
+        <table id="voucher-lines">
+          <thead>
+            <tr>
+              <th>行号</th>
+              <th>摘要</th>
+              <th>科目</th>
+              <th class="amount">借方</th>
+              <th class="amount">贷方</th>
+              <th>到期日</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="voucher-lines-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/subject_ledger.js"></script>
+  </body>
+</html>

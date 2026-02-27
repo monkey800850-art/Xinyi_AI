@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>银行流水导入</title>
+    <link rel="stylesheet" href="/static/css/bank_import.css" />
+  </head>
+  <body>
+    <div class="bank-page">
+      <header class="bank-header">
+        <div>
+          <h1>银行流水导入</h1>
+          <p>支持 CSV / Excel</p>
+        </div>
+      </header>
+
+      <section class="bank-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="bank-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>银行账户ID</label>
+            <input type="number" class="field-input" id="bank-account-id" placeholder="如 1" />
+          </div>
+          <div class="field">
+            <label>导入文件</label>
+            <input type="file" class="field-input" id="bank-file" accept=".csv,.xlsx,.xlsm,.xltx,.xltm" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="bank-import">导入</button>
+          <button class="btn secondary" id="bank-refresh">刷新列表</button>
+        </div>
+        <div id="bank-error" class="bank-error hidden"></div>
+        <div id="bank-result" class="bank-result hidden"></div>
+      </section>
+
+      <section class="bank-card">
+        <h2>导入结果</h2>
+        <table id="bank-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>账户ID</th>
+              <th>日期</th>
+              <th>金额</th>
+              <th>摘要</th>
+              <th>对方</th>
+              <th>余额</th>
+              <th>流水号</th>
+            </tr>
+          </thead>
+          <tbody id="bank-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/bank_import.js"></script>
+  </body>
+</html>

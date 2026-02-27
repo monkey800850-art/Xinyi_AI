@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>银行对账</title>
+    <link rel="stylesheet" href="/static/css/bank_reconcile.css" />
+  </head>
+  <body>
+    <div class="rec-page">
+      <header class="rec-header">
+        <div>
+          <h1>银行对账</h1>
+          <p>自动匹配 + 人工确认</p>
+        </div>
+        <div class="rec-actions">
+          <button class="btn" id="rec-auto">自动匹配</button>
+          <button class="btn secondary" id="rec-refresh">刷新列表</button>
+          <button class="btn secondary" id="rec-export">导出报表</button>
+        </div>
+      </header>
+
+      <section class="rec-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="rec-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>银行账户ID</label>
+            <input type="number" class="field-input" id="rec-bank-account-id" placeholder="如 1" />
+          </div>
+          <div class="field">
+            <label>日期容差(天)</label>
+            <input type="number" class="field-input" id="rec-tolerance" value="3" />
+          </div>
+          <div class="field">
+            <label>操作人</label>
+            <input type="text" class="field-input" id="rec-operator" placeholder="张三" />
+          </div>
+          <div class="field">
+            <label>角色</label>
+            <select class="field-input" id="rec-role">
+              <option value="">请选择</option>
+              <option value="cashier">出纳</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+        </div>
+        <div id="rec-error" class="rec-error hidden"></div>
+      </section>
+
+      <section class="rec-card">
+        <h2>对账摘要</h2>
+        <div class="summary" id="rec-summary"></div>
+      </section>
+
+      <section class="rec-card">
+        <h2>流水列表（可匹配）</h2>
+        <table id="rec-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>日期</th>
+              <th>金额</th>
+              <th>摘要</th>
+              <th>匹配状态</th>
+              <th>凭证</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="rec-body"></tbody>
+        </table>
+      </section>
+
+      <section class="rec-card">
+        <h2>人工确认</h2>
+        <div class="manual-grid">
+          <input type="number" class="field-input" id="manual-txn-id" placeholder="流水ID" />
+          <input type="number" class="field-input" id="manual-voucher-id" placeholder="凭证ID" />
+          <button class="btn" id="manual-confirm">确认匹配</button>
+          <button class="btn secondary" id="manual-cancel">取消匹配</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="/static/js/bank_reconcile.js"></script>
+  </body>
+</html>

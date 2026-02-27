@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>固定资产折旧计提</title>
+    <link rel="stylesheet" href="/static/css/asset_depreciation.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>固定资产折旧计提</h1>
+          <p>直线法月度计提</p>
+        </div>
+        <div class="asset-actions">
+          <a class="btn" href="/assets">返回资产卡片</a>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <h2>计提参数</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="dep-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>年份</label>
+            <input type="number" class="field-input" id="dep-year" value="2026" />
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <input type="number" class="field-input" id="dep-month" value="2" />
+          </div>
+          <div class="field">
+            <label>凭证状态</label>
+            <select class="field-input" id="dep-voucher-status">
+              <option value="draft">草稿</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="dep-preview">试算预览</button>
+          <button class="btn secondary" id="dep-run">正式计提</button>
+        </div>
+        <div id="dep-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>试算结果</h2>
+        <div id="dep-summary" class="summary"></div>
+        <table id="dep-preview-table">
+          <thead>
+            <tr>
+              <th>资产编号</th>
+              <th>资产名称</th>
+              <th>折旧金额</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="dep-preview-body"></tbody>
+        </table>
+      </section>
+
+      <section class="asset-card">
+        <h2>计提批次</h2>
+        <div class="filter-actions">
+          <button class="btn" id="dep-refresh">刷新批次</button>
+        </div>
+        <table id="dep-batch-table">
+          <thead>
+            <tr>
+              <th>期间</th>
+              <th>状态</th>
+              <th>总额</th>
+              <th>凭证ID</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="dep-batch-body"></tbody>
+        </table>
+      </section>
+
+      <section class="asset-card">
+        <h2>批次明细</h2>
+        <div id="dep-detail-title" class="summary"></div>
+        <table id="dep-detail-table">
+          <thead>
+            <tr>
+              <th>资产编号</th>
+              <th>资产名称</th>
+              <th>折旧金额</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="dep-detail-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/asset_depreciation.js"></script>
+  </body>
+</html>

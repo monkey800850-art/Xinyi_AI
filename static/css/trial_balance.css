@@ -1,0 +1,141 @@
+:root {
+  --page-bg: #f7f8fa;
+  --card-bg: #ffffff;
+  --border: #d0d5dd;
+  --text: #1d2939;
+  --muted: #667085;
+}
+
+body {
+  font-family: "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--page-bg);
+  color: var(--text);
+  margin: 0;
+  padding: 24px;
+}
+
+.tb-page {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.tb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.tb-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+}
+
+.tb-header p {
+  margin: 0 0 24px 0;
+  color: var(--muted);
+}
+
+.tb-actions .btn {
+  background: #1570ef;
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tb-actions .btn.secondary {
+  background: #475467;
+}
+
+.tb-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+  margin-top: 16px;
+}
+
+.tb-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.field-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+#tb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#tb-table th,
+#tb-table td {
+  border-bottom: 1px solid #edf0f2;
+  text-align: left;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.col-subject {
+  width: 360px;
+}
+
+.col-amount {
+  width: 140px;
+  text-align: right;
+}
+
+.indent {
+  display: inline-block;
+}
+
+.toggle {
+  margin-right: 6px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.toggle:disabled {
+  visibility: hidden;
+}
+
+.tb-error {
+  border: 1px solid #fecdca;
+  background: #fef3f2;
+  color: #b42318;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.tb-error.hidden {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .tb-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}

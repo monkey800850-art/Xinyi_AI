@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>凭证录入</title>
+    <link rel="stylesheet" href="/static/css/voucher_entry.css" />
+    <link rel="stylesheet" href="/static/css/autocomplete.css" />
+  </head>
+  <body data-book-id="1">
+    <div class="voucher-page">
+      <header class="voucher-header">
+        <div>
+          <h1>凭证录入</h1>
+          <p>录入草稿并校验借贷平衡</p>
+        </div>
+        <div class="voucher-actions">
+          <button type="button" class="btn" id="add-line-btn">新增分录</button>
+          <button type="button" class="btn secondary" id="save-voucher-btn">保存草稿</button>
+        </div>
+      </header>
+
+      <section class="voucher-card voucher-meta">
+        <div class="voucher-meta-grid">
+          <div class="field">
+            <label>操作人</label>
+            <input type="text" class="field-input" id="operator-name" placeholder="例如：张三" />
+          </div>
+          <div class="field">
+            <label>角色</label>
+            <select class="field-input" id="operator-role">
+              <option value="">请选择</option>
+              <option value="reviewer">审核员</option>
+              <option value="accountant">记账员</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>凭证ID</label>
+            <div class="field-text" id="voucher-id">-</div>
+          </div>
+          <div class="field">
+            <label>状态</label>
+            <div class="field-text" id="voucher-status">draft</div>
+          </div>
+          <div class="field action-group">
+            <label>状态操作</label>
+            <div class="status-actions">
+              <button type="button" class="btn small" id="approve-voucher-btn">审核</button>
+              <button type="button" class="btn small" id="unapprove-voucher-btn">反审核</button>
+              <button type="button" class="btn small" id="post-voucher-btn">记账</button>
+              <button type="button" class="btn small" id="unpost-voucher-btn">反记账</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="voucher-card voucher-head">
+        <div class="voucher-head-grid">
+          <div class="field">
+            <label>日期</label>
+            <input type="date" class="field-input" id="voucher-date" />
+          </div>
+          <div class="field">
+            <label>凭证字</label>
+            <input type="text" class="field-input" id="voucher-word" placeholder="记" />
+          </div>
+          <div class="field">
+            <label>编号</label>
+            <input type="text" class="field-input" id="voucher-no" placeholder="001" />
+          </div>
+          <div class="field">
+            <label>附件数</label>
+            <input type="number" class="field-input" id="voucher-attachments" min="0" value="0" />
+          </div>
+          <div class="field">
+            <label>制单人</label>
+            <input type="text" class="field-input" id="voucher-maker" placeholder="制单人" />
+          </div>
+        </div>
+      </section>
+
+      <section class="voucher-card">
+        <div id="voucher-errors" class="voucher-errors hidden"></div>
+        <table id="voucher-lines-table">
+          <thead>
+            <tr>
+              <th class="col-index">行号</th>
+              <th class="col-summary">摘要</th>
+              <th class="col-subject">科目编码/名称</th>
+              <th class="col-aux">辅助核算</th>
+              <th class="col-amount">借方金额</th>
+              <th class="col-amount">贷方金额</th>
+              <th class="col-due">到期日</th>
+              <th class="col-note">备注</th>
+            </tr>
+          </thead>
+          <tbody id="voucher-lines-body">
+            <tr class="voucher-line-row" data-row-index="0">
+              <td class="col-index">1</td>
+              <td>
+                <input type="text" class="summary-input" name="lines[0][summary]" />
+              </td>
+              <td>
+                <div class="ac-root">
+                  <input type="text" class="subject-code-input ac-input" name="lines[0][subject_code]" data-autocomplete-type="subject" data-target-name=".subject-name-input" data-target-id=".subject-id-input" placeholder="编码或名称">
+                  <input type="hidden" class="subject-id-input" name="lines[0][subject_id]">
+                  <div class="ac-dropdown"></div>
+                </div>
+                <input type="text" class="subject-name-input" name="lines[0][subject_name]" readonly>
+              </td>
+              <td>
+                <input type="text" class="aux-input" name="lines[0][aux_display]" placeholder="占位" />
+              </td>
+              <td>
+                <input type="number" class="amount-input debit-input" name="lines[0][debit]" min="0" step="0.01" />
+              </td>
+              <td>
+                <input type="number" class="amount-input credit-input" name="lines[0][credit]" min="0" step="0.01" />
+              </td>
+              <td>
+                <input type="date" class="due-input" name="lines[0][due_date]" />
+              </td>
+              <td>
+                <input type="text" class="note-input" name="lines[0][note]" />
+              </td>
+            </tr>
+            <tr class="voucher-line-row" data-row-index="1">
+              <td class="col-index">2</td>
+              <td>
+                <input type="text" class="summary-input" name="lines[1][summary]" />
+              </td>
+              <td>
+                <div class="ac-root">
+                  <input type="text" class="subject-code-input ac-input" name="lines[1][subject_code]" data-autocomplete-type="subject" data-target-name=".subject-name-input" data-target-id=".subject-id-input" placeholder="编码或名称">
+                  <input type="hidden" class="subject-id-input" name="lines[1][subject_id]">
+                  <div class="ac-dropdown"></div>
+                </div>
+                <input type="text" class="subject-name-input" name="lines[1][subject_name]" readonly>
+              </td>
+              <td>
+                <input type="text" class="aux-input" name="lines[1][aux_display]" placeholder="占位" />
+              </td>
+              <td>
+                <input type="number" class="amount-input debit-input" name="lines[1][debit]" min="0" step="0.01" />
+              </td>
+              <td>
+                <input type="number" class="amount-input credit-input" name="lines[1][credit]" min="0" step="0.01" />
+              </td>
+              <td>
+                <input type="date" class="due-input" name="lines[1][due_date]" />
+              </td>
+              <td>
+                <input type="text" class="note-input" name="lines[1][note]" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="voucher-card voucher-footer">
+        <div class="totals">
+          <div><span>借方合计：</span><strong id="debit-total">0.00</strong></div>
+          <div><span>贷方合计：</span><strong id="credit-total">0.00</strong></div>
+          <div><span>差额：</span><strong id="diff-total">0.00</strong></div>
+        </div>
+      </section>
+    </div>
+
+    <script src="/static/js/autocomplete.js"></script>
+    <script src="/static/js/voucher_entry.js"></script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>工作台</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css" />
+  </head>
+  <body>
+    <div class="dash-page">
+      <header class="dash-header">
+        <div>
+          <h1>工作台</h1>
+          <p>待办与预警概览</p>
+        </div>
+      </header>
+
+      <section class="dash-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="dash-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>用户</label>
+            <input type="text" class="field-input" id="dash-user" placeholder="张三" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="dash-refresh">刷新</button>
+        </div>
+        <div id="dash-error" class="dash-error hidden"></div>
+      </section>
+
+      <section class="dash-card">
+        <h2>待办</h2>
+        <div class="card-grid" id="todo-cards"></div>
+      </section>
+
+      <section class="dash-card">
+        <h2>预警</h2>
+        <div class="card-grid" id="alert-cards"></div>
+      </section>
+
+      <section class="dash-card">
+        <h2>快捷入口</h2>
+        <div class="shortcut-grid" id="shortcut-grid"></div>
+      </section>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>资产变动记录</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>资产变动记录</h1>
+          <p>处置 / 报废 / 转移</p>
+        </div>
+        <div class="asset-actions">
+          <a class="btn" href="/assets">返回资产卡片</a>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="change-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>变动类型</label>
+            <select class="field-input" id="change-type">
+              <option value="">全部</option>
+              <option value="DISPOSAL">处置</option>
+              <option value="SCRAP">报废</option>
+              <option value="TRANSFER">转移</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>开始日期</label>
+            <input type="date" class="field-input" id="change-start" />
+          </div>
+          <div class="field">
+            <label>结束日期</label>
+            <input type="date" class="field-input" id="change-end" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="change-refresh">查询</button>
+        </div>
+        <div id="change-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>记录列表</h2>
+        <table id="change-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>资产编号</th>
+              <th>类型</th>
+              <th>原部门</th>
+              <th>新部门</th>
+              <th>原责任人</th>
+              <th>新责任人</th>
+              <th>备注</th>
+              <th>操作人</th>
+            </tr>
+          </thead>
+          <tbody id="change-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/asset_changes.js"></script>
+  </body>
+</html>

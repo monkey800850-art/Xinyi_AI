@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>发票管理</title>
+    <link rel="stylesheet" href="/static/css/tax.css" />
+  </head>
+  <body>
+    <div class="tax-page">
+      <header class="tax-header">
+        <div>
+          <h1>发票管理</h1>
+          <p>上传/导入/查重/分类统计</p>
+        </div>
+      </header>
+
+      <section class="tax-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="invoice-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>导入文件</label>
+            <input type="file" class="field-input" id="invoice-file" accept=".csv,.xlsx,.xlsm,.xltx,.xltm" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="invoice-import">导入</button>
+          <button class="btn secondary" id="invoice-refresh">刷新列表</button>
+        </div>
+        <div id="invoice-error" class="tax-error hidden"></div>
+        <div id="invoice-result" class="tax-result hidden"></div>
+      </section>
+
+      <section class="tax-card">
+        <h2>发票列表</h2>
+        <table id="invoice-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>发票代码</th>
+              <th>发票号码</th>
+              <th>日期</th>
+              <th>金额</th>
+              <th>税率</th>
+              <th>税额</th>
+              <th>销方</th>
+              <th>购方</th>
+              <th>类别</th>
+            </tr>
+          </thead>
+          <tbody id="invoice-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/tax_invoices.js"></script>
+  </body>
+</html>

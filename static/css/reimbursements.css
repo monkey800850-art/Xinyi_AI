@@ -1,0 +1,138 @@
+:root {
+  --page-bg: #f7f8fa;
+  --card-bg: #ffffff;
+  --border: #d0d5dd;
+  --text: #1d2939;
+  --muted: #667085;
+}
+
+body {
+  font-family: "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--page-bg);
+  color: var(--text);
+  margin: 0;
+  padding: 24px;
+}
+
+.reim-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.reim-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reim-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+}
+
+.reim-header p {
+  margin: 0 0 24px 0;
+  color: var(--muted);
+}
+
+.btn {
+  background: #1570ef;
+  color: #ffffff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn.secondary {
+  background: #0f5bd3;
+}
+
+.btn.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.reim-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+  margin-top: 16px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.field-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.filter-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+#reim-table,
+#reim-stats-table,
+#items-table,
+#logs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#reim-table th,
+#reim-table td,
+#reim-stats-table th,
+#reim-stats-table td,
+#items-table th,
+#items-table td,
+#logs-table th,
+#logs-table td {
+  border-bottom: 1px solid #edf0f2;
+  text-align: left;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.amount {
+  text-align: right;
+}
+
+.reim-error {
+  border: 1px solid #fecdca;
+  background: #fef3f2;
+  color: #b42318;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.reim-error.hidden {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}

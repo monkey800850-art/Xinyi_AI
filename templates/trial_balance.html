@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>发生余额表</title>
+    <link rel="stylesheet" href="/static/css/trial_balance.css" />
+  </head>
+  <body data-book-id="1">
+    <div class="tb-page">
+      <header class="tb-header">
+        <div>
+          <h1>发生余额表</h1>
+          <p>按账套与期间查询</p>
+        </div>
+        <div class="tb-actions">
+          <button class="btn" id="tb-query-btn">查询</button>
+          <button class="btn secondary" id="tb-export-btn">导出</button>
+        </div>
+      </header>
+
+      <section class="tb-card tb-filters">
+        <div class="tb-filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="tb-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>开始日期</label>
+            <input type="date" class="field-input" id="tb-start-date" />
+          </div>
+          <div class="field">
+            <label>结束日期</label>
+            <input type="date" class="field-input" id="tb-end-date" />
+          </div>
+        </div>
+      </section>
+
+      <section class="tb-card">
+        <div id="tb-error" class="tb-error hidden"></div>
+        <table id="tb-table">
+          <thead>
+            <tr>
+              <th class="col-subject">科目</th>
+              <th class="col-amount">期初余额</th>
+              <th class="col-amount">本期借方发生额</th>
+              <th class="col-amount">本期贷方发生额</th>
+              <th class="col-amount">期末余额</th>
+            </tr>
+          </thead>
+          <tbody id="tb-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/trial_balance.js"></script>
+  </body>
+</html>

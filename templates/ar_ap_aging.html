@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>到期预警与账龄分析</title>
+    <link rel="stylesheet" href="/static/css/ar_ap.css" />
+  </head>
+  <body>
+    <div class="ar-page">
+      <header class="ar-header">
+        <div>
+          <h1>应收应付预警与账龄分析</h1>
+          <p>基础商用版</p>
+        </div>
+        <div class="ar-actions">
+          <button class="btn" id="ar-refresh">刷新摘要</button>
+        </div>
+      </header>
+
+      <section class="ar-card">
+        <div class="summary-grid">
+          <div class="summary-item warning">
+            <div class="label">临期数量</div>
+            <div class="value" id="due-soon-count">0</div>
+            <div class="amount" id="due-soon-amount">0.00</div>
+          </div>
+          <div class="summary-item overdue">
+            <div class="label">逾期数量</div>
+            <div class="value" id="overdue-count">0</div>
+            <div class="amount" id="overdue-amount">0.00</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ar-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="ar-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>开始日期</label>
+            <input type="date" class="field-input" id="ar-start-date" />
+          </div>
+          <div class="field">
+            <label>结束日期</label>
+            <input type="date" class="field-input" id="ar-end-date" />
+          </div>
+          <div class="field">
+            <label>截止日期</label>
+            <input type="date" class="field-input" id="ar-as-of" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="ar-query-aging">查询账龄</button>
+          <button class="btn secondary" id="ar-query-warning">查询预警</button>
+          <button class="btn secondary" id="ar-export-aging">导出账龄</button>
+        </div>
+        <div id="ar-error" class="ar-error hidden"></div>
+      </section>
+
+      <section class="ar-card">
+        <h2>到期预警明细</h2>
+        <table id="ar-warning-table">
+          <thead>
+            <tr>
+              <th>凭证</th>
+              <th>科目</th>
+              <th>往来对象</th>
+              <th>到期日</th>
+              <th>金额</th>
+              <th>状态</th>
+              <th>逾期天数</th>
+            </tr>
+          </thead>
+          <tbody id="ar-warning-body"></tbody>
+        </table>
+      </section>
+
+      <section class="ar-card">
+        <h2>账龄分析</h2>
+        <table id="ar-aging-table">
+          <thead>
+            <tr>
+              <th>往来对象</th>
+              <th>余额</th>
+              <th>账期内金额</th>
+              <th>逾期金额</th>
+              <th>逾期天数</th>
+            </tr>
+          </thead>
+          <tbody id="ar-aging-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/ar_ap.js"></script>
+  </body>
+</html>

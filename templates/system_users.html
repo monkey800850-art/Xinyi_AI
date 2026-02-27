@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>用户管理</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>用户管理</h1>
+          <p>启用/停用/角色分配</p>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <h2>新增 / 编辑</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>用户名</label>
+            <input type="text" class="field-input" id="user-username" />
+          </div>
+          <div class="field">
+            <label>显示名</label>
+            <input type="text" class="field-input" id="user-display" />
+          </div>
+          <div class="field">
+            <label>启用</label>
+            <select class="field-input" id="user-enabled">
+              <option value="1">启用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>角色ID(逗号)</label>
+            <input type="text" class="field-input" id="user-roles" placeholder="1,2" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="user-save">保存</button>
+        </div>
+        <div id="user-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>用户列表</h2>
+        <table id="user-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>用户名</th>
+              <th>显示名</th>
+              <th>角色</th>
+              <th>启用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="user-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/system_users.js"></script>
+  </body>
+</html>

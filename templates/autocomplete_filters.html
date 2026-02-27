@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>联想筛选演示</title>
+    <link rel="stylesheet" href="/static/css/autocomplete.css" />
+    <link rel="stylesheet" href="/static/css/voucher_entry.css" />
+  </head>
+  <body data-book-id="1">
+    <div class="voucher-page">
+      <header class="voucher-header">
+        <h1>联想筛选演示（非凭证页面）</h1>
+        <p>单位 / 项目 / 个人 / 部门</p>
+      </header>
+
+      <section class="voucher-card">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label>单位</label>
+            <div class="ac-root">
+              <input class="ac-input" type="text" data-autocomplete-type="entity" data-target-name=".entity-name" data-target-id=".entity-id" placeholder="单位编码/名称">
+              <input class="entity-id" type="hidden">
+              <div class="ac-dropdown"></div>
+            </div>
+            <input class="entity-name" type="text" readonly>
+          </div>
+          <div class="filter-item">
+            <label>项目</label>
+            <div class="ac-root">
+              <input class="ac-input" type="text" data-autocomplete-type="project" data-target-name=".project-name" data-target-id=".project-id" placeholder="项目编码/名称">
+              <input class="project-id" type="hidden">
+              <div class="ac-dropdown"></div>
+            </div>
+            <input class="project-name" type="text" readonly>
+          </div>
+          <div class="filter-item">
+            <label>个人</label>
+            <div class="ac-root">
+              <input class="ac-input" type="text" data-autocomplete-type="person" data-target-name=".person-name" data-target-id=".person-id" placeholder="个人编码/名称">
+              <input class="person-id" type="hidden">
+              <div class="ac-dropdown"></div>
+            </div>
+            <input class="person-name" type="text" readonly>
+          </div>
+          <div class="filter-item">
+            <label>部门</label>
+            <div class="ac-root">
+              <input class="ac-input" type="text" data-autocomplete-type="department" data-target-name=".department-name" data-target-id=".department-id" placeholder="部门编码/名称">
+              <input class="department-id" type="hidden">
+              <div class="ac-dropdown"></div>
+            </div>
+            <input class="department-name" type="text" readonly>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="/static/js/autocomplete.js"></script>
+    <script src="/static/js/voucher_entry.js"></script>
+  </body>
+</html>

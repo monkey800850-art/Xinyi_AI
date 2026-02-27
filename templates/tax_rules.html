@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>税务规则库</title>
+    <link rel="stylesheet" href="/static/css/tax.css" />
+  </head>
+  <body>
+    <div class="tax-page">
+      <header class="tax-header">
+        <div>
+          <h1>税务规则库</h1>
+          <p>地区/税率/减免规则</p>
+        </div>
+      </header>
+
+      <section class="tax-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>地区</label>
+            <input type="text" class="field-input" id="rule-region" placeholder="如 广东" />
+          </div>
+          <div class="field">
+            <label>税种</label>
+            <input type="text" class="field-input" id="rule-type" placeholder="增值税" />
+          </div>
+          <div class="field">
+            <label>税率</label>
+            <input type="number" class="field-input" id="rule-rate" step="0.0001" />
+          </div>
+          <div class="field">
+            <label>减免类型</label>
+            <input type="text" class="field-input" id="rule-reduction-type" />
+          </div>
+          <div class="field">
+            <label>减免税率</label>
+            <input type="number" class="field-input" id="rule-reduction-rate" step="0.0001" />
+          </div>
+          <div class="field">
+            <label>备注</label>
+            <input type="text" class="field-input" id="rule-note" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="rule-add">新增规则</button>
+        </div>
+        <div id="tax-error" class="tax-error hidden"></div>
+      </section>
+
+      <section class="tax-card">
+        <h2>规则列表</h2>
+        <table id="rule-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>地区</th>
+              <th>税种</th>
+              <th>税率</th>
+              <th>减免类型</th>
+              <th>减免税率</th>
+              <th>备注</th>
+              <th>启用</th>
+            </tr>
+          </thead>
+          <tbody id="rule-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/tax_rules.js"></script>
+  </body>
+</html>

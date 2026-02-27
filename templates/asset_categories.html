@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>资产类别管理</title>
+    <link rel="stylesheet" href="/static/css/assets.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>资产类别管理</h1>
+          <p>基础类别配置</p>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="asset-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>类别编码</label>
+            <input type="text" class="field-input" id="asset-code" />
+          </div>
+          <div class="field">
+            <label>类别名称</label>
+            <input type="text" class="field-input" id="asset-name" />
+          </div>
+          <div class="field">
+            <label>折旧方法</label>
+            <select class="field-input" id="asset-method">
+              <option value="STRAIGHT_LINE">直线法</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>使用年限(月)</label>
+            <input type="number" class="field-input" id="asset-life" value="0" />
+          </div>
+          <div class="field">
+            <label>残值率</label>
+            <input type="number" class="field-input" id="asset-residual" step="0.0001" value="0" />
+          </div>
+          <div class="field">
+            <label>折旧费用科目</label>
+            <input type="text" class="field-input" id="asset-expense" />
+          </div>
+          <div class="field">
+            <label>累计折旧科目</label>
+            <input type="text" class="field-input" id="asset-accum" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="asset-add">新增类别</button>
+        </div>
+        <div id="asset-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>类别列表</h2>
+        <table id="asset-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>编码</th>
+              <th>名称</th>
+              <th>方法</th>
+              <th>年限(月)</th>
+              <th>残值率</th>
+              <th>费用科目</th>
+              <th>累计折旧科目</th>
+              <th>启用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="asset-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/assets.js"></script>
+  </body>
+</html>

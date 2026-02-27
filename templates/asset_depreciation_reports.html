@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>固定资产折旧报表</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>折旧报表</h1>
+          <p>折旧明细与汇总</p>
+        </div>
+        <div class="asset-actions">
+          <a class="btn" href="/assets/depreciation">返回计提</a>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="report-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>年份</label>
+            <input type="number" class="field-input" id="report-year" value="2026" />
+          </div>
+          <div class="field">
+            <label>月份</label>
+            <input type="number" class="field-input" id="report-month" value="2" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="report-search">查询</button>
+          <button class="btn secondary" id="report-export-detail">导出明细</button>
+          <button class="btn secondary" id="report-export-summary">导出汇总</button>
+        </div>
+        <div id="report-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>折旧明细</h2>
+        <table id="report-detail-table">
+          <thead>
+            <tr>
+              <th>资产编号</th>
+              <th>资产名称</th>
+              <th>期间</th>
+              <th>本期折旧金额</th>
+              <th>批次ID</th>
+              <th>凭证ID</th>
+            </tr>
+          </thead>
+          <tbody id="report-detail-body"></tbody>
+        </table>
+      </section>
+
+      <section class="asset-card">
+        <h2>折旧汇总（按类别）</h2>
+        <table id="report-category-table">
+          <thead>
+            <tr>
+              <th>类别</th>
+              <th>本期折旧金额</th>
+            </tr>
+          </thead>
+          <tbody id="report-category-body"></tbody>
+        </table>
+      </section>
+
+      <section class="asset-card">
+        <h2>折旧汇总（按部门）</h2>
+        <table id="report-dept-table">
+          <thead>
+            <tr>
+              <th>部门</th>
+              <th>本期折旧金额</th>
+            </tr>
+          </thead>
+          <tbody id="report-dept-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/asset_depreciation_reports.js"></script>
+  </body>
+</html>

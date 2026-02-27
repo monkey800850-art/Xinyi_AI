@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>辅助余额与明细</title>
+    <link rel="stylesheet" href="/static/css/aux_reports.css" />
+    <link rel="stylesheet" href="/static/css/autocomplete.css" />
+  </head>
+  <body data-book-id="1">
+    <div class="aux-page">
+      <nav class="breadcrumb">发生余额表 &gt; 明细账 &gt; 辅助余额</nav>
+
+      <header class="aux-header">
+        <div>
+          <h1>辅助余额与明细</h1>
+          <p>科目 + 辅助维度查询</p>
+        </div>
+        <div class="aux-actions">
+          <a class="btn" href="/reports/trial_balance">返回发生余额表</a>
+        </div>
+      </header>
+
+      <section class="aux-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="aux-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>辅助类型</label>
+            <select class="field-input" id="aux-type">
+              <option value="entity">单位</option>
+              <option value="person">个人</option>
+              <option value="project">项目</option>
+              <option value="department">部门</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>科目</label>
+            <div class="ac-root">
+              <input type="text" class="ac-input" id="aux-subject-input" data-autocomplete-type="subject" placeholder="科目编码/名称" />
+              <input type="hidden" id="aux-subject-code" />
+              <div class="ac-dropdown"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>辅助项目</label>
+            <div class="ac-root" id="aux-dimension-root">
+              <input type="text" class="ac-input" id="aux-dimension-input" data-autocomplete-type="entity" placeholder="编码/名称" />
+              <input type="hidden" id="aux-dimension-code" />
+              <div class="ac-dropdown"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>开始日期</label>
+            <input type="date" class="field-input" id="aux-start-date" />
+          </div>
+          <div class="field">
+            <label>结束日期</label>
+            <input type="date" class="field-input" id="aux-end-date" />
+          </div>
+          <div class="field">
+            <label>主维度</label>
+            <select class="field-input" id="aux-primary">
+              <option value="aux">辅助项目</option>
+              <option value="subject">科目</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="aux-query-balance">查询余额</button>
+          <button class="btn secondary" id="aux-query-ledger">查询明细</button>
+          <button class="btn secondary" id="aux-export-balance">导出余额</button>
+          <button class="btn secondary" id="aux-export-ledger">导出明细</button>
+        </div>
+        <div id="aux-error" class="aux-error hidden"></div>
+      </section>
+
+      <section class="aux-card">
+        <h2>辅助余额表</h2>
+        <table id="aux-balance-table">
+          <thead>
+            <tr>
+              <th id="aux-primary-header">辅助项目</th>
+              <th class="amount">本期借方发生额</th>
+              <th class="amount">本期贷方发生额</th>
+              <th class="amount">期末余额</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="aux-balance-body"></tbody>
+        </table>
+      </section>
+
+      <section class="aux-card">
+        <h2>辅助明细</h2>
+        <table id="aux-ledger-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>凭证号</th>
+              <th>摘要</th>
+              <th>科目</th>
+              <th>辅助项目</th>
+              <th class="amount">借方</th>
+              <th class="amount">贷方</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="aux-ledger-body"></tbody>
+        </table>
+      </section>
+
+      <section class="aux-card" id="aux-voucher-detail" style="display:none;">
+        <h2>凭证详情</h2>
+        <div class="voucher-meta" id="aux-voucher-meta"></div>
+        <table id="aux-voucher-lines">
+          <thead>
+            <tr>
+              <th>行号</th>
+              <th>摘要</th>
+              <th>科目</th>
+              <th class="amount">借方</th>
+              <th class="amount">贷方</th>
+              <th>到期日</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="aux-voucher-lines-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/autocomplete.js"></script>
+    <script src="/static/js/aux_reports.js"></script>
+  </body>
+</html>

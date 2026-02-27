@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>固定资产卡片</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>固定资产卡片</h1>
+          <p>资产台账基础数据</p>
+        </div>
+        <div class="asset-actions">
+          <a class="btn" href="/assets/new">新建资产</a>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="asset-book-id" value="1" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="asset-refresh">刷新</button>
+        </div>
+        <div id="asset-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>列表</h2>
+        <table id="asset-table">
+          <thead>
+            <tr>
+              <th>资产编号</th>
+              <th>资产名称</th>
+              <th>类别</th>
+              <th>原值</th>
+              <th>状态</th>
+              <th>启用</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="asset-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/assets_cards.js"></script>
+  </body>
+</html>

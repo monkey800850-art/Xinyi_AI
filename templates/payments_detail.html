@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>支付申请详情</title>
+    <link rel="stylesheet" href="/static/css/payments.css" />
+  </head>
+  <body>
+    <div class="pay-page">
+      <header class="pay-header">
+        <div>
+          <h1>支付申请详情</h1>
+          <p>创建、审批与执行</p>
+        </div>
+        <div class="pay-actions">
+          <a class="btn" href="/payments">返回列表</a>
+        </div>
+      </header>
+
+      <section class="pay-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="payment-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>标题</label>
+            <input type="text" class="field-input" id="payment-title" placeholder="支付申请" />
+          </div>
+          <div class="field">
+            <label>收款人</label>
+            <input type="text" class="field-input" id="payment-payee" placeholder="供应商A" />
+          </div>
+          <div class="field">
+            <label>收款账号</label>
+            <input type="text" class="field-input" id="payment-account" placeholder="6222..." />
+          </div>
+          <div class="field">
+            <label>支付方式</label>
+            <select class="field-input" id="payment-method">
+              <option value="bank">银行转账</option>
+              <option value="wechat">微信</option>
+              <option value="alipay">支付宝</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>金额</label>
+            <input type="number" class="field-input" id="payment-amount" step="0.01" />
+          </div>
+          <div class="field">
+            <label>关联报销ID</label>
+            <input type="number" class="field-input" id="payment-reimbursement-id" />
+          </div>
+          <div class="field">
+            <label>状态</label>
+            <div class="field-input" id="payment-status">draft</div>
+          </div>
+          <div class="field">
+            <label>驳回原因</label>
+            <div class="field-input" id="payment-reject-reason">-</div>
+          </div>
+          <div class="field">
+            <label>操作人</label>
+            <input type="text" class="field-input" id="payment-operator" placeholder="李四" />
+          </div>
+          <div class="field">
+            <label>角色</label>
+            <select class="field-input" id="payment-role">
+              <option value="">请选择</option>
+              <option value="approver">审批人</option>
+              <option value="cashier">出纳</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <input type="hidden" id="payment-id" value="{{ payment_id }}" />
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="payment-save">保存草稿</button>
+          <button class="btn secondary" id="payment-submit">提交审批</button>
+          <button class="btn" id="payment-approve">审批通过</button>
+          <button class="btn secondary" id="payment-reject">驳回</button>
+          <button class="btn" id="payment-execute">执行支付</button>
+        </div>
+        <div id="payment-error" class="pay-error hidden"></div>
+      </section>
+
+      <section class="pay-card">
+        <h2>审批轨迹</h2>
+        <table id="pay-logs-table">
+          <thead>
+            <tr>
+              <th>动作</th>
+              <th>状态</th>
+              <th>操作人</th>
+              <th>角色</th>
+              <th>备注</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody id="pay-logs-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/payments.js"></script>
+  </body>
+</html>

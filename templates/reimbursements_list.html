@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>报销单列表</title>
+    <link rel="stylesheet" href="/static/css/reimbursements.css" />
+  </head>
+  <body>
+    <div class="reim-page">
+      <header class="reim-header">
+        <div>
+          <h1>报销单列表</h1>
+          <p>创建、提交与审批跟踪</p>
+        </div>
+        <div class="reim-actions">
+          <a class="btn" href="/reimbursements/new">新建报销单</a>
+        </div>
+      </header>
+
+      <section class="reim-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="reim-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>状态</label>
+            <select class="field-input" id="reim-status">
+              <option value="">全部</option>
+              <option value="draft">草稿</option>
+              <option value="pending">待提交</option>
+              <option value="in_review">审批中</option>
+              <option value="approved">审批通过</option>
+              <option value="rejected">审批驳回</option>
+              <option value="to_pay">待支付</option>
+              <option value="paid">已支付</option>
+              <option value="archived">已归档</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>审批人角色</label>
+            <select class="field-input" id="reim-role">
+              <option value="">无</option>
+              <option value="approver">审批人</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>操作人</label>
+            <input type="text" class="field-input" id="reim-operator" placeholder="张三" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="reim-query">查询</button>
+          <button class="btn secondary" id="reim-stats">统计</button>
+        </div>
+        <div id="reim-error" class="reim-error hidden"></div>
+      </section>
+
+      <section class="reim-card">
+        <h2>列表</h2>
+        <table id="reim-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>标题</th>
+              <th>申请人</th>
+              <th>部门</th>
+              <th>金额</th>
+              <th>状态</th>
+              <th>驳回原因</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="reim-body"></tbody>
+        </table>
+      </section>
+
+      <section class="reim-card">
+        <h2>统计</h2>
+        <table id="reim-stats-table">
+          <thead>
+            <tr>
+              <th>状态</th>
+              <th>数量</th>
+              <th>金额</th>
+            </tr>
+          </thead>
+          <tbody id="reim-stats-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/reimbursements.js"></script>
+  </body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>报销单详情</title>
+    <link rel="stylesheet" href="/static/css/reimbursements.css" />
+  </head>
+  <body>
+    <div class="reim-page">
+      <header class="reim-header">
+        <div>
+          <h1>报销单详情</h1>
+          <p>创建、提交、审批</p>
+        </div>
+        <div class="reim-actions">
+          <a class="btn" href="/reimbursements">返回列表</a>
+        </div>
+      </header>
+
+      <section class="reim-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="detail-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>标题</label>
+            <input type="text" class="field-input" id="detail-title" placeholder="差旅报销" />
+          </div>
+          <div class="field">
+            <label>申请人</label>
+            <input type="text" class="field-input" id="detail-applicant" placeholder="张三" />
+          </div>
+          <div class="field">
+            <label>部门</label>
+            <input type="text" class="field-input" id="detail-department" placeholder="财务部" />
+          </div>
+          <div class="field">
+            <label>附件数</label>
+            <input type="number" class="field-input" id="detail-attachment-count" value="0" />
+          </div>
+          <div class="field">
+            <label>状态</label>
+            <div class="field-input" id="detail-status">draft</div>
+          </div>
+          <div class="field">
+            <label>驳回原因</label>
+            <div class="field-input" id="detail-reject-reason">-</div>
+          </div>
+          <div class="field">
+            <label>操作人</label>
+            <input type="text" class="field-input" id="detail-operator" placeholder="李四" />
+          </div>
+          <div class="field">
+            <label>角色</label>
+            <select class="field-input" id="detail-role">
+              <option value="">请选择</option>
+              <option value="approver">审批人</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <input type="hidden" id="detail-id" value="{{ reimbursement_id }}" />
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="detail-save">保存草稿</button>
+          <button class="btn secondary" id="detail-submit">提交审批</button>
+          <button class="btn" id="detail-approve">审批通过</button>
+          <button class="btn secondary" id="detail-reject">驳回</button>
+        </div>
+        <div id="detail-error" class="reim-error hidden"></div>
+      </section>
+
+      <section class="reim-card">
+        <h2>明细</h2>
+        <table id="items-table">
+          <thead>
+            <tr>
+              <th>日期</th>
+              <th>类别</th>
+              <th>说明</th>
+              <th>金额</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="items-body">
+            <tr>
+              <td><input type="date" class="item-date" /></td>
+              <td><input type="text" class="item-category" /></td>
+              <td><input type="text" class="item-desc" /></td>
+              <td><input type="number" class="item-amount" step="0.01" /></td>
+              <td><button class="btn small item-remove">删除</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn small" id="item-add">新增明细</button>
+      </section>
+
+      <section class="reim-card">
+        <h2>审批轨迹</h2>
+        <table id="logs-table">
+          <thead>
+            <tr>
+              <th>动作</th>
+              <th>状态</th>
+              <th>操作人</th>
+              <th>角色</th>
+              <th>备注</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody id="logs-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/reimbursements.js"></script>
+  </body>
+</html>

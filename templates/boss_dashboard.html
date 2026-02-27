@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>老板看板</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css" />
+  </head>
+  <body>
+    <div class="dash-page">
+      <header class="dash-header">
+        <div>
+          <h1>老板看板</h1>
+          <p>经营摘要与趋势</p>
+        </div>
+      </header>
+
+      <section class="dash-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="boss-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>开始日期</label>
+            <input type="date" class="field-input" id="boss-start-date" />
+          </div>
+          <div class="field">
+            <label>结束日期</label>
+            <input type="date" class="field-input" id="boss-end-date" />
+          </div>
+          <div class="field">
+            <label>角色</label>
+            <select class="field-input" id="boss-role">
+              <option value="boss">老板</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="boss-refresh">刷新</button>
+        </div>
+        <div id="boss-error" class="dash-error hidden"></div>
+      </section>
+
+      <section class="dash-card">
+        <h2>核心指标</h2>
+        <div class="card-grid" id="boss-cards"></div>
+      </section>
+
+      <section class="dash-card">
+        <h2>风险警报</h2>
+        <div class="card-grid" id="boss-risk"></div>
+      </section>
+
+      <section class="dash-card">
+        <h2>基础趋势</h2>
+        <canvas id="boss-trend" height="160"></canvas>
+      </section>
+    </div>
+
+    <script src="/static/js/boss_dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>固定资产台账</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>固定资产台账</h1>
+          <p>基础资产台账与净值查看</p>
+        </div>
+        <div class="asset-actions">
+          <a class="btn" href="/assets">返回资产卡片</a>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>账套ID</label>
+            <input type="number" class="field-input" id="ledger-book-id" value="1" />
+          </div>
+          <div class="field">
+            <label>资产编号/名称</label>
+            <input type="text" class="field-input" id="ledger-keyword" placeholder="编号或名称" />
+          </div>
+          <div class="field">
+            <label>资产类别ID</label>
+            <input type="number" class="field-input" id="ledger-category-id" />
+          </div>
+          <div class="field">
+            <label>资产状态</label>
+            <select class="field-input" id="ledger-status">
+              <option value="">全部</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="DISPOSED">DISPOSED</option>
+              <option value="SCRAPPED">SCRAPPED</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>部门ID</label>
+            <input type="number" class="field-input" id="ledger-dept-id" />
+          </div>
+          <div class="field">
+            <label>启用开始日期</label>
+            <input type="date" class="field-input" id="ledger-start-from" />
+          </div>
+          <div class="field">
+            <label>启用结束日期</label>
+            <input type="date" class="field-input" id="ledger-start-to" />
+          </div>
+          <div class="field">
+            <label>累计折旧截至期间</label>
+            <div class="inline-fields">
+              <input type="number" class="field-input" id="ledger-dep-year" placeholder="年" />
+              <input type="number" class="field-input" id="ledger-dep-month" placeholder="月" />
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="ledger-search">查询</button>
+          <button class="btn secondary" id="ledger-export">导出</button>
+        </div>
+        <div id="ledger-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>台账结果</h2>
+        <table id="ledger-table">
+          <thead>
+            <tr>
+              <th>资产编号</th>
+              <th>资产名称</th>
+              <th>类别</th>
+              <th>原值</th>
+              <th>累计折旧</th>
+              <th>净值</th>
+              <th>状态</th>
+              <th>部门</th>
+              <th>启用日期</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/asset_ledger.js"></script>
+  </body>
+</html>
