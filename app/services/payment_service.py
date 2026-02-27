@@ -86,6 +86,12 @@ def create_or_update_payment(payload: Dict[str, object]) -> Dict[str, object]:
     engine = get_engine()
     with engine.begin() as conn:
         if pid:
+            current = conn.execute(
+                text("SELECT status FROM payment_requests WHERE id=:id AND book_id=:book_id"),
+                {"id": pid, "book_id": book_id},
+            ).fetchone()
+            if not current:
+                raise PaymentError("not_found")
             conn.execute(
                 text(
                     """
@@ -110,7 +116,10 @@ def create_or_update_payment(payload: Dict[str, object]) -> Dict[str, object]:
                 },
             )
             payment_id = pid
+            status = current.status
         else:
+            if status not in ("draft", "pending"):
+                raise PaymentError("validation_error", [{"field": "status", "message": "invalid_status"}])
             result = conn.execute(
                 text(
                     """
@@ -166,6 +175,8 @@ def submit_payment(payment_id: int, operator: str, role: str) -> Dict[str, objec
 
 
 def approve_payment(payment_id: int, operator: str, role: str, comment: str = None) -> Dict[str, object]:
+    if not operator:
+        raise PaymentError("operator_required")
     if role not in ("approver", "admin"):
         raise PaymentError("permission_denied")
 
@@ -190,6 +201,8 @@ def approve_payment(payment_id: int, operator: str, role: str, comment: str = No
 
 
 def reject_payment(payment_id: int, operator: str, role: str, reason: str) -> Dict[str, object]:
+    if not operator:
+        raise PaymentError("operator_required")
     if role not in ("approver", "admin"):
         raise PaymentError("permission_denied")
     if not reason:
@@ -216,6 +229,8 @@ def reject_payment(payment_id: int, operator: str, role: str, reason: str) -> Di
 
 
 def execute_payment(payment_id: int, operator: str, role: str) -> Dict[str, object]:
+    if not operator:
+        raise PaymentError("operator_required")
     if role not in ("cashier", "admin"):
         raise PaymentError("permission_denied")
 

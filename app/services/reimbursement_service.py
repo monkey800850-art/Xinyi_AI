@@ -103,6 +103,12 @@ def create_or_update_reimbursement(payload: Dict[str, object]) -> Dict[str, obje
     engine = get_engine()
     with engine.begin() as conn:
         if rid:
+            current = conn.execute(
+                text("SELECT status FROM reimbursements WHERE id=:id AND book_id=:book_id"),
+                {"id": rid, "book_id": book_id},
+            ).fetchone()
+            if not current:
+                raise ReimbursementError("not_found")
             conn.execute(
                 text(
                     """
@@ -129,7 +135,10 @@ def create_or_update_reimbursement(payload: Dict[str, object]) -> Dict[str, obje
                 {"id": rid},
             )
             reimbursement_id = rid
+            status = current.status
         else:
+            if status not in ("draft", "pending"):
+                raise ReimbursementError("validation_error", [{"field": "status", "message": "invalid_status"}])
             result = conn.execute(
                 text(
                     """
@@ -198,6 +207,8 @@ def submit_reimbursement(reimbursement_id: int, operator: str, role: str) -> Dic
 
 
 def approve_reimbursement(reimbursement_id: int, operator: str, role: str, comment: str = None) -> Dict[str, object]:
+    if not operator:
+        raise ReimbursementError("operator_required")
     if role not in ("approver", "admin"):
         raise ReimbursementError("permission_denied")
     engine = get_engine()
@@ -221,6 +232,8 @@ def approve_reimbursement(reimbursement_id: int, operator: str, role: str, comme
 
 
 def reject_reimbursement(reimbursement_id: int, operator: str, role: str, reason: str) -> Dict[str, object]:
+    if not operator:
+        raise ReimbursementError("operator_required")
     if role not in ("approver", "admin"):
         raise ReimbursementError("permission_denied")
     if not reason:

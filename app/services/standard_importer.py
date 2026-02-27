@@ -55,6 +55,30 @@ def _map_balance_direction(value: str) -> Optional[str]:
     return None
 
 
+def _infer_balance_direction(code: str, category: str, name: str) -> Optional[str]:
+    c0 = (code or "").strip()[:1]
+    if c0 == "1":
+        return "DEBIT"
+    if c0 in ("2", "3"):
+        return "CREDIT"
+    if c0 == "4":
+        return "DEBIT"
+    if c0 in ("5", "6"):
+        text_name = (name or "").strip()
+        if any(k in text_name for k in ("收入", "收益")):
+            return "CREDIT"
+        if any(k in text_name for k in ("成本", "费用", "损失", "税金", "支出", "减值")):
+            return "DEBIT"
+        return "DEBIT"
+
+    text_cat = (category or "").strip()
+    if "资产" in text_cat or "成本" in text_cat:
+        return "DEBIT"
+    if "负债" in text_cat or "权益" in text_cat:
+        return "CREDIT"
+    return None
+
+
 def _derive_flags(note: str) -> Dict[str, int]:
     note = note or ""
     return {
@@ -95,9 +119,9 @@ def _import_with_connection(
             code = (row.get("科目编码") or "").strip()
             name = (row.get("科目名称") or "").strip()
             category = (row.get("类别") or "").strip()
-            balance_direction = _map_balance_direction(
-                (row.get("余额方向") or "").strip()
-            )
+            balance_direction = _map_balance_direction((row.get("余额方向") or "").strip())
+            if not balance_direction:
+                balance_direction = _infer_balance_direction(code, category, name)
             note = (row.get("说明") or "").strip()
 
             if not _is_valid_code(code):

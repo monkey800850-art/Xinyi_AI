@@ -835,6 +835,7 @@ def create_app() -> Flask:
         operator, role = _get_operator_from_headers()
         try:
             result = submit_payment(payment_id, operator, role)
+            log_audit("payment", "submit", "payment", payment_id, operator, role, {})
             return jsonify(result), 200
         except PaymentError as err:
             return jsonify({"error": str(err)}), 400
@@ -845,6 +846,15 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         try:
             result = approve_payment(payment_id, operator, role, payload.get("comment"))
+            log_audit(
+                "payment",
+                "approve",
+                "payment",
+                payment_id,
+                operator,
+                role,
+                {"comment": payload.get("comment") or ""},
+            )
             return jsonify(result), 200
         except PaymentError as err:
             return jsonify({"error": str(err)}), 400
@@ -855,6 +865,15 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         try:
             result = reject_payment(payment_id, operator, role, payload.get("reason"))
+            log_audit(
+                "payment",
+                "reject",
+                "payment",
+                payment_id,
+                operator,
+                role,
+                {"reason": payload.get("reason") or ""},
+            )
             return jsonify(result), 200
         except PaymentError as err:
             return jsonify({"error": str(err)}), 400

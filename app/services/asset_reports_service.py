@@ -80,7 +80,7 @@ def get_asset_ledger(params: Dict[str, str]) -> Dict[str, object]:
         "SELECT fa.id, fa.asset_code, fa.asset_name, fa.original_value, fa.status, "
         "fa.start_use_date, fa.department_id, fa.person_id, fa.depreciation_method, "
         "fa.useful_life_months, fa.location, ac.name AS category_name, d.name AS department_name, "
-        "p.name AS person_name, lc.change_type AS last_change_type, lc.change_date AS last_change_date, "
+        "p.name AS person_name, MAX(lc.change_type) AS last_change_type, MAX(lc.change_date) AS last_change_date, "
         f"COALESCE(SUM({sum_expr}), 0) AS accum_depr "
         "FROM fixed_assets fa "
         "JOIN asset_categories ac ON ac.id = fa.category_id "

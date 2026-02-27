@@ -154,7 +154,7 @@ def list_changes(params: Dict[str, str]) -> Dict[str, object]:
 
     sql = (
         "SELECT ac.id, ac.asset_id, ac.asset_code, fa.asset_name, ac.change_type, ac.change_date, "
-        "from_department_id, to_department_id, from_person_id, to_person_id, note, operator "
+        "ac.from_department_id, ac.to_department_id, ac.from_person_id, ac.to_person_id, ac.note, ac.operator "
         "FROM asset_changes ac "
         "LEFT JOIN fixed_assets fa ON fa.id = ac.asset_id "
         "WHERE ac.book_id=:book_id"
