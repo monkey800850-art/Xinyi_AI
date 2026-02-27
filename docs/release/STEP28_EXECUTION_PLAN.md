@@ -27,15 +27,33 @@
 - 验收：关键健康接口 PASS/FAIL 输出与退出码。
 - 实测：`pass=6 fail=0`。
 
-### A-T2 数据库备份脚本化（完成）
+### A-T2 数据库备份脚本化（完成，A1补齐于 2026-02-28）
 - 交付物：`scripts/ops/db_backup.sh`
 - 验收：时间戳备份文件落盘、失败非0、支持 `.env`/环境变量/参数覆盖。
-- 实测：`/tmp/step28_backups/xinyi_ai_20260227_230952.sql`，`size_bytes=586084`，`exit=0`。
+- 本轮实测（成功）：
+  - 命令：`scripts/ops/db_backup.sh --backup-dir /tmp/step28_a1_t2_backups_r1`
+  - 结果：`[OK] backup completed`
+  - 文件：`/tmp/step28_a1_t2_backups_r1/xinyi_ai_20260228_071150.sql`
+  - 大小：`size_bytes=1669753`
+  - 退出码：`exit=0`
+- 本轮实测（失败）：
+  - 命令：`scripts/ops/db_backup.sh --bad-opt`
+  - 结果：`[ERROR] Unknown option: --bad-opt`
+  - 退出码：`exit=1`
 
-### A-T3 关键链路最小回归（完成）
+### A-T3 关键链路最小回归（完成，A1补齐于 2026-02-28）
 - 交付物：`scripts/ops/min_regression.sh`
 - 覆盖：S5 与 S4->S6。
-- 实测：`pass_count=8 fail_count=0 blocked_count=0`，`exit=0`。
+- 本轮实测（成功）：
+  - 前置：本地启动 `python3 app.py`
+  - 命令：`scripts/ops/min_regression.sh`
+  - 结果：`pass_count=8 fail_count=0 blocked_count=0`
+  - 关键通过项：`s4-depreciation-run`、`s5-change-create`、`s5-change-list`、`s4-to-s6-ledger-linkage`
+  - 退出码：`exit=0`
+- 本轮实测（异常）：
+  - 命令：`BASE_URL=http://127.0.0.1:59999 scripts/ops/min_regression.sh`
+  - 结果：`blocked_count=3`（含 `sample-book-create` 等阻断）
+  - 退出码：`exit=1`
 
 ## 5. STEP28-B：会计凭证录入 AI 增强（规则优先 + AI增强）
 
@@ -138,18 +156,51 @@
 ## 10. STEP28-B B1-T1 完成记录（2026-02-27）
 - 交付物：
   - `app/services/voucher_template_service.py`
-  - `app.py`（新增 `POST /api/vouchers/template-preview`）
-- API 路径：`POST /api/vouchers/template-preview`
+  - `app.py`（`POST /api/vouchers/template-preview` + `POST /api/vouchers/template-suggest`）
+  - `tests/test_step28_b_t1_template_preview.py`
+- 复用点盘点（服务/API/表）：
+  - 服务复用：`app/services/voucher_service.py::_check_period_open`（期间合法性检查复用）；科目合法性复用 `subjects` 表口径（`code + is_enabled`）。
+  - API 复用：沿用凭证域路由风格 `POST /api/vouchers/*`，保持仅“草稿建议/预览”不入账。
+  - 审计与权限风格复用：复用 `X-User/X-Role` 头解析与 `log_audit` 记录风格（module=`voucher`）。
+  - 关键表复用：`books`、`subjects`、`accounting_periods`、`audit_logs`（不写 `vouchers/voucher_lines`）。
+- API 路径：
+  - `POST /api/vouchers/template-preview`
+  - `POST /api/vouchers/template-suggest`（与 preview 同规则，同为 preview-only）
 - 已支持模板类型（最小 3 类）：
   - `BANK_FEE`（银行手续费）
   - `ASSET_DEPRECIATION`（固定资产折旧）
   - `EXPENSE_REIMBURSEMENT_PAYMENT`（费用报销付款）
 - 能力范围：
-  - 模板参数替换：`amount` / `biz_date` / `summary_text` / `counterparty`
-  - 规则校验：借贷平衡、科目合法性、期间合法性（含账期开放检查）
+  - 模板参数替换：`amount` / `biz_date` / `summary_text` / `counterparty`（并可覆盖默认科目参数）
+  - 规则校验：借贷平衡、科目合法性（存在+启用）、期间合法性（账期开放）
   - 结果结构：`success/template_info/voucher_draft/validations/errors/warnings/audit_hint`
-- 最近一次实测摘要（book_id=13，enterprise）：
-  - `BANK_FEE` 成功：HTTP 200，`success=true`
-  - `ASSET_DEPRECIATION` 成功：HTTP 200，`success=true`
-  - 非法科目失败：HTTP 400，`subject_not_found:999999`
-  - 缺少金额失败：HTTP 400，`amount required`
+- 实测结果（2026-02-27，本地 `python3 -m unittest -v tests/test_step28_b_t1_template_preview.py`）：
+  - 总计：4/4 通过（2 成功 + 2 失败），`Ran 4 tests in 0.539s`
+  - `ok_preview`：`BANK_FEE` -> HTTP 200, `success=true`
+  - `ok_suggest`：`ASSET_DEPRECIATION` -> HTTP 200, `success=true`
+  - `fail_subject`：`EXPENSE_REIMBURSEMENT_PAYMENT`（`debit_subject_code=999999`）-> HTTP 400, `subject_not_found:999999`
+  - `fail_period`：`BANK_FEE`（关闭账期 2025-02）-> HTTP 400, `会计期间已结账`
+  - 非落账验证：实测脚本输出 `voucher_count 0`
+
+## 11. 第二批增量完成记录（2026-02-28）
+- 平台能力核查（只读）：
+  - 已核查：会计分录批量导入、账套引入/导入、备份恢复、删除安全、初始化完整性
+  - 结论：P0 已补齐；P1（会计分录批量导入、账套导入）保留后续
+- P0 补齐交付：
+  - 初始化完整性：`POST /books` 增加期间初始化（3年）；`GET /api/books/<id>/init-integrity`
+  - 备份恢复：
+    - DB级：`scripts/ops/db_backup.sh` + `scripts/ops/db_restore_verify.sh`
+    - 业务级：`GET /api/books/<id>/backup-snapshot` + `POST /api/books/backup-restore-verify`
+  - 删除安全控制：`POST /api/books/<id>/disable`（`admin/boss` + `confirm_text` + 审计）
+- 科目管理最小优化：
+  - `standard_importer` 增加类别一致性校验（warn-only，不把类别硬当一级科目）
+  - `trial_balance` 增加编码前缀父级回退与 `category_summary` 分类汇总兼容输出
+- UI入口全链测试：
+  - 页面入口：`/dashboard`、`/voucher/entry`、`/reports/trial_balance`、`/system/audit` 全部 `200`
+  - 关键链路成功：初始化、账套快照与恢复校验、科目联想、凭证建议、余额表
+  - 关键失败链路：恢复校验篡改快照失败、非法科目建议失败、非授权停用账套失败
+- Payroll/Tax 本批必做项（已实现）：
+  - 年终奖计税切换：`POST /api/tax/calc/year-end-bonus`（`separate/merge`）
+  - 劳务报酬个税计算：`POST /api/tax/calc/labor-service`
+  - 税务实测：5组（成功/失败均覆盖），并纳入回归 `13 tests -> OK`
+- 详情记录：`docs/release/STEP28_BATCH2_PLATFORM_CHECK_AND_UAT.md`
