@@ -20,6 +20,7 @@ from app.services.asset_reports_service import (
     get_depreciation_detail,
     get_depreciation_summary,
 )
+from app.services.audit_service import log_audit
 
 
 class ExportError(RuntimeError):
@@ -72,6 +73,15 @@ def _audit_export(report_key: str, book_id, filters: Dict[str, object], file_nam
                 "operator": operator or "",
             },
         )
+    log_audit(
+        "export",
+        "export",
+        "report",
+        None,
+        operator,
+        "",
+        {"report_key": report_key, "file_name": file_name, "filters": filters},
+    )
 
 
 def _build_workbook(report_key: str, params: Dict[str, str]) -> Tuple[Workbook, Dict[str, object]]:
@@ -257,12 +267,28 @@ def _build_workbook(report_key: str, params: Dict[str, str]) -> Tuple[Workbook, 
             "category_id": params.get("category_id", ""),
             "status": params.get("status", ""),
             "department_id": params.get("department_id", ""),
+            "person_id": params.get("person_id", ""),
             "start_use_from": params.get("start_use_from", ""),
             "start_use_to": params.get("start_use_to", ""),
             "dep_year": params.get("dep_year", ""),
             "dep_month": params.get("dep_month", ""),
         }
-        headers = ["资产编号", "资产名称", "类别", "原值", "累计折旧", "净值", "状态", "部门", "启用日期"]
+        headers = [
+            "资产编号",
+            "资产名称",
+            "类别",
+            "原值",
+            "累计折旧",
+            "净值",
+            "状态",
+            "部门",
+            "责任人",
+            "折旧方法",
+            "使用年限(月)",
+            "存放地点",
+            "启用日期",
+            "最近变动",
+        ]
         rows = [
             [
                 item["asset_code"],
@@ -273,7 +299,12 @@ def _build_workbook(report_key: str, params: Dict[str, str]) -> Tuple[Workbook, 
                 _format_amount(item["net_value"]),
                 item["status"],
                 item["department_name"],
+                item.get("person_name", ""),
+                item.get("depreciation_method", ""),
+                item.get("useful_life_months", ""),
+                item.get("location", ""),
                 item["start_use_date"],
+                item.get("last_change_info", ""),
             ]
             for item in data.get("items", [])
         ]
@@ -286,14 +317,19 @@ def _build_workbook(report_key: str, params: Dict[str, str]) -> Tuple[Workbook, 
             "book_id": data["book_id"],
             "year": data["period_year"],
             "month": data["period_month"],
+            "asset_code": params.get("asset_code", ""),
+            "asset_name": params.get("asset_name", ""),
+            "category_id": params.get("category_id", ""),
         }
-        headers = ["资产编号", "资产名称", "期间", "本期折旧金额", "批次ID", "凭证ID"]
+        headers = ["资产编号", "资产名称", "期间", "本期折旧金额", "累计折旧", "净值", "批次ID", "凭证ID"]
         rows = [
             [
                 item["asset_code"],
                 item["asset_name"],
                 item["period"],
                 _format_amount(item["amount"]),
+                _format_amount(item.get("accumulated_depr", 0)),
+                _format_amount(item.get("net_value", 0)),
                 item["batch_id"],
                 item["voucher_id"],
             ]
@@ -308,6 +344,9 @@ def _build_workbook(report_key: str, params: Dict[str, str]) -> Tuple[Workbook, 
             "book_id": data["book_id"],
             "year": data["period_year"],
             "month": data["period_month"],
+            "asset_code": params.get("asset_code", ""),
+            "asset_name": params.get("asset_name", ""),
+            "category_id": params.get("category_id", ""),
         }
         ws.title = "按类别"
         headers = ["类别", "本期折旧金额"]

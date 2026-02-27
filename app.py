@@ -46,6 +46,20 @@ from app.services.asset_reports_service import (
     get_depreciation_summary,
 )
 from app.services.export_service import ExportError, export_report
+from app.services.audit_service import log_audit
+from app.services.system_service import (
+    SystemError,
+    create_or_update_role,
+    create_or_update_user,
+    list_audit_logs,
+    list_roles,
+    list_rules,
+    list_users,
+    set_role_permissions,
+    set_user_enabled,
+    set_user_roles,
+    upsert_rule,
+)
 from app.services.ledger_service import LedgerError, get_subject_ledger, get_voucher_detail
 from app.services.payment_service import (
     PaymentError,
@@ -210,6 +224,22 @@ def create_app() -> Flask:
     def asset_depreciation_report_page():
         return render_template("asset_depreciation_reports.html")
 
+    @app.get("/system/users")
+    def system_users_page():
+        return render_template("system_users.html")
+
+    @app.get("/system/roles")
+    def system_roles_page():
+        return render_template("system_roles.html")
+
+    @app.get("/system/rules")
+    def system_rules_page():
+        return render_template("system_rules.html")
+
+    @app.get("/system/audit")
+    def system_audit_page():
+        return render_template("audit_logs.html")
+
     @app.get("/assets")
     def assets_list_page():
         return render_template("assets_list.html")
@@ -353,27 +383,41 @@ def create_app() -> Flask:
 
     @app.post("/api/assets/categories")
     def api_asset_categories_create():
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = create_category(payload)
+            log_audit("asset", "category_create", "asset_category", result.get("id"), operator, role, payload)
             return jsonify(result), 201
         except AssetError as err:
             return jsonify({"error": str(err)}), 400
 
     @app.post("/api/assets/categories/<int:category_id>")
     def api_asset_categories_update(category_id: int):
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = update_category(category_id, payload)
+            log_audit("asset", "category_update", "asset_category", category_id, operator, role, payload)
             return jsonify(result), 200
         except AssetError as err:
             return jsonify({"error": str(err)}), 400
 
     @app.post("/api/assets/categories/<int:category_id>/enabled")
     def api_asset_categories_enabled(category_id: int):
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = set_category_enabled(category_id, int(payload.get("is_enabled", 1)))
+            log_audit(
+                "asset",
+                "category_enabled",
+                "asset_category",
+                category_id,
+                operator,
+                role,
+                {"is_enabled": payload.get("is_enabled", 1)},
+            )
             return jsonify(result), 200
         except AssetError as err:
             return jsonify({"error": str(err)}), 400
@@ -396,27 +440,41 @@ def create_app() -> Flask:
 
     @app.post("/api/assets")
     def api_assets_create():
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = create_asset(payload)
+            log_audit("asset", "asset_create", "fixed_asset", result.get("id"), operator, role, payload)
             return jsonify(result), 201
         except AssetError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
 
     @app.post("/api/assets/<int:asset_id>")
     def api_assets_update(asset_id: int):
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = update_asset(asset_id, payload)
+            log_audit("asset", "asset_update", "fixed_asset", asset_id, operator, role, payload)
             return jsonify(result), 200
         except AssetError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
 
     @app.post("/api/assets/<int:asset_id>/enabled")
     def api_assets_enabled(asset_id: int):
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = set_asset_enabled(asset_id, int(payload.get("is_enabled", 1)))
+            log_audit(
+                "asset",
+                "asset_enabled",
+                "fixed_asset",
+                asset_id,
+                operator,
+                role,
+                {"is_enabled": payload.get("is_enabled", 1)},
+            )
             return jsonify(result), 200
         except AssetError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
@@ -431,7 +489,10 @@ def create_app() -> Flask:
 
     @app.post("/api/assets/depreciation")
     def api_depreciation_run():
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
+        payload["operator"] = operator
+        payload["operator_role"] = role
         try:
             result = run_depreciation(payload)
             return jsonify(result), 201
@@ -456,9 +517,20 @@ def create_app() -> Flask:
 
     @app.post("/api/assets/<int:asset_id>/change")
     def api_asset_change(asset_id: int):
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
+        payload["operator"] = operator
         try:
             result = create_change(asset_id, payload)
+            log_audit(
+                "asset",
+                f"asset_{payload.get('change_type', '').lower()}",
+                "fixed_asset",
+                asset_id,
+                operator,
+                role,
+                payload,
+            )
             return jsonify(result), 200
         except AssetChangeError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
@@ -537,6 +609,118 @@ def create_app() -> Flask:
             app.logger.exception("export_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
 
+    @app.post("/api/auth/login")
+    def api_auth_login():
+        payload = request.get_json(silent=True) or {}
+        username = payload.get("username") or ""
+        operator = (payload.get("operator") or username or "").strip()
+        role = (payload.get("role") or "").strip()
+        log_audit("auth", "login", "user", None, operator, role, {"username": username})
+        return jsonify({"status": "ok"}), 200
+
+    @app.post("/api/auth/logout")
+    def api_auth_logout():
+        payload = request.get_json(silent=True) or {}
+        username = payload.get("username") or ""
+        operator = (payload.get("operator") or username or "").strip()
+        role = (payload.get("role") or "").strip()
+        log_audit("auth", "logout", "user", None, operator, role, {"username": username})
+        return jsonify({"status": "ok"}), 200
+
+    @app.get("/api/system/users")
+    def api_system_users():
+        try:
+            result = list_users(request.args)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/system/users")
+    def api_system_users_save():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_or_update_user(payload, operator, role)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/system/users/<int:user_id>/enabled")
+    def api_system_user_enabled(user_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = set_user_enabled(user_id, int(payload.get("is_enabled", 1)), operator, role)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/system/users/<int:user_id>/roles")
+    def api_system_user_roles(user_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        role_ids = payload.get("role_ids") or []
+        try:
+            result = set_user_roles(user_id, [int(r) for r in role_ids], operator, role)
+            return jsonify(result), 200
+        except (ValueError, SystemError) as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/system/roles")
+    def api_system_roles():
+        try:
+            result = list_roles(request.args)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/system/roles")
+    def api_system_roles_save():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_or_update_role(payload, operator, role)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/system/roles/<int:role_id>/permissions")
+    def api_system_role_permissions(role_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        perms = payload.get("permissions") or []
+        try:
+            result = set_role_permissions(role_id, [str(p) for p in perms], operator, role)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/system/rules")
+    def api_system_rules():
+        try:
+            result = list_rules(request.args)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/system/rules")
+    def api_system_rules_save():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = upsert_rule(payload, operator, role)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/system/audit")
+    def api_system_audit():
+        try:
+            result = list_audit_logs(request.args)
+            return jsonify(result), 200
+        except SystemError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
     @app.get("/api/reimbursements")
     def api_reimbursements_list():
         try:
@@ -587,6 +771,15 @@ def create_app() -> Flask:
             result = approve_reimbursement(
                 reimbursement_id, operator, role, payload.get("comment")
             )
+            log_audit(
+                "reimbursement",
+                "approve",
+                "reimbursement",
+                reimbursement_id,
+                operator,
+                role,
+                {"comment": payload.get("comment") or ""},
+            )
             return jsonify(result), 200
         except ReimbursementError as err:
             return jsonify({"error": str(err)}), 400
@@ -598,6 +791,15 @@ def create_app() -> Flask:
         try:
             result = reject_reimbursement(
                 reimbursement_id, operator, role, payload.get("reason")
+            )
+            log_audit(
+                "reimbursement",
+                "reject",
+                "reimbursement",
+                reimbursement_id,
+                operator,
+                role,
+                {"reason": payload.get("reason") or ""},
             )
             return jsonify(result), 200
         except ReimbursementError as err:
@@ -662,6 +864,7 @@ def create_app() -> Flask:
         operator, role = _get_operator_from_headers()
         try:
             result = execute_payment(payment_id, operator, role)
+            log_audit("payment", "execute", "payment", payment_id, operator, role, {})
             return jsonify(result), 200
         except PaymentError as err:
             return jsonify({"error": str(err)}), 400
@@ -716,6 +919,15 @@ def create_app() -> Flask:
                 operator,
                 role,
             )
+            log_audit(
+                "bank_reconcile",
+                "confirm",
+                "bank_transaction",
+                int(payload.get("bank_transaction_id")),
+                operator,
+                role,
+                {"voucher_id": payload.get("voucher_id")},
+            )
             return jsonify(result), 200
         except (ValueError, ReconcileError) as err:
             return jsonify({"error": str(err)}), 400
@@ -726,6 +938,15 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         try:
             result = cancel_match(int(payload.get("bank_transaction_id")), operator, role)
+            log_audit(
+                "bank_reconcile",
+                "cancel",
+                "bank_transaction",
+                int(payload.get("bank_transaction_id")),
+                operator,
+                role,
+                {},
+            )
             return jsonify(result), 200
         except (ValueError, ReconcileError) as err:
             return jsonify({"error": str(err)}), 400
@@ -748,9 +969,11 @@ def create_app() -> Flask:
 
     @app.post("/api/tax/rules")
     def api_tax_rules_create():
+        operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
             result = create_tax_rule(payload)
+            log_audit("tax", "rule_create", "tax_rule", result.get("id"), operator, role, payload)
             return jsonify(result), 201
         except TaxError as err:
             return jsonify({"error": str(err)}), 400
@@ -823,6 +1046,15 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         try:
             result = save_voucher(payload)
+            log_audit(
+                "voucher",
+                "voucher_create",
+                "voucher",
+                result.get("voucher_id"),
+                payload.get("maker", ""),
+                "",
+                {"book_id": payload.get("book_id"), "status": result.get("status")},
+            )
             return jsonify(result), 201
         except VoucherValidationError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
@@ -835,6 +1067,7 @@ def create_app() -> Flask:
         operator, role = _get_operator_from_headers()
         try:
             result = change_voucher_status(voucher_id, "approve", operator, role)
+            log_audit("voucher", "approve", "voucher", voucher_id, operator, role, {})
             return jsonify(result), 200
         except VoucherStatusError as err:
             return jsonify({"error": str(err)}), 400
@@ -844,6 +1077,7 @@ def create_app() -> Flask:
         operator, role = _get_operator_from_headers()
         try:
             result = change_voucher_status(voucher_id, "unapprove", operator, role)
+            log_audit("voucher", "unapprove", "voucher", voucher_id, operator, role, {})
             return jsonify(result), 200
         except VoucherStatusError as err:
             return jsonify({"error": str(err)}), 400
@@ -853,6 +1087,7 @@ def create_app() -> Flask:
         operator, role = _get_operator_from_headers()
         try:
             result = change_voucher_status(voucher_id, "post", operator, role)
+            log_audit("voucher", "post", "voucher", voucher_id, operator, role, {})
             return jsonify(result), 200
         except VoucherStatusError as err:
             return jsonify({"error": str(err)}), 400
@@ -862,6 +1097,7 @@ def create_app() -> Flask:
         operator, role = _get_operator_from_headers()
         try:
             result = change_voucher_status(voucher_id, "unpost", operator, role)
+            log_audit("voucher", "unpost", "voucher", voucher_id, operator, role, {})
             return jsonify(result), 200
         except VoucherStatusError as err:
             return jsonify({"error": str(err)}), 400

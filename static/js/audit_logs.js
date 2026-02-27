@@ -1,6 +1,6 @@
 (function () {
   function setError(message, errors) {
-    var box = document.getElementById("change-error");
+    var box = document.getElementById("audit-error");
     if (!box) return;
     if (!message && (!errors || errors.length === 0)) {
       box.classList.add("hidden");
@@ -29,67 +29,57 @@
   }
 
   function render(items) {
-    var body = document.getElementById("change-body");
+    var body = document.getElementById("audit-body");
     body.innerHTML = "";
     if (!items || items.length === 0) {
       var empty = document.createElement("tr");
-      empty.innerHTML = '<td colspan="10">暂无记录</td>';
+      empty.innerHTML = '<td colspan="8">暂无日志</td>';
       body.appendChild(empty);
       return;
     }
-
     for (var i = 0; i < items.length; i++) {
       var item = items[i];
       var tr = document.createElement("tr");
       tr.innerHTML =
         "<td>" +
-        item.change_date +
+        item.created_at +
         "</td><td>" +
-        item.asset_code +
+        item.module +
         "</td><td>" +
-        (item.asset_name || "") +
+        item.action +
         "</td><td>" +
-        item.change_type +
+        (item.entity_type || "") +
         "</td><td>" +
-        (item.from_department_id || "") +
-        "</td><td>" +
-        (item.to_department_id || "") +
-        "</td><td>" +
-        (item.from_person_id || "") +
-        "</td><td>" +
-        (item.to_person_id || "") +
-        "</td><td>" +
-        (item.note || "") +
+        (item.entity_id || "") +
         "</td><td>" +
         (item.operator || "") +
+        "</td><td>" +
+        (item.operator_role || "") +
+        "</td><td>" +
+        JSON.stringify(item.detail || {}) +
         "</td>";
       body.appendChild(tr);
     }
   }
 
-  function listChanges() {
-    var bookId = document.getElementById("change-book-id").value || "";
-    if (!bookId) {
-      setError("请填写账套ID");
-      return;
-    }
-
-    var type = document.getElementById("change-type").value;
-    var assetCode = document.getElementById("change-asset-code").value;
-    var startDate = document.getElementById("change-start").value;
-    var endDate = document.getElementById("change-end").value;
+  function query() {
+    var module = document.getElementById("audit-module").value || "";
+    var action = document.getElementById("audit-action").value || "";
+    var operator = document.getElementById("audit-operator").value || "";
+    var start = document.getElementById("audit-start").value || "";
+    var end = document.getElementById("audit-end").value || "";
 
     var url =
-      "/api/assets/changes?book_id=" +
-      encodeURIComponent(bookId) +
-      "&change_type=" +
-      encodeURIComponent(type) +
-      "&asset_code=" +
-      encodeURIComponent(assetCode) +
+      "/api/system/audit?module=" +
+      encodeURIComponent(module) +
+      "&action=" +
+      encodeURIComponent(action) +
+      "&operator=" +
+      encodeURIComponent(operator) +
       "&start_date=" +
-      encodeURIComponent(startDate) +
+      encodeURIComponent(start) +
       "&end_date=" +
-      encodeURIComponent(endDate);
+      encodeURIComponent(end);
 
     fetchJson(url)
       .then(function (payload) {
@@ -106,7 +96,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("change-refresh").addEventListener("click", listChanges);
-    listChanges();
+    document.getElementById("audit-query").addEventListener("click", query);
+    query();
   });
 })();

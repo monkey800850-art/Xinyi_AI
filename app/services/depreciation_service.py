@@ -39,26 +39,31 @@ def _quantize_amount(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def _load_assets(conn, book_id: int) -> List[Dict[str, object]]:
-    rows = conn.execute(
-        text(
-            """
-            SELECT fa.id, fa.book_id, fa.asset_code, fa.asset_name, fa.category_id,
-                   fa.status, fa.is_enabled, fa.original_value, fa.residual_rate,
-                   fa.residual_value, fa.useful_life_months, fa.depreciation_method,
-                   fa.start_use_date, fa.capitalization_date,
-                   ac.depreciation_method AS cat_method,
-                   ac.expense_subject_code, ac.accumulated_depr_subject_code
-            FROM fixed_assets fa
-            JOIN asset_categories ac ON ac.id = fa.category_id
-            WHERE fa.book_id=:book_id
-              AND fa.is_enabled=1
-              AND fa.status='ACTIVE'
-            ORDER BY fa.asset_code ASC
-            """
-        ),
-        {"book_id": book_id},
-    ).fetchall()
+def _load_assets(conn, book_id: int, asset_id: int = None, category_id: int = None) -> List[Dict[str, object]]:
+    sql = (
+        "SELECT fa.id, fa.book_id, fa.asset_code, fa.asset_name, fa.category_id, "
+        "fa.status, fa.is_enabled, fa.is_depreciable, fa.original_value, fa.residual_rate, "
+        "fa.residual_value, fa.useful_life_months, fa.depreciation_method, "
+        "fa.start_use_date, fa.capitalization_date, "
+        "ac.depreciation_method AS cat_method, "
+        "ac.expense_subject_code, ac.accumulated_depr_subject_code "
+        "FROM fixed_assets fa "
+        "JOIN asset_categories ac ON ac.id = fa.category_id "
+        "WHERE fa.book_id=:book_id "
+        "AND fa.is_enabled=1 "
+        "AND fa.status='ACTIVE' "
+        "AND fa.is_depreciable=1"
+    )
+    params = {"book_id": book_id}
+    if asset_id:
+        sql += " AND fa.id=:asset_id"
+        params["asset_id"] = asset_id
+    if category_id:
+        sql += " AND fa.category_id=:category_id"
+        params["category_id"] = category_id
+    sql += " ORDER BY fa.asset_code ASC"
+
+    rows = conn.execute(text(sql), params).fetchall()
 
     items: List[Dict[str, object]] = []
     for r in rows:
@@ -86,6 +91,32 @@ def _load_assets(conn, book_id: int) -> List[Dict[str, object]]:
     return items
 
 
+def _load_depreciated_assets_in_period(
+    conn, book_id: int, year: int, month: int, asset_id: int = None, category_id: int = None
+) -> set:
+    sql = (
+        "SELECT DISTINCT dl.asset_id "
+        "FROM depreciation_lines dl "
+        "JOIN depreciation_batches db ON db.id = dl.batch_id "
+        "JOIN fixed_assets fa ON fa.id = dl.asset_id "
+        "WHERE db.book_id=:book_id "
+        "AND db.period_year=:year "
+        "AND db.period_month=:month"
+    )
+    params = {"book_id": book_id, "year": year, "month": month}
+    if asset_id:
+        sql += " AND dl.asset_id=:asset_id"
+        params["asset_id"] = asset_id
+    if category_id:
+        sql += " AND fa.category_id=:category_id"
+        params["category_id"] = category_id
+    rows = conn.execute(
+        text(sql),
+        params,
+    ).fetchall()
+    return {r.asset_id for r in rows}
+
+
 def _already_depreciated_months(conn, book_id: int, asset_id: int, year: int, month: int) -> int:
     row = conn.execute(
         text(
@@ -105,20 +136,34 @@ def _already_depreciated_months(conn, book_id: int, asset_id: int, year: int, mo
 
 
 def _build_depreciation_lines(
-    conn, book_id: int, year: int, month: int
-) -> Tuple[List[Dict[str, object]], List[Dict[str, object]], Decimal]:
+    conn, book_id: int, year: int, month: int, asset_id: int = None, category_id: int = None
+) -> Tuple[List[Dict[str, object]], List[Dict[str, object]], List[Dict[str, object]], Decimal, int]:
     period_end = _period_end(year, month)
-    assets = _load_assets(conn, book_id)
+    assets = _load_assets(conn, book_id, asset_id=asset_id, category_id=category_id)
+    existing_assets = _load_depreciated_assets_in_period(
+        conn, book_id, year, month, asset_id=asset_id, category_id=category_id
+    )
 
     items: List[Dict[str, object]] = []
     errors: List[Dict[str, object]] = []
+    skipped: List[Dict[str, object]] = []
     total = Decimal("0")
 
     for asset in assets:
+        if asset["id"] in existing_assets:
+            skipped.append(
+                {
+                    "asset_code": asset["asset_code"],
+                    "reason": "duplicate",
+                    "message": "本期已计提",
+                }
+            )
+            continue
         if asset["depreciation_method"] != "STRAIGHT_LINE":
             errors.append(
                 {
                     "asset_code": asset["asset_code"],
+                    "reason": "unsupported_method",
                     "message": "仅支持直线法",
                 }
             )
@@ -128,6 +173,7 @@ def _build_depreciation_lines(
             errors.append(
                 {
                     "asset_code": asset["asset_code"],
+                    "reason": "missing_subject",
                     "message": "缺少折旧费用科目或累计折旧科目",
                 }
             )
@@ -138,11 +184,19 @@ def _build_depreciation_lines(
             errors.append(
                 {
                     "asset_code": asset["asset_code"],
+                    "reason": "missing_start_date",
                     "message": "缺少开始使用日期/入账日期",
                 }
             )
             continue
         if base_start_date > period_end:
+            skipped.append(
+                {
+                    "asset_code": asset["asset_code"],
+                    "reason": "not_started",
+                    "message": "未到计提期间",
+                }
+            )
             continue
 
         original_value = asset["original_value"]
@@ -154,6 +208,7 @@ def _build_depreciation_lines(
             errors.append(
                 {
                     "asset_code": asset["asset_code"],
+                    "reason": "invalid_life",
                     "message": "使用年限非法",
                 }
             )
@@ -169,6 +224,7 @@ def _build_depreciation_lines(
             errors.append(
                 {
                     "asset_code": asset["asset_code"],
+                    "reason": "insufficient_base",
                     "message": "可折旧金额不足",
                 }
             )
@@ -177,6 +233,13 @@ def _build_depreciation_lines(
         already = _already_depreciated_months(conn, book_id, asset["id"], year, month)
         remaining = useful_life_months - already
         if remaining <= 0:
+            skipped.append(
+                {
+                    "asset_code": asset["asset_code"],
+                    "reason": "fully_depreciated",
+                    "message": "已提足",
+                }
+            )
             continue
 
         monthly_raw = base_value / Decimal(str(useful_life_months))
@@ -187,6 +250,13 @@ def _build_depreciation_lines(
             amount = monthly
 
         if amount <= 0:
+            skipped.append(
+                {
+                    "asset_code": asset["asset_code"],
+                    "reason": "amount_zero",
+                    "message": "本期金额为0",
+                }
+            )
             continue
 
         total += amount
@@ -209,7 +279,7 @@ def _build_depreciation_lines(
             }
         )
 
-    return items, errors, total
+    return items, errors, skipped, total, len(assets)
 
 
 def preview_depreciation(params: Dict[str, str]) -> Dict[str, object]:
@@ -230,12 +300,18 @@ def preview_depreciation(params: Dict[str, str]) -> Dict[str, object]:
         book_id = int(book_id_raw)
         year = int(year_raw)
         month = int(month_raw)
+        asset_id = int(params.get("asset_id")) if params.get("asset_id") not in (None, "") else None
+        category_id = (
+            int(params.get("category_id")) if params.get("category_id") not in (None, "") else None
+        )
     except Exception:
         raise DepreciationError("validation_error", [{"field": "fields", "message": "格式非法"}])
 
     engine = get_engine()
     with engine.connect() as conn:
-        items, asset_errors, total = _build_depreciation_lines(conn, book_id, year, month)
+        items, asset_errors, skipped, total, scanned = _build_depreciation_lines(
+            conn, book_id, year, month, asset_id=asset_id, category_id=category_id
+        )
 
     output_items = []
     for item in items:
@@ -256,6 +332,11 @@ def preview_depreciation(params: Dict[str, str]) -> Dict[str, object]:
         "method": "STRAIGHT_LINE",
         "total_amount": float(_quantize_amount(total)),
         "items": output_items,
+        "scan_count": scanned,
+        "success_count": len(items),
+        "skipped_count": len(skipped),
+        "failed_count": len(asset_errors),
+        "skipped": skipped,
         "errors": asset_errors,
     }
 
@@ -266,7 +347,11 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
     book_id = payload.get("book_id")
     year = payload.get("year")
     month = payload.get("month")
+    asset_id = payload.get("asset_id")
+    category_id = payload.get("category_id")
     generate_status = (payload.get("voucher_status") or "draft").strip()
+    operator = (payload.get("operator") or "").strip()
+    operator_role = (payload.get("operator_role") or "").strip()
 
     _require(book_id is not None, errors, "book_id", "必填")
     _require(year is not None, errors, "year", "必填")
@@ -279,6 +364,8 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
         book_id = int(book_id)
         year = int(year)
         month = int(month)
+        asset_id = int(asset_id) if asset_id not in (None, "") else None
+        category_id = int(category_id) if category_id not in (None, "") else None
     except Exception:
         raise DepreciationError("validation_error", [{"field": "fields", "message": "格式非法"}])
 
@@ -297,13 +384,12 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
             raise DepreciationError("本期已计提")
 
     with engine.connect() as conn:
-        items, asset_errors, total = _build_depreciation_lines(conn, book_id, year, month)
-
-    if asset_errors:
-        raise DepreciationError("资产计提校验失败", asset_errors)
+        items, asset_errors, skipped, total, scanned = _build_depreciation_lines(
+            conn, book_id, year, month, asset_id=asset_id, category_id=category_id
+        )
 
     if not items:
-        raise DepreciationError("本期无可计提资产")
+        raise DepreciationError("本期无可计提资产", asset_errors + skipped)
 
     subject_codes = set()
     for item in items:
@@ -322,22 +408,55 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
         for r in rows:
             subject_map[r.code] = {"name": r.name, "is_enabled": r.is_enabled}
 
+    valid_items = []
     for item in items:
         exp = item["expense_subject_code"]
         acc = item["accumulated_depr_subject_code"]
         exp_subject = subject_map.get(exp)
         acc_subject = subject_map.get(acc)
         if not exp_subject:
-            asset_errors.append({"asset_code": item["asset_code"], "message": "折旧费用科目不存在"})
+            asset_errors.append(
+                {
+                    "asset_code": item["asset_code"],
+                    "reason": "missing_subject",
+                    "message": "折旧费用科目不存在",
+                }
+            )
         elif exp_subject["is_enabled"] != 1:
-            asset_errors.append({"asset_code": item["asset_code"], "message": "折旧费用科目已停用"})
+            asset_errors.append(
+                {
+                    "asset_code": item["asset_code"],
+                    "reason": "subject_disabled",
+                    "message": "折旧费用科目已停用",
+                }
+            )
         if not acc_subject:
-            asset_errors.append({"asset_code": item["asset_code"], "message": "累计折旧科目不存在"})
+            asset_errors.append(
+                {
+                    "asset_code": item["asset_code"],
+                    "reason": "missing_subject",
+                    "message": "累计折旧科目不存在",
+                }
+            )
         elif acc_subject["is_enabled"] != 1:
-            asset_errors.append({"asset_code": item["asset_code"], "message": "累计折旧科目已停用"})
+            asset_errors.append(
+                {
+                    "asset_code": item["asset_code"],
+                    "reason": "subject_disabled",
+                    "message": "累计折旧科目已停用",
+                }
+            )
 
-    if asset_errors:
-        raise DepreciationError("资产计提校验失败", asset_errors)
+        if exp_subject and exp_subject["is_enabled"] == 1 and acc_subject and acc_subject["is_enabled"] == 1:
+            valid_items.append(item)
+
+    items = valid_items
+    if not items:
+        raise DepreciationError("本期无可计提资产", asset_errors + skipped)
+
+    total = Decimal("0")
+    for item in items:
+        total += _parse_decimal(item["monthly_amount"])
 
     summary = f"固定资产折旧{year:04d}-{month:02d}"
     voucher_lines = []
@@ -465,6 +584,19 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
                 conn.execute(text("DELETE FROM depreciation_batches WHERE id=:id"), {"id": batch_id})
         raise
 
+    # audit
+    if operator:
+        from app.services.audit_service import log_audit
+        log_audit(
+            "asset",
+            "depreciation_run",
+            "depreciation_batch",
+            batch_id,
+            operator,
+            operator_role,
+            {"book_id": book_id, "year": year, "month": month, "voucher_id": voucher_id},
+        )
+
     return {
         "batch_id": batch_id,
         "voucher_id": voucher_id,
@@ -473,6 +605,12 @@ def run_depreciation(payload: Dict[str, object]) -> Dict[str, object]:
         "period_month": month,
         "total_amount": float(_quantize_amount(total)),
         "status": "DRAFT",
+        "scan_count": scanned,
+        "success_count": len(items),
+        "skipped_count": len(skipped),
+        "failed_count": len(asset_errors),
+        "skipped": skipped,
+        "errors": asset_errors,
     }
 
 

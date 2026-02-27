@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>审计日志</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>审计日志</h1>
+          <p>关键操作记录</p>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <div class="filter-grid">
+          <div class="field">
+            <label>模块</label>
+            <input type="text" class="field-input" id="audit-module" placeholder="voucher/system" />
+          </div>
+          <div class="field">
+            <label>动作</label>
+            <input type="text" class="field-input" id="audit-action" placeholder="create/update" />
+          </div>
+          <div class="field">
+            <label>操作人</label>
+            <input type="text" class="field-input" id="audit-operator" placeholder="张三" />
+          </div>
+          <div class="field">
+            <label>开始时间</label>
+            <input type="date" class="field-input" id="audit-start" />
+          </div>
+          <div class="field">
+            <label>结束时间</label>
+            <input type="date" class="field-input" id="audit-end" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="audit-query">查询</button>
+        </div>
+        <div id="audit-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>日志列表</h2>
+        <table id="audit-table">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>模块</th>
+              <th>动作</th>
+              <th>对象</th>
+              <th>对象ID</th>
+              <th>操作人</th>
+              <th>角色</th>
+              <th>详情</th>
+            </tr>
+          </thead>
+          <tbody id="audit-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/audit_logs.js"></script>
+  </body>
+</html>

@@ -54,7 +54,7 @@
     body.innerHTML = "";
     if (!items || items.length === 0) {
       var empty = document.createElement("tr");
-      empty.innerHTML = '<td colspan="9">暂无数据</td>';
+      empty.innerHTML = '<td colspan="14">暂无数据</td>';
       body.appendChild(empty);
       return;
     }
@@ -80,7 +80,17 @@
         "</td><td>" +
         (item.department_name || "") +
         "</td><td>" +
+        (item.person_name || "") +
+        "</td><td>" +
+        (item.depreciation_method || "") +
+        "</td><td>" +
+        (item.useful_life_months || "") +
+        "</td><td>" +
+        (item.location || "") +
+        "</td><td>" +
         (item.start_use_date || "") +
+        "</td><td>" +
+        (item.last_change_info || "") +
         "</td>";
       body.appendChild(tr);
     }
@@ -102,6 +112,7 @@
       category_id: document.getElementById("ledger-category-id").value,
       status: document.getElementById("ledger-status").value,
       department_id: document.getElementById("ledger-dept-id").value,
+      person_id: document.getElementById("ledger-person-id").value,
       start_use_from: document.getElementById("ledger-start-from").value,
       start_use_to: document.getElementById("ledger-start-to").value,
       dep_year: document.getElementById("ledger-dep-year").value,

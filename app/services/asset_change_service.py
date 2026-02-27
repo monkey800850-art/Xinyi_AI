@@ -130,7 +130,6 @@ def create_change(asset_id: int, payload: Dict[str, object]) -> Dict[str, object
         )
         change_id = result.lastrowid
 
-    # audit hook placeholder
     return {"id": change_id, "asset_id": asset_id, "change_type": change_type}
 
 
@@ -139,35 +138,46 @@ def list_changes(params: Dict[str, str]) -> Dict[str, object]:
     if not book_id_raw:
         raise AssetChangeError("validation_error", [{"field": "book_id", "message": "必填"}])
 
+    asset_id_raw = (params.get("asset_id") or "").strip()
+    asset_code = (params.get("asset_code") or "").strip()
     change_type = (params.get("change_type") or "").strip().upper()
     start_date_raw = (params.get("start_date") or "").strip()
     end_date_raw = (params.get("end_date") or "").strip()
 
     try:
         book_id = int(book_id_raw)
+        asset_id = int(asset_id_raw) if asset_id_raw else None
         start_date = _parse_date(start_date_raw) if start_date_raw else None
         end_date = _parse_date(end_date_raw) if end_date_raw else None
     except Exception:
         raise AssetChangeError("validation_error", [{"field": "fields", "message": "字段格式非法"}])
 
     sql = (
-        "SELECT id, asset_id, asset_code, change_type, change_date, "
+        "SELECT ac.id, ac.asset_id, ac.asset_code, fa.asset_name, ac.change_type, ac.change_date, "
         "from_department_id, to_department_id, from_person_id, to_person_id, note, operator "
-        "FROM asset_changes WHERE book_id=:book_id"
+        "FROM asset_changes ac "
+        "LEFT JOIN fixed_assets fa ON fa.id = ac.asset_id "
+        "WHERE ac.book_id=:book_id"
     )
     params_sql = {"book_id": book_id}
 
+    if asset_id:
+        sql += " AND ac.asset_id=:asset_id"
+        params_sql["asset_id"] = asset_id
+    if asset_code:
+        sql += " AND ac.asset_code LIKE :asset_code"
+        params_sql["asset_code"] = f"%{asset_code}%"
     if change_type:
-        sql += " AND change_type=:change_type"
+        sql += " AND ac.change_type=:change_type"
         params_sql["change_type"] = change_type
     if start_date:
-        sql += " AND change_date >= :start_date"
+        sql += " AND ac.change_date >= :start_date"
         params_sql["start_date"] = start_date
     if end_date:
-        sql += " AND change_date <= :end_date"
+        sql += " AND ac.change_date <= :end_date"
         params_sql["end_date"] = end_date
 
-    sql += " ORDER BY change_date DESC, id DESC"
+    sql += " ORDER BY ac.change_date DESC, ac.id DESC"
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -180,6 +190,7 @@ def list_changes(params: Dict[str, str]) -> Dict[str, object]:
                 "id": r.id,
                 "asset_id": r.asset_id,
                 "asset_code": r.asset_code,
+                "asset_name": r.asset_name or "",
                 "change_type": r.change_type,
                 "change_date": r.change_date.isoformat() if r.change_date else "",
                 "from_department_id": r.from_department_id or "",

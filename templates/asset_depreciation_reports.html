@@ -32,6 +32,14 @@
             <label>月份</label>
             <input type="number" class="field-input" id="report-month" value="2" />
           </div>
+          <div class="field">
+            <label>资产编号/名称</label>
+            <input type="text" class="field-input" id="report-keyword" placeholder="编号或名称" />
+          </div>
+          <div class="field">
+            <label>类别ID</label>
+            <input type="number" class="field-input" id="report-category-id" />
+          </div>
         </div>
         <div class="filter-actions">
           <button class="btn" id="report-search">查询</button>
@@ -50,6 +58,8 @@
               <th>资产名称</th>
               <th>期间</th>
               <th>本期折旧金额</th>
+              <th>累计折旧</th>
+              <th>净值</th>
               <th>批次ID</th>
               <th>凭证ID</th>
             </tr>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>全局规则</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>全局规则配置</h1>
+          <p>编码规则 / 预警天数 / 审批模板基础</p>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <h2>新增 / 更新</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>规则Key</label>
+            <input type="text" class="field-input" id="rule-key" />
+          </div>
+          <div class="field">
+            <label>规则值</label>
+            <input type="text" class="field-input" id="rule-value" />
+          </div>
+          <div class="field">
+            <label>描述</label>
+            <input type="text" class="field-input" id="rule-desc" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="rule-save">保存</button>
+        </div>
+        <div id="rule-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>规则列表</h2>
+        <table id="rule-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Key</th>
+              <th>Value</th>
+              <th>描述</th>
+            </tr>
+          </thead>
+          <tbody id="rule-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/system_rules.js"></script>
+  </body>
+</html>

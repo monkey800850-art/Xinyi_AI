@@ -38,10 +38,26 @@
             <select class="field-input" id="fa-category"></select>
           </div>
           <div class="field">
+            <label>规格型号</label>
+            <input type="text" class="field-input" id="fa-model" />
+          </div>
+          <div class="field">
+            <label>单位</label>
+            <input type="text" class="field-input" id="fa-unit" />
+          </div>
+          <div class="field">
+            <label>数量</label>
+            <input type="number" class="field-input" id="fa-qty" step="0.0001" />
+          </div>
+          <div class="field">
             <label>状态</label>
             <select class="field-input" id="fa-status">
               <option value="DRAFT">DRAFT</option>
               <option value="ACTIVE">ACTIVE</option>
+              <option value="IDLE">IDLE</option>
+              <option value="PENDING_SCRAP">PENDING_SCRAP</option>
+              <option value="DISPOSED">DISPOSED</option>
+              <option value="SCRAPPED">SCRAPPED</option>
             </select>
           </div>
           <div class="field">
@@ -49,6 +65,13 @@
             <select class="field-input" id="fa-enabled">
               <option value="1">启用</option>
               <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>是否计提折旧</label>
+            <select class="field-input" id="fa-depreciable">
+              <option value="1">计提</option>
+              <option value="0">不计提</option>
             </select>
           </div>
         </div>
@@ -86,6 +109,10 @@
         <h2>归属信息</h2>
         <div class="filter-grid">
           <div class="field">
+            <label>购置日期</label>
+            <input type="date" class="field-input" id="fa-purchase-date" />
+          </div>
+          <div class="field">
             <label>开始使用日期</label>
             <input type="date" class="field-input" id="fa-start-date" />
           </div>
@@ -104,6 +131,10 @@
           <div class="field">
             <label>备注</label>
             <input type="text" class="field-input" id="fa-note" />
+          </div>
+          <div class="field">
+            <label>存放地点</label>
+            <input type="text" class="field-input" id="fa-location" />
           </div>
         </div>
         <div class="filter-actions">

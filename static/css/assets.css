@@ -72,6 +72,10 @@ body {
   cursor: pointer;
 }
 
+.btn.secondary {
+  background: #475467;
+}
+
 .btn.small {
   padding: 6px 10px;
   font-size: 12px;

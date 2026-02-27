@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>角色权限</title>
+    <link rel="stylesheet" href="/static/css/assets_cards.css" />
+  </head>
+  <body>
+    <div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>角色权限</h1>
+          <p>功能权限 + 数据范围</p>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <h2>新增 / 编辑</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>角色编码</label>
+            <input type="text" class="field-input" id="role-code" />
+          </div>
+          <div class="field">
+            <label>角色名称</label>
+            <input type="text" class="field-input" id="role-name" />
+          </div>
+          <div class="field">
+            <label>数据范围</label>
+            <select class="field-input" id="role-scope">
+              <option value="ALL">ALL</option>
+              <option value="BOOK">BOOK</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>启用</label>
+            <select class="field-input" id="role-enabled">
+              <option value="1">启用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>权限Key(逗号)</label>
+            <input type="text" class="field-input" id="role-perms" placeholder="voucher.read,voucher.write" />
+          </div>
+          <div class="field">
+            <label>描述</label>
+            <input type="text" class="field-input" id="role-desc" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="role-save">保存</button>
+        </div>
+        <div id="role-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>角色列表</h2>
+        <table id="role-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>编码</th>
+              <th>名称</th>
+              <th>数据范围</th>
+              <th>权限</th>
+              <th>启用</th>
+            </tr>
+          </thead>
+          <tbody id="role-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="/static/js/system_roles.js"></script>
+  </body>
+</html>

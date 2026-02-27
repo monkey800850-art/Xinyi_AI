@@ -11,6 +11,29 @@
     box.textContent = message;
   }
 
+  function setEditing(id, item) {
+    document.getElementById("asset-edit-id").value = id || "";
+    if (!item) {
+      document.getElementById("asset-code").value = "";
+      document.getElementById("asset-name").value = "";
+      document.getElementById("asset-method").value = "STRAIGHT_LINE";
+      document.getElementById("asset-life").value = "0";
+      document.getElementById("asset-residual").value = "0";
+      document.getElementById("asset-expense").value = "";
+      document.getElementById("asset-accum").value = "";
+      document.getElementById("asset-add").textContent = "新增类别";
+      return;
+    }
+    document.getElementById("asset-code").value = item.code || "";
+    document.getElementById("asset-name").value = item.name || "";
+    document.getElementById("asset-method").value = item.depreciation_method || "STRAIGHT_LINE";
+    document.getElementById("asset-life").value = item.default_useful_life_months || 0;
+    document.getElementById("asset-residual").value = item.default_residual_rate || 0;
+    document.getElementById("asset-expense").value = item.expense_subject_code || "";
+    document.getElementById("asset-accum").value = item.accumulated_depr_subject_code || "";
+    document.getElementById("asset-add").textContent = "保存修改";
+  }
+
   function renderList(items) {
     var body = document.getElementById("asset-body");
     body.innerHTML = "";
@@ -43,15 +66,19 @@
         (item.accumulated_depr_subject_code || "") +
         "</td>" +
         "<td>" +
-        item.is_enabled +
+        (item.is_enabled ? "启用" : "停用") +
         "</td>" +
-        '<td><button class="btn small" data-id="' +
+        '<td><button class="btn small" data-edit-id="' +
+        item.id +
+        '">编辑</button> ' +
+        '<button class="btn small" data-id="' +
         item.id +
         '" data-enabled="' +
         item.is_enabled +
         '">' +
         (item.is_enabled ? "停用" : "启用") +
         "</button></td>";
+      tr.dataset.item = JSON.stringify(item);
       body.appendChild(tr);
     }
   }
@@ -81,7 +108,8 @@
       });
   }
 
-  function addCategory() {
+  function saveCategory() {
+    var editId = document.getElementById("asset-edit-id").value || "";
     var payload = {
       book_id: document.getElementById("asset-book-id").value,
       code: document.getElementById("asset-code").value,
@@ -93,7 +121,8 @@
       accumulated_depr_subject_code: document.getElementById("asset-accum").value,
     };
 
-    fetch("/api/assets/categories", {
+    var url = editId ? "/api/assets/categories/" + editId : "/api/assets/categories";
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -105,14 +134,15 @@
       })
       .then(function (payload) {
         if (!payload.ok) {
-          setError(payload.data.error || "新增失败");
+          setError(payload.data.error || "保存失败");
           return;
         }
         setError("");
         listCategories();
+        setEditing("", null);
       })
       .catch(function () {
-        setError("新增失败");
+        setError("保存失败");
       });
   }
 
@@ -145,11 +175,28 @@
       var id = e.target.getAttribute("data-id");
       var enabled = e.target.getAttribute("data-enabled") === "1";
       toggleCategory(id, enabled);
+      return;
+    }
+    if (e.target && e.target.matches("button[data-edit-id]")) {
+      var id = e.target.getAttribute("data-edit-id");
+      var row = e.target.closest("tr");
+      var item = null;
+      if (row && row.dataset.item) {
+        try {
+          item = JSON.parse(row.dataset.item);
+        } catch (err) {
+          item = null;
+        }
+      }
+      setEditing(id, item);
     }
   });
 
   document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("asset-add").addEventListener("click", addCategory);
+    document.getElementById("asset-add").addEventListener("click", saveCategory);
+    document.getElementById("asset-cancel").addEventListener("click", function () {
+      setEditing("", null);
+    });
     listCategories();
   });
 })();

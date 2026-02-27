@@ -88,11 +88,24 @@
 
     function listAssets() {
       var bookId = document.getElementById("asset-book-id").value || "";
+      var keywordInput = document.getElementById("asset-keyword");
+      var categoryInput = document.getElementById("asset-category-id");
+      var statusInput = document.getElementById("asset-status");
+      var keyword = keywordInput ? keywordInput.value : "";
+      var categoryId = categoryInput ? categoryInput.value : "";
+      var status = statusInput ? statusInput.value : "";
       if (!bookId) {
         setError("asset-error", "请填写账套ID");
         return;
       }
-      fetchJson("/api/assets?book_id=" + encodeURIComponent(bookId))
+      var url =
+        "/api/assets?book_id=" +
+        encodeURIComponent(bookId) +
+        (keyword ? "&keyword=" + encodeURIComponent(keyword) : "") +
+        (categoryId ? "&category_id=" + encodeURIComponent(categoryId) : "") +
+        (status ? "&status=" + encodeURIComponent(status) : "");
+
+      fetchJson(url)
         .then(function (payload) {
           if (!payload.ok) {
             setError("asset-error", payload.data.error || "查询失败", payload.data.errors);
@@ -150,6 +163,21 @@
       return document.getElementById("fa-book-id").value || "";
     }
 
+    var categoryCache = {};
+
+    function applyCategoryDefaults(item) {
+      if (!item) return;
+      if (!document.getElementById("fa-life").value) {
+        document.getElementById("fa-life").value = item.default_useful_life_months || "";
+      }
+      if (!document.getElementById("fa-residual-rate").value) {
+        document.getElementById("fa-residual-rate").value = item.default_residual_rate || "";
+      }
+      if (!document.getElementById("fa-method").value) {
+        document.getElementById("fa-method").value = item.depreciation_method || "STRAIGHT_LINE";
+      }
+    }
+
     function fillCategories(bookId, selectedId) {
       if (!bookId) {
         setError("fa-error", "请填写账套ID");
@@ -164,9 +192,11 @@
           var select = document.getElementById("fa-category");
           select.innerHTML = "";
           var items = payload.data.items || [];
+          categoryCache = {};
           var hasOption = false;
           for (var i = 0; i < items.length; i++) {
             var item = items[i];
+            categoryCache[String(item.id)] = item;
             if (item.is_enabled !== 1 && item.id !== selectedId) {
               continue;
             }
@@ -185,6 +215,10 @@
             optEmpty.textContent = "暂无可用类别";
             select.appendChild(optEmpty);
           }
+          if (!assetId) {
+            var current = select.value || (items[0] ? String(items[0].id) : "");
+            applyCategoryDefaults(categoryCache[String(current)]);
+          }
           setError("fa-error", "");
         })
         .catch(function () {
@@ -196,18 +230,24 @@
       document.getElementById("fa-book-id").value = data.book_id || "";
       document.getElementById("fa-code").value = data.asset_code || "";
       document.getElementById("fa-name").value = data.asset_name || "";
+      document.getElementById("fa-model").value = data.specification_model || "";
+      document.getElementById("fa-unit").value = data.unit || "";
+      document.getElementById("fa-qty").value = data.quantity || "";
       document.getElementById("fa-status").value = data.status || "DRAFT";
       document.getElementById("fa-enabled").value = data.is_enabled ? "1" : "0";
+      document.getElementById("fa-depreciable").value = data.is_depreciable ? "1" : "0";
       document.getElementById("fa-original").value = data.original_value || "";
       document.getElementById("fa-residual-rate").value = data.residual_rate || "";
       document.getElementById("fa-residual-value").value = data.residual_value || "";
       document.getElementById("fa-life").value = data.useful_life_months || "";
       document.getElementById("fa-method").value = data.depreciation_method || "STRAIGHT_LINE";
+      document.getElementById("fa-purchase-date").value = data.purchase_date || "";
       document.getElementById("fa-start-date").value = data.start_use_date || "";
       document.getElementById("fa-cap-date").value = data.capitalization_date || "";
       document.getElementById("fa-dept").value = data.department_id || "";
       document.getElementById("fa-person").value = data.person_id || "";
       document.getElementById("fa-note").value = data.note || "";
+      document.getElementById("fa-location").value = data.location || "";
       var codeInput = document.getElementById("fa-code");
       if (assetId) {
         codeInput.readOnly = true;
@@ -240,8 +280,14 @@
         asset_code: document.getElementById("fa-code").value,
         asset_name: document.getElementById("fa-name").value,
         category_id: document.getElementById("fa-category").value,
+        specification_model: document.getElementById("fa-model").value,
+        unit: document.getElementById("fa-unit").value,
+        quantity: document.getElementById("fa-qty").value,
+        location: document.getElementById("fa-location").value,
+        purchase_date: document.getElementById("fa-purchase-date").value,
         status: document.getElementById("fa-status").value,
         is_enabled: document.getElementById("fa-enabled").value,
+        is_depreciable: document.getElementById("fa-depreciable").value,
         original_value: document.getElementById("fa-original").value,
         residual_rate: document.getElementById("fa-residual-rate").value,
         residual_value: document.getElementById("fa-residual-value").value,
@@ -336,6 +382,11 @@
 
     document.getElementById("fa-book-id").addEventListener("change", function () {
       fillCategories(getBookId(), document.getElementById("fa-category").value);
+    });
+    document.getElementById("fa-category").addEventListener("change", function () {
+      var selectedId = document.getElementById("fa-category").value;
+      var item = categoryCache[String(selectedId)];
+      applyCategoryDefaults(item);
     });
     saveBtn.addEventListener("click", saveAsset);
     if (transferBtn) {

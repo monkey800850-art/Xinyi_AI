@@ -54,7 +54,7 @@
     body.innerHTML = "";
     if (!items || items.length === 0) {
       var empty = document.createElement("tr");
-      empty.innerHTML = '<td colspan="6">暂无数据</td>';
+      empty.innerHTML = '<td colspan="8">暂无数据</td>';
       body.appendChild(empty);
       return;
     }
@@ -70,6 +70,10 @@
         item.period +
         "</td><td>" +
         item.amount +
+        "</td><td>" +
+        item.accumulated_depr +
+        "</td><td>" +
+        item.net_value +
         "</td><td>" +
         item.batch_id +
         "</td><td>" +
@@ -102,13 +106,26 @@
   }
 
   function buildQuery() {
+    var keyword = document.getElementById("report-keyword").value || "";
+    var assetCode = "";
+    var assetName = "";
+    if (keyword) {
+      assetCode = keyword;
+      assetName = keyword;
+    }
     return (
       "book_id=" +
       encodeURIComponent(document.getElementById("report-book-id").value || "") +
       "&year=" +
       encodeURIComponent(document.getElementById("report-year").value || "") +
       "&month=" +
-      encodeURIComponent(document.getElementById("report-month").value || "")
+      encodeURIComponent(document.getElementById("report-month").value || "") +
+      "&asset_code=" +
+      encodeURIComponent(assetCode) +
+      "&asset_name=" +
+      encodeURIComponent(assetName) +
+      "&category_id=" +
+      encodeURIComponent(document.getElementById("report-category-id").value || "")
     );
   }
 
