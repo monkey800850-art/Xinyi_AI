@@ -311,4 +311,6 @@
 
 ## 16. 下一步（第三批）规划入口（2026-02-28）
 - 规划文档：`docs/release/STEP29_BATCH3_EXECUTION_TREE.md`
+- 缺陷修复卡：`docs/release/STEP29_A_DEFECT_REPAIR_CARDS.md`
+- P1 方案设计：`docs/release/STEP29_P1_IMPORT_DESIGN.md`
 - 说明：第三批仅规划已完成，后续按 `3A -> 3B -> 3C -> 3D` 顺序执行。

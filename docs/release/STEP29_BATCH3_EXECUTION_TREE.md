@@ -24,8 +24,7 @@
 
 ### 3A-T1 缺陷卡模板与分级规则固化
 - 交付物：
-  - `docs/release/STEP29_DEFECT_CARD_TEMPLATE.md`
-  - `docs/release/STEP29_DEFECT_TRIAGE_RULES.md`
+  - `docs/release/STEP29_A_DEFECT_REPAIR_CARDS.md`
 - 最小验收：
   - 缺陷卡包含：复现步骤、预期/实际、影响范围、证据路径、回归点、优先级。
   - 分级规则与第二批一致（P0/P1/P2）。
@@ -59,7 +58,7 @@
 
 ### 3B-T1 会计分录批量导入（API优先）
 - 交付物：
-  - 导入模板定义文档
+  - `docs/release/STEP29_P1_IMPORT_DESIGN.md`（A 章节）
   - 预检 API + 导入 API（设计与实现分步）
   - 对应测试清单
 - 最小验收：
@@ -72,7 +71,7 @@
 
 ### 3B-T2 账套导入（业务级）
 - 交付物：
-  - 账套导入规范（快照结构/版本）
+  - `docs/release/STEP29_P1_IMPORT_DESIGN.md`（B 章节）
   - 导入校验 API（与现有 `backup-restore-verify` 风格兼容）
 - 最小验收：
   - 导入前校验可拦截结构错误、重复编码冲突。
