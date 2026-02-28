@@ -29,7 +29,15 @@ from app.services.bank_reconcile_service import (
     get_reconcile_report,
     list_reconciliation_items,
 )
-from app.services.book_service import BookCreateError, create_book_with_subject_init
+from app.services.book_service import (
+    BookCreateError,
+    BookManageError,
+    build_book_backup_snapshot,
+    create_book_with_subject_init,
+    disable_book,
+    get_book_init_integrity,
+    verify_book_backup_snapshot,
+)
 from app.services.dashboard_service import DashboardError, get_boss_metrics, get_workbench_metrics
 from app.services.depreciation_service import (
     DepreciationError,
@@ -83,6 +91,8 @@ from app.services.reimbursement_service import (
 )
 from app.services.tax_service import (
     TaxError,
+    calc_labor_service_tax,
+    calc_year_end_bonus_tax,
     build_tax_alerts,
     create_tax_rule,
     get_tax_summary,
@@ -265,6 +275,76 @@ def create_app() -> Flask:
         except Exception as err:
             app.logger.exception("book_create_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/books/<int:book_id>/init-integrity")
+    def api_book_init_integrity(book_id: int):
+        try:
+            result = get_book_init_integrity(book_id)
+            return jsonify(result), 200
+        except BookManageError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/books/<int:book_id>/backup-snapshot")
+    def api_book_backup_snapshot(book_id: int):
+        operator, role = _get_operator_from_headers()
+        try:
+            result = build_book_backup_snapshot(book_id)
+            log_audit(
+                "book",
+                "backup_snapshot",
+                "book",
+                book_id,
+                operator,
+                role,
+                {
+                    "book_id": book_id,
+                    "subject_count": (result.get("stats") or {}).get("subject_count", 0),
+                    "period_count": (result.get("stats") or {}).get("period_count", 0),
+                },
+            )
+            return jsonify(result), 200
+        except BookManageError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/books/backup-restore-verify")
+    def api_book_backup_restore_verify():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = verify_book_backup_snapshot(payload)
+            log_audit(
+                "book",
+                "backup_restore_verify",
+                "book_backup",
+                None,
+                operator,
+                role,
+                {"ok": bool(result.get("ok")), "error_count": len(result.get("errors") or [])},
+            )
+            status = 200 if result.get("ok") else 400
+            return jsonify(result), status
+        except BookManageError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/books/<int:book_id>/disable")
+    def api_disable_book(book_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = disable_book(book_id, payload.get("confirm_text", ""), role)
+            log_audit(
+                "book",
+                "disable",
+                "book",
+                book_id,
+                operator,
+                role,
+                {"book_id": book_id, "safety_confirmed": True},
+            )
+            return jsonify(result), 200
+        except BookManageError as err:
+            status = 403 if str(err) == "forbidden" else 400
+            return jsonify({"error": str(err)}), status
 
     @app.get("/api/dashboard/workbench")
     def api_dashboard_workbench():
@@ -1050,6 +1130,48 @@ def create_app() -> Flask:
         except TaxError as err:
             return jsonify({"error": str(err)}), 400
 
+    @app.post("/api/tax/calc/year-end-bonus")
+    def api_tax_calc_year_end_bonus():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = calc_year_end_bonus_tax(payload)
+            log_audit(
+                "tax",
+                "calc_year_end_bonus",
+                "tax_calc",
+                None,
+                operator,
+                role,
+                {
+                    "tax_mode": payload.get("tax_mode"),
+                    "biz_year": payload.get("biz_year"),
+                    "success": True,
+                },
+            )
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/tax/calc/labor-service")
+    def api_tax_calc_labor_service():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = calc_labor_service_tax(payload)
+            log_audit(
+                "tax",
+                "calc_labor_service",
+                "tax_calc",
+                None,
+                operator,
+                role,
+                {"period": payload.get("period"), "success": True},
+            )
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
     @app.get("/api/vouchers/<int:voucher_id>")
     def api_voucher_detail(voucher_id: int):
         try:
@@ -1082,8 +1204,7 @@ def create_app() -> Flask:
             app.logger.exception("voucher_save_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
 
-    @app.post("/api/vouchers/template-preview")
-    def api_voucher_template_preview():
+    def _run_voucher_template_preview(action_name: str):
         operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
         try:
@@ -1094,6 +1215,21 @@ def create_app() -> Flask:
                 operator=operator,
                 role=role,
             )
+            log_audit(
+                "voucher",
+                action_name,
+                "voucher_template",
+                None,
+                operator,
+                role,
+                {
+                    "book_id": payload.get("book_id"),
+                    "template_code": payload.get("template_code"),
+                    "success": bool(result.get("success")),
+                    "error_count": len(result.get("errors") or []),
+                    "preview_only": True,
+                },
+            )
             status = 200 if result.get("success") else 400
             return jsonify(result), status
         except VoucherTemplateError as err:
@@ -1101,6 +1237,14 @@ def create_app() -> Flask:
         except Exception:
             app.logger.exception("voucher_template_preview_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/vouchers/template-preview")
+    def api_voucher_template_preview():
+        return _run_voucher_template_preview("template_preview")
+
+    @app.post("/api/vouchers/template-suggest")
+    def api_voucher_template_suggest():
+        return _run_voucher_template_preview("template_suggest")
 
     @app.post("/api/vouchers/<int:voucher_id>/approve")
     def api_voucher_approve(voucher_id: int):

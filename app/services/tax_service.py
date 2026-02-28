@@ -15,6 +15,33 @@ class TaxError(RuntimeError):
     pass
 
 
+BONUS_MONTHLY_BRACKETS = [
+    (Decimal("3000"), Decimal("0.03"), Decimal("0")),
+    (Decimal("12000"), Decimal("0.10"), Decimal("210")),
+    (Decimal("25000"), Decimal("0.20"), Decimal("1410")),
+    (Decimal("35000"), Decimal("0.25"), Decimal("2660")),
+    (Decimal("55000"), Decimal("0.30"), Decimal("4410")),
+    (Decimal("80000"), Decimal("0.35"), Decimal("7160")),
+    (Decimal("999999999"), Decimal("0.45"), Decimal("15160")),
+]
+
+COMPREHENSIVE_ANNUAL_BRACKETS = [
+    (Decimal("36000"), Decimal("0.03"), Decimal("0")),
+    (Decimal("144000"), Decimal("0.10"), Decimal("2520")),
+    (Decimal("300000"), Decimal("0.20"), Decimal("16920")),
+    (Decimal("420000"), Decimal("0.25"), Decimal("31920")),
+    (Decimal("660000"), Decimal("0.30"), Decimal("52920")),
+    (Decimal("960000"), Decimal("0.35"), Decimal("85920")),
+    (Decimal("999999999"), Decimal("0.45"), Decimal("181920")),
+]
+
+LABOR_BRACKETS = [
+    (Decimal("20000"), Decimal("0.20"), Decimal("0")),
+    (Decimal("50000"), Decimal("0.30"), Decimal("2000")),
+    (Decimal("999999999"), Decimal("0.40"), Decimal("7000")),
+]
+
+
 INVOICE_HEADER_MAP = {
     "invoice_no": ["invoice_no", "发票号码", "发票号"],
     "invoice_code": ["invoice_code", "发票代码"],
@@ -55,6 +82,99 @@ def _parse_decimal(value) -> Decimal:
         return Decimal(str(value).replace(",", ""))
     except (InvalidOperation, ValueError):
         raise ValueError("invalid_amount")
+
+
+def _pick_bracket(base: Decimal, brackets) -> Tuple[Decimal, Decimal]:
+    for upper, rate, quick in brackets:
+        if base <= upper:
+            return rate, quick
+    return brackets[-1][1], brackets[-1][2]
+
+
+def calc_year_end_bonus_tax(payload: Dict[str, object]) -> Dict[str, object]:
+    mode = (payload.get("tax_mode") or "").strip().lower()
+    year = int(payload.get("biz_year") or 0) if payload.get("biz_year") not in (None, "") else None
+    amount_raw = payload.get("bonus_amount")
+
+    if amount_raw in (None, ""):
+        raise TaxError("bonus_amount required")
+    try:
+        amount = _parse_decimal(amount_raw)
+    except ValueError:
+        raise TaxError("bonus_amount invalid")
+    if amount <= 0:
+        raise TaxError("bonus_amount must be > 0")
+    if mode not in ("separate", "merge"):
+        raise TaxError("tax_mode must be one of: separate, merge")
+
+    if mode == "separate":
+        taxable_base = (amount / Decimal("12")).quantize(Decimal("0.01"))
+        rate, quick = _pick_bracket(taxable_base, BONUS_MONTHLY_BRACKETS)
+        tax = (amount * rate - quick).quantize(Decimal("0.01"))
+        explain = (
+            "separate mode: bonus/12 choose monthly bracket; "
+            "tax=bonus*rate-quick_deduction"
+        )
+    else:
+        taxable_base = amount
+        rate, quick = _pick_bracket(taxable_base, COMPREHENSIVE_ANNUAL_BRACKETS)
+        tax = (taxable_base * rate - quick).quantize(Decimal("0.01"))
+        explain = (
+            "merge mode(simplified): treat bonus as annual comprehensive taxable base only; "
+            "tax=base*rate-quick_deduction"
+        )
+
+    if tax < 0:
+        tax = Decimal("0.00")
+
+    return {
+        "tax_mode": mode,
+        "biz_year": year,
+        "bonus_amount": float(amount),
+        "taxable_base": float(taxable_base),
+        "tax_amount": float(tax),
+        "rate": float(rate),
+        "quick_deduction": float(quick),
+        "explain": explain,
+    }
+
+
+def calc_labor_service_tax(payload: Dict[str, object]) -> Dict[str, object]:
+    gross_raw = payload.get("gross_amount")
+    period = (payload.get("period") or "").strip() or None
+
+    if gross_raw in (None, ""):
+        raise TaxError("gross_amount required")
+    try:
+        gross = _parse_decimal(gross_raw)
+    except ValueError:
+        raise TaxError("gross_amount invalid")
+    if gross <= 0:
+        raise TaxError("gross_amount must be > 0")
+
+    if gross <= Decimal("4000"):
+        taxable_base = (gross - Decimal("800")).quantize(Decimal("0.01"))
+        if taxable_base < 0:
+            taxable_base = Decimal("0.00")
+        base_explain = "gross<=4000, taxable_base=gross-800"
+    else:
+        taxable_base = (gross * Decimal("0.8")).quantize(Decimal("0.01"))
+        base_explain = "gross>4000, taxable_base=gross*80%"
+
+    rate, quick = _pick_bracket(taxable_base, LABOR_BRACKETS)
+    tax = (taxable_base * rate - quick).quantize(Decimal("0.01"))
+    if tax < 0:
+        tax = Decimal("0.00")
+
+    return {
+        "period": period,
+        "gross_amount": float(gross),
+        "taxable_base": float(taxable_base),
+        "tax_amount": float(tax),
+        "rate": float(rate),
+        "quick_deduction": float(quick),
+        "explain": f"{base_explain}; labor bracket tax=base*rate-quick_deduction (simplified prewithholding)",
+    }
 
 
 def _detect_columns(headers: List[str], mapping: Dict[str, List[str]]) -> Dict[str, int]:

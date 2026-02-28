@@ -236,3 +236,25 @@
     - 一致成功：`GET /api/trial_balance` -> `200`，`category_codes` 含 `ASSET/PNL`
     - 不一致告警：`POST /books`（自定义不一致CSV）-> `201`，`category_validation.mismatch_count=1`，`mode=warn_only`
     - 老数据 fallback：`GET /api/trial_balance` -> `200`，`item(1001).category_source=prefix_fallback`
+
+## 13. 第4轮-D/E/F Payroll-Tax（省额度模式）完成记录（2026-02-28）
+- D 设计卡（精简版）：
+  - 文档：`docs/release/STEP28_PAYROLL_TAX_DESIGN_CARD.md`
+  - 已明确：Payroll MVP、数据模型草案、税务台账衔接、与 STEP28-B 复用关系、范围边界、简化假设。
+- E 年终奖计税切换（已实现）：
+  - 服务：`app/services/tax_service.py::calc_year_end_bonus_tax`
+  - API：`POST /api/tax/calc/year-end-bonus`
+  - 参数校验：`bonus_amount` 必填且 `>0`，`tax_mode in {separate, merge}`。
+- F 劳务报酬个税（已实现）：
+  - 服务：`app/services/tax_service.py::calc_labor_service_tax`
+  - API：`POST /api/tax/calc/labor-service`
+  - 参数校验：`gross_amount` 必填且 `>0`。
+- 单元测试（真实执行）：
+  - 命令：`python3 -m unittest -v tests/test_step28_batch2_tax_calcs.py`
+  - 结果：`Ran 5 tests in 0.435s`，`OK`
+- API 实测（真实执行，5组）：
+  - `bonus_separate_ok`：HTTP `200`，`tax_amount=1080.0`
+  - `bonus_merge_ok`：HTTP `200`，`tax_amount=1080.0`
+  - `bonus_invalid_mode_fail`：HTTP `400`，`tax_mode must be one of: separate, merge`
+  - `labor_ok`：HTTP `200`，`taxable_base=8000.0`，`tax_amount=1600.0`
+  - `labor_invalid_amount_fail`：HTTP `400`，`gross_amount must be > 0`
