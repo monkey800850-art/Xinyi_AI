@@ -186,3 +186,43 @@ python3 -m unittest -v tests/test_step28_b_t1_template_preview.py tests/test_ste
 ### 8.4 第二批最终结论
 - 第二批完成：`完成`。
 - 可进入下一轮：`可进入 H（UI 全链测试）`。
+
+## 9. 第6轮 H UI 全链测试（端到端/UAT，2026-02-28）
+
+### 9.1 测试环境与证据
+- 执行方式：Flask `test_client`（从 UI 页面入口触发并串联后端调用链）。
+- 证据文件：`/tmp/step28_h_ui_uat_239020.json`
+- 总用例：`22`，通过：`22`，失败：`0`（失败链路为“预期失败”校验，均命中预期状态码）。
+
+### 9.2 覆盖范围
+- 初始化/完整性：`POST /books`、`GET /api/books/<id>/init-integrity`
+- 账套操作：`GET /api/books/<id>/backup-snapshot`、`POST /api/books/backup-restore-verify`、`POST /api/books/<id>/disable`
+- 科目/凭证：`/voucher/entry`、`POST /api/vouchers/template-suggest`、`POST /api/vouchers/template-preview`、`/reports/trial_balance`
+- 报表：`GET /api/trial_balance`（类别汇总 + fallback）
+- 税务：`/tax/summary`、`POST /api/tax/calc/year-end-bonus`、`POST /api/tax/calc/labor-service`
+- 审计页面：`/system/audit`
+
+### 9.3 成功链路（节选）
+1. 初始化与完整性：`POST /books -> 201`，`GET init-integrity -> 200, ok=true`
+2. 账套备份与恢复校验：`snapshot -> 200`，`backup-restore-verify -> 200, ok=true`
+3. 凭证与报表：`template-suggest -> 200`，`POST voucher(posted) -> 201`，`trial_balance -> 200`，`category_summary` 含 `ASSET/PNL`
+4. 老数据 fallback：清空 `subjects.category` 后 `trial_balance -> 200`，`category_source=prefix_fallback`
+5. 税务调用链：bonus `separate/merge -> 200`，labor -> `200`
+
+### 9.4 失败链路（均为预期拦截）
+1. 停用权限拦截：非管理员 `POST /api/books/<id>/disable -> 403`
+2. 停用确认拦截：错误确认串 `POST /api/books/<id>/disable -> 400`
+3. 凭证非法科目：`template-preview(debit=999999) -> 400`
+4. 年终奖非法模式：`year-end-bonus(tax_mode=invalid) -> 400`
+5. 劳务报酬非法金额：`labor-service(gross=-1) -> 400`
+6. 关闭期间拦截：`template-preview(biz_date in closed period) -> 400`
+
+### 9.5 缺陷分级结果
+- 新增缺陷：`0`
+- P0：`0`
+- P1：`0`（本轮未发现新增；历史 P1 遗留保持不变）
+- P2：`0`
+
+### 9.6 结论
+- 本轮 H 结论：UI 全链测试通过（按当前范围）。
+- 是否立即开修复卡：`否`（未发现新增 P0/P1 缺陷）。
