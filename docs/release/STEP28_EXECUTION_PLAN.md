@@ -211,3 +211,28 @@
   - 劳务报酬个税计算：`POST /api/tax/calc/labor-service`
   - 税务实测：5组（成功/失败均覆盖），并纳入回归 `13 tests -> OK`
 - 详情记录：`docs/release/STEP28_BATCH2_PLATFORM_CHECK_AND_UAT.md`
+
+## 12. 第3轮-C 科目管理优化完成记录（2026-02-28）
+- 变更范围（最小改动）：
+  - 新增：`app/services/subject_category_service.py`（类别映射与前缀推导）
+  - 接入：`app/services/standard_importer.py`（初始化导入类别一致性校验，warn-only）
+  - 接入：`app/services/trial_balance_service.py`（类别优先 + 前缀fallback 汇总兼容）
+  - 测试：`tests/test_step28_c_subject_category.py`
+- 字段策略（不改表结构）：
+  - 运行时映射 `category_code`（ASSET/LIABILITY/EQUITY/COST/PNL）与 `category_name`。
+  - 兼容现有 `subjects.category`：非空时优先使用；空值时按 `subject_code` 首位回退。
+- 一致性校验接入点：
+  - 初始化导入路径：`import_subjects_from_standard`。
+  - 校验口径：`subject_code` 前缀类别 vs `category` 文本类别，输出 `category_validation`（`mode=warn_only`）。
+- 余额表兼容口径：
+  - `items` 增加 `category_code/category_name/category_source`。
+  - `category_summary` 按 `category_code+category_name` 汇总；老数据空类别回退前缀。
+- 实测（真实执行）：
+  - 单测命令：`python3 -m unittest -v tests/test_step28_c_subject_category.py`
+    - 结果：`Ran 3 tests in 0.792s`，`OK`
+  - 回归命令：`python3 -m unittest -v tests/test_step28_batch2_platform_subjects.py`
+    - 结果：`Ran 4 tests in 0.938s`，`OK`
+  - API 复核（test client）：
+    - 一致成功：`GET /api/trial_balance` -> `200`，`category_codes` 含 `ASSET/PNL`
+    - 不一致告警：`POST /books`（自定义不一致CSV）-> `201`，`category_validation.mismatch_count=1`，`mode=warn_only`
+    - 老数据 fallback：`GET /api/trial_balance` -> `200`，`item(1001).category_source=prefix_fallback`

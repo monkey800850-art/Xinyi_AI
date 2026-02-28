@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import text
 
 from app.db import get_engine
+from app.services.subject_category_service import check_category_consistency
 
 
 class StandardImportError(RuntimeError):
@@ -100,6 +101,7 @@ def _import_with_connection(
     inserted = 0
     failed = 0
     errors: List[str] = []
+    category_mismatch = 0
 
     existing = conn.execute(
         text(
@@ -133,6 +135,9 @@ def _import_with_connection(
                 continue
 
             flags = _derive_flags(note)
+            category_check = check_category_consistency(code, category)
+            if not category_check["ok"]:
+                category_mismatch += 1
 
             try:
                 conn.execute(
@@ -183,6 +188,12 @@ def _import_with_connection(
         "inserted": inserted,
         "failed": failed,
         "errors": errors,
+        "category_validation": {
+            "mismatch_count": category_mismatch,
+            "ok": category_mismatch == 0,
+            "mode": "warn_only",
+            "rule": "subject_code_prefix_vs_category_text",
+        },
     }
 
 

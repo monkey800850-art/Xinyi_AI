@@ -5,6 +5,7 @@ from typing import Dict, List
 from sqlalchemy import text
 
 from app.db import get_engine
+from app.services.subject_category_service import resolve_subject_category
 
 
 class TrialBalanceError(RuntimeError):
@@ -31,6 +32,17 @@ def _sum_children(nodes_by_code: Dict[str, Dict[str, object]], order: List[str])
             parent["ending_balance"] += node["ending_balance"]
 
 
+def _find_parent_by_prefix(code: str, existing_codes: set) -> str:
+    c = (code or "").strip()
+    if len(c) <= 4:
+        return ""
+    for cut in range(len(c) - 2, 3, -2):
+        p = c[:cut]
+        if p in existing_codes:
+            return p
+    return ""
+
+
 def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
     book_id_raw = (params.get("book_id") or "").strip()
     start_raw = (params.get("start_date") or "").strip()
@@ -52,7 +64,7 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
         subjects = conn.execute(
             text(
                 """
-                SELECT id, code, name, level, parent_code, balance_direction
+                SELECT id, code, name, category, level, parent_code, balance_direction
                 FROM subjects
                 WHERE book_id=:book_id
                 ORDER BY code ASC
@@ -88,8 +100,12 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
 
     nodes_by_code: Dict[str, Dict[str, object]] = {}
     order: List[str] = []
+    existing_codes = {s.code for s in subjects}
 
     for s in subjects:
+        parent_code = (s.parent_code or "").strip()
+        if not parent_code:
+            parent_code = _find_parent_by_prefix(s.code, existing_codes)
         sums_for = sum_map.get(s.code, {"debit": Decimal("0"), "credit": Decimal("0")})
         opening = Decimal("0")
         if (s.balance_direction or "").upper() == "CREDIT":
@@ -100,25 +116,52 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
         node = {
             "code": s.code,
             "name": s.name,
+            "category": s.category or "",
             "level": s.level,
-            "parent_code": s.parent_code,
+            "parent_code": parent_code or None,
             "opening_balance": opening,
+            "raw_period_debit": sums_for["debit"],
+            "raw_period_credit": sums_for["credit"],
+            "raw_ending_balance": ending,
             "period_debit": sums_for["debit"],
             "period_credit": sums_for["credit"],
             "ending_balance": ending,
         }
+        category_resolved = resolve_subject_category(s.code, s.category or "")
+        node["category_code"] = category_resolved["category_code"]
+        node["category_name"] = category_resolved["category_name"]
+        node["category_source"] = category_resolved["category_source"]
         nodes_by_code[s.code] = node
         order.append(s.code)
 
     _sum_children(nodes_by_code, order)
 
     items = []
+    category_summary: Dict[str, Dict[str, Decimal]] = {}
     for code in order:
         node = nodes_by_code[code]
+        cat_code = node.get("category_code") or "UNKNOWN"
+        cat_name = node.get("category_name") or "未分类"
+        cat_key = f"{cat_code}|{cat_name}"
+        if cat_key not in category_summary:
+            category_summary[cat_key] = {
+                "category_code": cat_code,
+                "category_name": cat_name,
+                "period_debit": Decimal("0"),
+                "period_credit": Decimal("0"),
+                "ending_balance": Decimal("0"),
+            }
+        category_summary[cat_key]["period_debit"] += node["raw_period_debit"]
+        category_summary[cat_key]["period_credit"] += node["raw_period_credit"]
+        category_summary[cat_key]["ending_balance"] += node["raw_ending_balance"]
         items.append(
             {
                 "code": node["code"],
                 "name": node["name"],
+                "category": node["category_name"],
+                "category_code": node["category_code"],
+                "category_name": node["category_name"],
+                "category_source": node["category_source"],
                 "level": node["level"],
                 "parent_code": node["parent_code"],
                 "opening_balance": float(node["opening_balance"]),
@@ -133,4 +176,15 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
         "start_date": start_date.isoformat(),
         "end_date": end_date.isoformat(),
         "items": items,
+        "category_summary": [
+            {
+                "category": v["category_name"],
+                "category_code": v["category_code"],
+                "category_name": v["category_name"],
+                "period_debit": float(v["period_debit"]),
+                "period_credit": float(v["period_credit"]),
+                "ending_balance": float(v["ending_balance"]),
+            }
+            for k, v in sorted(category_summary.items(), key=lambda x: x[0])
+        ],
     }
