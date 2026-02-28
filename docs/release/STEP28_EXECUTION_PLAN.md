@@ -258,3 +258,28 @@
   - `bonus_invalid_mode_fail`：HTTP `400`，`tax_mode must be one of: separate, merge`
   - `labor_ok`：HTTP `200`，`taxable_base=8000.0`，`tax_amount=1600.0`
   - `labor_invalid_amount_fail`：HTTP `400`，`gross_amount must be > 0`
+
+## 14. 第5轮-G 第二批统一回归与文档收口（2026-02-28）
+- 统一回归命令：
+  - `python3 -m unittest -v tests/test_step28_b_t1_template_preview.py tests/test_step28_batch2_platform_subjects.py tests/test_step28_c_subject_category.py tests/test_step28_batch2_tax_calcs.py`
+- 结果：
+  - `Ran 16 tests in 1.887s`
+  - `OK`
+- 页面不回归（Flask test_client）：
+  - `/dashboard=200`
+  - `/voucher/entry=200`
+  - `/reports/trial_balance=200`
+  - `/tax/summary=200`
+- 第二批状态汇总：
+  - A1：完成
+  - A2：完成
+  - B1+B2：完成（P0 关闭）
+  - C：完成
+  - D+E+F：完成
+  - G：完成
+- 已知限制（保留）：
+  - 年终奖 `merge` 为最小示例口径，未并入全年累计工资流水
+  - 劳务报酬未覆盖汇缴差异与非居民复杂规则
+  - P1 遗留：会计分录批量导入、账套导入
+- 第二批最终结论：`完成`
+- 下一步：`可进入第6轮 H（UI 全链测试）`

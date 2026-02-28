@@ -153,3 +153,36 @@ scripts/ops/db_restore_verify.sh --dump-file /tmp/step28_batch2_backups/xinyi_ai
 3. 年终奖 `merge` 采用最小可验证口径（仅以 bonus 作为综合所得计税基数，未并入全年工资流水）
 4. 劳务报酬按最小版预扣规则实现，未接入申报周期汇缴差异处理
 5. 本批保持最小改动，未引入 AI 识别/生成逻辑
+
+## 8. 第5轮 G 统一回归与收口（2026-02-28）
+
+### 8.1 统一回归（单测/API）
+命令：
+```bash
+python3 -m unittest -v tests/test_step28_b_t1_template_preview.py tests/test_step28_batch2_platform_subjects.py tests/test_step28_c_subject_category.py tests/test_step28_batch2_tax_calcs.py
+```
+结果：
+- `Ran 16 tests in 1.887s`
+- `OK`
+
+覆盖：
+- STEP28-B-T1：模板建议与规则校验（4）
+- 平台/P0：初始化、备份恢复验证、停用安全（4）
+- 科目优化：类别一致性、不一致告警、fallback（3）
+- 税务两项：年终奖切换、劳务报酬（5）
+
+### 8.2 关键页面不回归
+命令：Flask `test_client` 页面访问
+结果：
+- `GET /dashboard` -> `200`
+- `GET /voucher/entry` -> `200`
+- `GET /reports/trial_balance` -> `200`
+- `GET /tax/summary` -> `200`
+
+### 8.3 缺陷分级
+- 本轮回归未出现失败项。
+- P0：0，P1：沿用既有遗留（分录批量导入、账套导入），P2：0。
+
+### 8.4 第二批最终结论
+- 第二批完成：`完成`。
+- 可进入下一轮：`可进入 H（UI 全链测试）`。
