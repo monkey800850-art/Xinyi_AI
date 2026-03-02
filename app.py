@@ -73,6 +73,11 @@ from app.services.consolidation_adjustment_service import (
     create_consolidation_adjustment,
     list_consolidation_adjustments,
 )
+from app.services.consolidation_ownership_service import (
+    ConsolidationOwnershipError,
+    create_consolidation_ownership,
+    list_consolidation_ownership,
+)
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
@@ -1289,6 +1294,123 @@ def create_app() -> Flask:
             app.logger.exception("consolidation_adjustments_list_unexpected_error")
             _safe_log_consolidation_audit(
                 action="adjustments_get",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/ownership")
+    def api_consolidation_ownership_create():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload)
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of_raw = str(payload.get("effective_from") or "").strip()
+            as_of = date.fromisoformat(as_of_raw) if as_of_raw else date.today()
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = create_consolidation_ownership(payload)
+            _safe_log_consolidation_audit(
+                action="ownership_post",
+                group_id=group_id,
+                status="success",
+                code=201,
+                operator_id=operator_id,
+                payload=payload,
+                note="ownership_created",
+            )
+            return jsonify({"ok": True, "item": result}), 201
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="ownership_post",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationOwnershipError) as err:
+            _safe_log_consolidation_audit(
+                action="ownership_post",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_ownership_create_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="ownership_post",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/ownership")
+    def api_consolidation_ownership_list():
+        args = request.args.to_dict(flat=True)
+        operator_id = _get_operator_id()
+        group_id = None
+        try:
+            group_id = int(args.get("consolidation_group_id") or args.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(args.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = list_consolidation_ownership(args)
+            _safe_log_consolidation_audit(
+                action="ownership_get",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=args,
+                note="ownership_listed",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="ownership_get",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationOwnershipError) as err:
+            _safe_log_consolidation_audit(
+                action="ownership_get",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_ownership_list_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="ownership_get",
                 group_id=group_id,
                 status="failed",
                 code=500,
