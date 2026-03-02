@@ -1,4 +1,5 @@
 import io
+import calendar
 import re
 import sys
 from argparse import Namespace
@@ -66,6 +67,11 @@ from app.services.consolidation_authorization_service import (
     create_authorization,
     list_authorizations,
     set_authorization_status,
+)
+from app.services.consolidation_adjustment_service import (
+    ConsolidationAdjustmentError,
+    create_consolidation_adjustment,
+    list_consolidation_adjustments,
 )
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
@@ -235,6 +241,18 @@ def _safe_log_consolidation_audit(
         )
     except Exception:
         app.logger.exception("consolidation_audit_log_failed action=%s group_id=%s", action, group_id)
+
+
+def _period_to_as_of_date(period: str) -> date:
+    raw = str(period or "").strip()
+    if len(raw) != 7 or raw[4] != "-":
+        raise ValueError("period_invalid")
+    year = int(raw[:4])
+    month = int(raw[5:])
+    if month < 1 or month > 12:
+        raise ValueError("period_invalid")
+    day = calendar.monthrange(year, month)[1]
+    return date(year, month, day)
 
 
 def _build_main_nav(path: str):
@@ -1155,6 +1173,122 @@ def create_app() -> Flask:
             app.logger.exception("consolidation_read_probe_unexpected_error")
             _safe_log_consolidation_audit(
                 action="read_probe",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/adjustments")
+    def api_consolidation_adjustments_create():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload)
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = _period_to_as_of_date(str(payload.get("period") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = create_consolidation_adjustment(payload)
+            _safe_log_consolidation_audit(
+                action="adjustments_post",
+                group_id=group_id,
+                status="success",
+                code=201,
+                operator_id=operator_id,
+                payload=payload,
+                note="adjustment_created",
+            )
+            return jsonify({"ok": True, "item": result}), 201
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="adjustments_post",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationAdjustmentError) as err:
+            _safe_log_consolidation_audit(
+                action="adjustments_post",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_adjustments_create_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="adjustments_post",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/adjustments")
+    def api_consolidation_adjustments_list():
+        args = request.args.to_dict(flat=True)
+        operator_id = _get_operator_id()
+        group_id = None
+        try:
+            group_id = int(args.get("consolidation_group_id") or args.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = _period_to_as_of_date(str(args.get("period") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = list_consolidation_adjustments(args)
+            _safe_log_consolidation_audit(
+                action="adjustments_get",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=args,
+                note="adjustment_listed",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="adjustments_get",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationAdjustmentError) as err:
+            _safe_log_consolidation_audit(
+                action="adjustments_get",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_adjustments_list_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="adjustments_get",
                 group_id=group_id,
                 status="failed",
                 code=500,

@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Set, Tuple
 from sqlalchemy import bindparam, text
 
 from app.db_router import get_connection_provider
+from app.services.consolidation_adjustment_service import get_adjustment_totals_by_subject
 from app.services.consolidation_authorization_service import (
     ConsolidationAuthorizationError,
     assert_virtual_authorized,
@@ -427,6 +428,7 @@ def _resolve_scope(
             "scope_tree": scope_tree,
             "current_subject_name": str(group_row.group_name or f"合并组{consolidation_group_id}"),
             "scope_notice": f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}",
+            "effective_member_count": effective_member_count,
             "is_eliminated": False,
             "query_mode": "consolidation_group",
             "query_mode_label": "合并组模式（成员汇总）",
@@ -836,6 +838,7 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
     consolidation_group_id_raw = (params.get("consolidation_group_id") or "").strip()
     virtual_entity_id_raw = (params.get("virtual_entity_id") or "").strip()
     amount_node_id = str(params.get("amount_node_id") or "").strip()
+    scope_mode = str(params.get("scope") or "raw").strip().lower() or "raw"
     start_raw = (params.get("start_date") or "").strip()
     end_raw = (params.get("end_date") or "").strip()
 
@@ -843,6 +846,8 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
         raise TrialBalanceError("start_date/end_date required")
     if not book_id_raw and not consolidation_group_id_raw and not virtual_entity_id_raw:
         raise TrialBalanceError("book_id or consolidation_group_id or virtual_entity_id required")
+    if scope_mode not in ("raw", "after_elim"):
+        raise TrialBalanceError("scope_invalid")
 
     book_id = _parse_positive_int(book_id_raw, "book_id")
     consolidation_group_id = _parse_positive_int(consolidation_group_id_raw, "consolidation_group_id")
@@ -853,6 +858,7 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
 
     tenant_id = (params.get("tenant_id") or "").strip() or None
     provider = get_connection_provider()
+    adjustment_totals: Dict[str, Dict[str, Decimal]] = {}
     with provider.connect(tenant_id=tenant_id, book_id=book_id) as conn:
         if consolidation_group_id is not None:
             assert_virtual_authorized(conn, int(consolidation_group_id), end_date)
@@ -890,6 +896,13 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
             raise TrialBalanceError("amount_node_id_not_found")
 
         if not scope_book_ids:
+            empty_scope_notice = scope_data.get("scope_notice") or "当前范围无可用主体"
+            if consolidation_group_id is not None:
+                effective_member_count = int(scope_data.get("effective_member_count") or 0)
+                if scope_mode == "after_elim":
+                    empty_scope_notice = f"当前为合并组汇总口径（汇总+抵销后）；有效成员 {effective_member_count}"
+                else:
+                    empty_scope_notice = f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}"
             return {
                 "book_id": book_id,
                 "scope_type": scope_data.get("scope_type"),
@@ -913,7 +926,8 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
                 "virtual_entity_id": scope_data.get("virtual_entity_id"),
                 "virtual_entity_name": scope_data.get("virtual_entity_name", ""),
                 "is_eliminated": scope_data.get("is_eliminated"),
-                "scope_notice": scope_data.get("scope_notice") or "当前范围无可用主体",
+                "scope": scope_mode,
+                "scope_notice": empty_scope_notice,
                 "items": [],
                 "category_summary": [],
             }
@@ -952,6 +966,12 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
             ).bindparams(bindparam("book_ids", expanding=True)),
             {"book_ids": scope_book_ids, "start_date": start_date, "end_date": end_date},
         ).fetchall()
+        if consolidation_group_id is not None and scope_mode == "after_elim":
+            adjustment_totals = get_adjustment_totals_by_subject(
+                conn,
+                group_id=int(consolidation_group_id),
+                period=end_date.strftime("%Y-%m"),
+            )
 
     sum_map = {
         (row.code or "").strip(): {
@@ -960,6 +980,11 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
         }
         for row in sums
     }
+    if adjustment_totals:
+        for code, delta in adjustment_totals.items():
+            bucket = sum_map.setdefault(code, {"debit": Decimal("0"), "credit": Decimal("0")})
+            bucket["debit"] += Decimal(str(delta.get("debit") or 0))
+            bucket["credit"] += Decimal(str(delta.get("credit") or 0))
 
     nodes_by_code: Dict[str, Dict[str, object]] = {}
     order: List[str] = []
@@ -1039,6 +1064,14 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
             }
         )
 
+    scope_notice = scope_data.get("scope_notice") or "当前为单账套口径"
+    if consolidation_group_id is not None:
+        effective_member_count = int(scope_data.get("effective_member_count") or 0)
+        if scope_mode == "after_elim":
+            scope_notice = f"当前为合并组汇总口径（汇总+抵销后）；有效成员 {effective_member_count}"
+        else:
+            scope_notice = f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}"
+
     return {
         "book_id": book_id,
         "scope_type": scope_data.get("scope_type"),
@@ -1062,7 +1095,8 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
         "virtual_entity_id": scope_data.get("virtual_entity_id"),
         "virtual_entity_name": scope_data.get("virtual_entity_name", ""),
         "is_eliminated": scope_data.get("is_eliminated"),
-        "scope_notice": scope_data.get("scope_notice") or "当前为单账套口径",
+        "scope": scope_mode,
+        "scope_notice": scope_notice,
         "items": items,
         "category_summary": [
             {
