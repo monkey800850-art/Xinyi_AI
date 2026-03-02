@@ -61,7 +61,8 @@ def _row_to_dict(row) -> Dict[str, object]:
 
 def create_authorization(payload: Dict[str, object], operator: str = "", role: str = "") -> Dict[str, object]:
     virtual_subject_id = _parse_positive_int(payload.get("virtual_subject_id"), "virtual_subject_id")
-    operator_id = _parse_positive_int(payload.get("operator_id"), "operator_id")
+    operator_id_raw = payload.get("operator_id")
+    operator_id = int(operator_id_raw) if str(operator_id_raw or "").strip().isdigit() else 0
     approval_document_number = str(payload.get("approval_document_number") or "").strip()
     approval_document_name = str(payload.get("approval_document_name") or "").strip()
     if not approval_document_number:
