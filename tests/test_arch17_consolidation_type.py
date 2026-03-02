@@ -69,20 +69,40 @@ class Arch17ConsolidationTypeTest(unittest.TestCase):
             conn.execute(
                 text(
                     """
-                    CREATE TABLE IF NOT EXISTS consolidation_group_types (
+                    CREATE TABLE IF NOT EXISTS consolidation_ownership (
                         id BIGINT PRIMARY KEY AUTO_INCREMENT,
                         group_id BIGINT NOT NULL,
-                        consolidation_type VARCHAR(32) NOT NULL,
-                        note VARCHAR(255) NULL,
-                        created_by BIGINT NOT NULL DEFAULT 0,
-                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        updated_by BIGINT NOT NULL DEFAULT 0,
-                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        UNIQUE KEY uq_conso_group_types_group (group_id)
+                        parent_entity_id BIGINT NOT NULL,
+                        child_entity_id BIGINT NOT NULL,
+                        ownership_pct DECIMAL(9,6) NOT NULL,
+                        control_type VARCHAR(32) NULL,
+                        effective_from DATE NOT NULL,
+                        effective_to DATE NULL,
+                        status VARCHAR(16) NOT NULL DEFAULT 'active',
+                        is_enabled TINYINT NOT NULL DEFAULT 1,
+                        operator_id BIGINT NOT NULL DEFAULT 0,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
                     """
                 )
             )
+            def _has_col(table_name: str, col: str) -> bool:
+                row = conn.execute(
+                    text(
+                        """
+                        SELECT COUNT(*) AS cnt
+                        FROM information_schema.columns
+                        WHERE table_schema = DATABASE()
+                          AND table_name=:table_name
+                          AND column_name=:col
+                        """
+                    ),
+                    {"table_name": table_name, "col": col},
+                ).fetchone()
+                return int(row.cnt or 0) > 0
+
+            if not _has_col("consolidation_ownership", "control_type"):
+                conn.execute(text("ALTER TABLE consolidation_ownership ADD COLUMN control_type VARCHAR(32) NULL"))
             conn.execute(
                 text(
                     """
@@ -135,59 +155,86 @@ class Arch17ConsolidationTypeTest(unittest.TestCase):
                     SELECT COUNT(1) AS c
                     FROM consolidation_audit_log
                     WHERE group_id=:gid
-                      AND action IN ('type_get', 'type_post')
+                      AND action='type_post'
                     """
                 ),
                 {"gid": int(group_id)},
             ).fetchone()
         return int(row.c or 0)
 
-    def test_01_consolidation_type_contract_auth_and_validation(self):
+    def _insert_ownership(self, group_id: int):
+        with self.engine.begin() as conn:
+            conn.execute(
+                text("DELETE FROM consolidation_ownership WHERE group_id=:gid"),
+                {"gid": int(group_id)},
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO consolidation_ownership (
+                        group_id, parent_entity_id, child_entity_id, ownership_pct, control_type,
+                        effective_from, effective_to, status, is_enabled, operator_id
+                    ) VALUES
+                        (:gid, 1001, 2001, 0.80, 'same_control', '2025-01-01', '2025-12-31', 'active', 1, 1),
+                        (:gid, 1001, 2002, 0.60, 'purchase', '2025-01-01', '2025-12-31', 'active', 1, 1),
+                        (:gid, 1001, 2003, 0.30, 'same_control', '2025-01-01', '2025-12-31', 'active', 1, 1)
+                    """
+                ),
+                {"gid": int(group_id)},
+            )
+
+    def test_01_post_type_engine_same_vs_non_same_control(self):
         group_id = self._create_group()
+        self._insert_ownership(group_id)
 
-        unauth_get = self.client.get("/api/consolidation/type", query_string={"group_id": group_id})
-        self.assertEqual(unauth_get.status_code, 403, unauth_get.get_data(as_text=True))
-
-        unauth_post = self.client.post(
+        unauth = self.client.post(
             "/api/consolidation/type",
-            json={"group_id": group_id, "consolidation_type": "same_control", "operator_id": 1},
+            json={"consolidation_group_id": group_id, "as_of": "2025-03-01", "operator_id": 1},
         )
-        self.assertEqual(unauth_post.status_code, 403, unauth_post.get_data(as_text=True))
+        self.assertEqual(unauth.status_code, 403, unauth.get_data(as_text=True))
 
         self._grant(group_id)
         before = self._audit_count(group_id)
-
-        default_get = self.client.get("/api/consolidation/type", query_string={"group_id": group_id})
-        self.assertEqual(default_get.status_code, 200, default_get.get_data(as_text=True))
-        default_item = (default_get.get_json() or {}).get("item") or {}
-        self.assertEqual(str(default_item.get("consolidation_type") or ""), "purchase")
-        self.assertTrue(bool(default_item.get("is_default")))
-
-        set_same = self.client.post(
+        ok = self.client.post(
             "/api/consolidation/type",
-            json={"group_id": group_id, "consolidation_type": "same_control", "note": "arch17", "operator_id": 9},
+            json={"consolidation_group_id": group_id, "as_of": "2025-03-01", "operator_id": 1},
         )
-        self.assertEqual(set_same.status_code, 200, set_same.get_data(as_text=True))
-        same_item = (set_same.get_json() or {}).get("item") or {}
-        self.assertEqual(str(same_item.get("consolidation_type") or ""), "same_control")
-        self.assertEqual(str(same_item.get("note") or ""), "arch17")
+        self.assertEqual(ok.status_code, 200, ok.get_data(as_text=True))
+        body = ok.get_json() or {}
+        self.assertTrue(body.get("ok"))
+        self.assertEqual(int(body.get("group_id") or 0), group_id)
+        self.assertEqual(str(body.get("as_of") or ""), "2025-03-01")
 
-        set_purchase = self.client.post(
-            "/api/consolidation/type",
-            json={"group_id": group_id, "consolidation_type": "purchase", "operator_id": 9},
-        )
-        self.assertEqual(set_purchase.status_code, 200, set_purchase.get_data(as_text=True))
-        purchase_item = (set_purchase.get_json() or {}).get("item") or {}
-        self.assertEqual(str(purchase_item.get("consolidation_type") or ""), "purchase")
+        items = body.get("items") or []
+        self.assertEqual(len(items), 3)
+        d = {int(x["child_entity_id"]): x for x in items}
+        self.assertEqual(str(d[2001]["classification"]), "subsidiary")
+        self.assertEqual(str(d[2001]["consolidation_type"]), "same_control")
+        self.assertTrue(bool(d[2001]["controlled"]))
+
+        self.assertEqual(str(d[2002]["classification"]), "subsidiary")
+        self.assertEqual(str(d[2002]["consolidation_type"]), "non_same_control")
+        self.assertTrue(bool(d[2002]["controlled"]))
+
+        self.assertEqual(str(d[2003]["classification"]), "associate")
+        self.assertEqual(str(d[2003]["consolidation_type"]), "non_same_control")
+        self.assertFalse(bool(d[2003]["controlled"]))
+
+        self.assertTrue(str(d[2001].get("rationale") or "").strip())
+        summary = body.get("summary") or {}
+        self.assertEqual(int(summary.get("same_control_count") or 0), 1)
+        self.assertEqual(int(summary.get("non_same_control_count") or 0), 2)
+        self.assertEqual(int(summary.get("subsidiary_count") or 0), 2)
+        self.assertEqual(int(summary.get("associate_count") or 0), 1)
 
         invalid = self.client.post(
             "/api/consolidation/type",
-            json={"group_id": group_id, "consolidation_type": "invalid_type", "operator_id": 9},
+            json={"consolidation_group_id": group_id, "as_of": "", "operator_id": 1},
         )
         self.assertEqual(invalid.status_code, 400, invalid.get_data(as_text=True))
 
         after = self._audit_count(group_id)
-        self.assertGreaterEqual(after - before, 4)
+        self.assertGreaterEqual(after - before, 2)
 
 
 if __name__ == "__main__":

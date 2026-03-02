@@ -106,7 +106,12 @@ from app.services.consolidation_ic_asset_transfer_service import (
     ConsolidationIcAssetTransferError,
     generate_ic_asset_transfer_onboard,
 )
-from app.services.consolidation_type_service import ConsolidationTypeError, get_type, set_type
+from app.services.consolidation_type_service import (
+    ConsolidationTypeError,
+    evaluate_type,
+    get_type,
+    set_type,
+)
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
@@ -2169,9 +2174,10 @@ def create_app() -> Flask:
             group_id = int(payload.get("group_id") or payload.get("consolidation_group_id"))
             if group_id <= 0:
                 raise ValueError("group_id_invalid")
+            as_of = date.fromisoformat(str(payload.get("as_of") or "").strip())
             with get_connection_provider().connect() as conn:
-                assert_virtual_authorized(conn, group_id, date.today())
-            item = set_type(group_id, payload, operator_id=operator_id)
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = evaluate_type(group_id, as_of.isoformat())
             _safe_log_consolidation_audit(
                 action="type_post",
                 group_id=group_id,
@@ -2179,9 +2185,9 @@ def create_app() -> Flask:
                 code=200,
                 operator_id=operator_id,
                 payload=payload,
-                note=f"set_to={item.get('consolidation_type','')}",
+                note=f"as_of={as_of.isoformat()}",
             )
-            return jsonify({"ok": True, "item": item}), 200
+            return jsonify({"ok": True, **result}), 200
         except ConsolidationAuthorizationError as err:
             _safe_log_consolidation_audit(
                 action="type_post",
