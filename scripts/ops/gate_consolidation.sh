@@ -14,6 +14,7 @@ cleanup() {
     if [[ "${pid:-}" =~ ^[0-9]+$ ]]; then
       kill "$pid" 2>/dev/null || true
       wait "$pid" 2>/dev/null || true
+      sleep 0.3
     fi
   fi
 }
@@ -38,8 +39,25 @@ echo "[gate] 2/3 unit test"
 python3 -m pytest -q tests/test_cons_auth_gate_unit.py || fail_gate "unit_test"
 
 echo "[gate] 3/3 app endpoints"
-FLASK_ENV=production FLASK_DEBUG=0 \
-python3 app.py >"$APP_LOG" 2>&1 &
+python3 - <<'PY' >"$APP_LOG" 2>&1 &
+import os
+import importlib.util
+import pathlib
+
+os.environ["FLASK_ENV"] = "production"
+os.environ["FLASK_DEBUG"] = "0"
+
+app_path = pathlib.Path.cwd() / "app.py"
+spec = importlib.util.spec_from_file_location("xinyi_app_main", app_path)
+if spec is None or spec.loader is None:
+    raise RuntimeError(f"cannot load app module from {app_path}")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+create_app = getattr(module, "create_app")
+
+app = create_app()
+app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
+PY
 app_pid=$!
 echo "$app_pid" > "$APP_PID_FILE"
 
@@ -78,7 +96,7 @@ probe_http_code() {
   local url="$1"
   local code
   set +e
-  code="$(curl --max-time 5 -s -o /dev/null -w "%{http_code}" "$url")"
+  code="$(curl --noproxy '*' --max-time 5 -s -o /dev/null -w "%{http_code}" "$url")"
   local rc=$?
   set -e
   if [ "$rc" -ne 0 ]; then
@@ -88,13 +106,22 @@ probe_http_code() {
   fi
 }
 
+is_valid_http_code() {
+  local code="$1"
+  [[ "$code" =~ ^[0-9]{3}$ ]] && [ "$code" != "000" ]
+}
+
 ui_code="$(probe_http_code "http://127.0.0.1:5000/system/consolidation")"
 api_code="$(probe_http_code "http://127.0.0.1:5000/api/consolidation/parameters")"
 echo "[gate] /system/consolidation -> ${ui_code}"
 echo "[gate] /api/consolidation/parameters -> ${api_code}"
 
-if [ "$ui_code" = "000" ] || [ "$api_code" = "000" ]; then
-  fail_gate "gate3_http_probe_000" 1
+if ! is_valid_http_code "$ui_code" || ! is_valid_http_code "$api_code"; then
+  if [ "$ui_code" = "000" ] || [ "$api_code" = "000" ]; then
+    echo "===== proxy env ====="
+    env | grep -i proxy || echo "(no proxy env)"
+  fi
+  fail_gate "gate3_http_probe_invalid" 1
 fi
 
 echo "summary: PASS"
