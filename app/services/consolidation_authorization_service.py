@@ -188,7 +188,8 @@ def set_authorization_status(
     if next_status not in VALID_STATUS:
         raise ConsolidationAuthorizationError("status_invalid")
     tenant_id = str((payload or {}).get("tenant_id") or "").strip() or None
-    operator_id = _parse_positive_int((payload or {}).get("operator_id"), "operator_id")
+    operator_id_raw = (payload or {}).get("operator_id")
+    operator_id = int(operator_id_raw) if str(operator_id_raw or "").strip().isdigit() else 0
     provider = get_connection_provider()
     with provider.begin(tenant_id=tenant_id) as conn:
         existing = conn.execute(
