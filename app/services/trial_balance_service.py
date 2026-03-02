@@ -10,6 +10,7 @@ from app.services.consolidation_authorization_service import (
     ConsolidationAuthorizationError,
     assert_virtual_authorized,
 )
+from app.services.consolidation_parameters_service import get_trial_balance_scope_config
 from app.services.subject_category_service import resolve_subject_category
 
 
@@ -838,7 +839,8 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
     consolidation_group_id_raw = (params.get("consolidation_group_id") or "").strip()
     virtual_entity_id_raw = (params.get("virtual_entity_id") or "").strip()
     amount_node_id = str(params.get("amount_node_id") or "").strip()
-    scope_mode = str(params.get("scope") or "raw").strip().lower() or "raw"
+    scope_raw = str(params.get("scope") or "").strip().lower()
+    scope_mode = scope_raw or "raw"
     start_raw = (params.get("start_date") or "").strip()
     end_raw = (params.get("end_date") or "").strip()
 
@@ -859,9 +861,16 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
     tenant_id = (params.get("tenant_id") or "").strip() or None
     provider = get_connection_provider()
     adjustment_totals: Dict[str, Dict[str, Decimal]] = {}
+    method = "full"
+    default_scope = "raw"
     with provider.connect(tenant_id=tenant_id, book_id=book_id) as conn:
         if consolidation_group_id is not None:
             assert_virtual_authorized(conn, int(consolidation_group_id), end_date)
+            scope_cfg = get_trial_balance_scope_config(conn, int(consolidation_group_id), end_date)
+            method = str(scope_cfg.get("consolidation_method") or "full")
+            default_scope = str(scope_cfg.get("default_scope") or "raw")
+            if not scope_raw:
+                scope_mode = default_scope
         scope_data = _resolve_scope(
             conn,
             book_id=book_id,
@@ -900,9 +909,15 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
             if consolidation_group_id is not None:
                 effective_member_count = int(scope_data.get("effective_member_count") or 0)
                 if scope_mode == "after_elim":
-                    empty_scope_notice = f"当前为合并组汇总口径（汇总+抵销后）；有效成员 {effective_member_count}"
+                    empty_scope_notice = (
+                        f"当前为合并组汇总口径（汇总+抵销后）；有效成员 {effective_member_count}"
+                        f"；method={method}；default_scope={default_scope}"
+                    )
                 else:
-                    empty_scope_notice = f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}"
+                    empty_scope_notice = (
+                        f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}"
+                        f"；method={method}；default_scope={default_scope}"
+                    )
             return {
                 "book_id": book_id,
                 "scope_type": scope_data.get("scope_type"),
@@ -1068,9 +1083,15 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
     if consolidation_group_id is not None:
         effective_member_count = int(scope_data.get("effective_member_count") or 0)
         if scope_mode == "after_elim":
-            scope_notice = f"当前为合并组汇总口径（汇总+抵销后）；有效成员 {effective_member_count}"
+            scope_notice = (
+                f"当前为合并组汇总口径（汇总+抵销后）；有效成员 {effective_member_count}"
+                f"；method={method}；default_scope={default_scope}"
+            )
         else:
-            scope_notice = f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}"
+            scope_notice = (
+                f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}"
+                f"；method={method}；default_scope={default_scope}"
+            )
 
     return {
         "book_id": book_id,
