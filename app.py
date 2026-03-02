@@ -1,5 +1,7 @@
 import io
 import calendar
+import argparse
+import json
 import re
 import sys
 from argparse import Namespace
@@ -93,6 +95,10 @@ from app.services.consolidation_onboarding_ic_match_service import (
 from app.services.consolidation_purchase_method_service import (
     ConsolidationPurchaseMethodError,
     generate_purchase_method,
+)
+from app.services.consolidation_equity_method_service import (
+    ConsolidationEquityMethodError,
+    generate_equity_method,
 )
 from app.services.consolidation_unrealized_profit_service import (
     ConsolidationUnrealizedProfitError,
@@ -1690,6 +1696,90 @@ def create_app() -> Flask:
                 note="internal_error",
             )
             return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/equity_method/generate")
+    def api_consolidation_equity_method_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(payload.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = generate_equity_method(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="equity_method_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set={result.get('adjustment_set_id','')}",
+            )
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "adjustment_set_id": result.get("adjustment_set_id"),
+                        "counts": {"lines": int(result.get("line_count") or 0)},
+                        "preview_lines": result.get("preview_lines") or [],
+                        **result,
+                    }
+                ),
+                200,
+            )
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="equity_method_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationEquityMethodError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            status_code = 409 if msg in {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"} else 400
+            _safe_log_consolidation_audit(
+                action="equity_method_generate",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_equity_method_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="equity_method_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/task/cons-21")
+    def api_task_cons_21():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        try:
+            result = generate_equity_method(payload, operator_id=operator_id)
+            return jsonify({"status": "success", "message": "权益法核算完成", **result}), 200
+        except (TypeError, ValueError, ConsolidationEquityMethodError, ConsolidationAdjustmentError) as err:
+            return jsonify({"status": "failed", "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("task_cons_21_unexpected_error")
+            return jsonify({"status": "failed", "error": "internal_error"}), 500
 
     @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
     def api_consolidation_inventory_up_reversal_generate():
@@ -3489,6 +3579,54 @@ def create_app() -> Flask:
     return app
 
 
+def _run_cli_task() -> int | None:
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("--task", default="")
+    parser.add_argument("--action", default="")
+    parser.add_argument("--group-id", type=int, default=0)
+    parser.add_argument("--as-of", default="")
+    parser.add_argument("--associate-entity-id", type=int, default=0)
+    parser.add_argument("--opening-carrying-amount", default="0")
+    parser.add_argument("--ownership-pct", default="0")
+    parser.add_argument("--net-income", default="0")
+    parser.add_argument("--other-comprehensive-income", default="0")
+    parser.add_argument("--dividends", default="0")
+    parser.add_argument("--impairment", default="0")
+    parser.add_argument("--operator-id", type=int, default=1)
+    args, _unknown = parser.parse_known_args()
+
+    task = str(args.task or "").strip().upper()
+    action = str(args.action or "").strip().lower()
+    if not task and not action:
+        return None
+
+    if task == "CONS-21" and action == "equity_method_calculation":
+        payload = {
+            "consolidation_group_id": args.group_id,
+            "as_of": args.as_of,
+            "associate_entity_id": args.associate_entity_id,
+            "opening_carrying_amount": args.opening_carrying_amount,
+            "ownership_pct": args.ownership_pct,
+            "net_income": args.net_income,
+            "other_comprehensive_income": args.other_comprehensive_income,
+            "dividends": args.dividends,
+            "impairment": args.impairment,
+        }
+        try:
+            result = generate_equity_method(payload, operator_id=args.operator_id)
+            print(json.dumps({"ok": True, **result}, ensure_ascii=False))
+            return 0
+        except Exception as err:
+            print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
+            return 1
+
+    print(json.dumps({"ok": False, "error": "task_or_action_not_supported"}, ensure_ascii=False))
+    return 1
+
+
 if __name__ == "__main__":
+    cli_exit_code = _run_cli_task()
+    if cli_exit_code is not None:
+        sys.exit(cli_exit_code)
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=True)
