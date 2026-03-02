@@ -1,10 +1,14 @@
 import io
+import re
 import sys
+from argparse import Namespace
+from datetime import date
 
-from flask import Flask, jsonify, render_template, request, send_file
+from flask import Flask, jsonify, render_template, request, send_file, session
 
 from app.config import DatabaseConfigError, load_env
 from app.db import test_db_connection
+from app.db_router import clear_request_route_context, set_request_route_context
 from app.services.ar_ap_service import ArApError, get_aging_report, get_due_warnings, get_warning_summary
 from app.services.asset_service import (
     AssetError,
@@ -36,7 +40,30 @@ from app.services.book_service import (
     create_book_with_subject_init,
     disable_book,
     get_book_init_integrity,
+    list_books,
     verify_book_backup_snapshot,
+)
+from app.services.consolidation_service import (
+    ConsolidationError,
+    add_consolidation_group_member,
+    create_consolidation_group,
+    get_effective_group_members,
+)
+from app.services.consolidation_manage_service import (
+    ConsolidationManageError,
+    add_virtual_entity_member,
+    bind_non_legal_to_legal,
+    create_virtual_entity,
+    disable_virtual_entity_member,
+    get_virtual_entity_detail,
+    list_relation_overview,
+    list_virtual_entity_members,
+)
+from app.services.consolidation_authorization_service import (
+    ConsolidationAuthorizationError,
+    create_authorization,
+    list_authorizations,
+    set_authorization_status,
 )
 from app.services.dashboard_service import DashboardError, get_boss_metrics, get_workbench_metrics
 from app.services.depreciation_service import (
@@ -69,25 +96,37 @@ from app.services.system_service import (
     upsert_rule,
 )
 from app.services.ledger_service import LedgerError, get_subject_ledger, get_voucher_detail
+from app.services.master_data_service import (
+    MasterDataError,
+    get_subject_aux_effective,
+    list_master_items,
+    list_subject_aux_configs,
+    save_subject_aux_config,
+    upsert_master_item,
+)
 from app.services.payment_service import (
     PaymentError,
     approve_payment,
     create_or_update_payment,
+    delete_payment,
     execute_payment,
     get_payment_detail,
     list_payments,
     reject_payment,
     submit_payment,
+    void_payment,
 )
 from app.services.reimbursement_service import (
     ReimbursementError,
     approve_reimbursement,
     create_or_update_reimbursement,
+    delete_reimbursement,
     get_reimbursement_detail,
     get_reimbursement_stats,
     list_reimbursements,
     reject_reimbursement,
     submit_reimbursement,
+    void_reimbursement,
 )
 from app.services.tax_service import (
     TaxError,
@@ -103,15 +142,148 @@ from app.services.tax_service import (
     validate_tax,
 )
 from app.services.trial_balance_service import TrialBalanceError, get_trial_balance
+from app.services.voucher_import_service import (
+    VoucherImportError,
+    commit_vouchers_import,
+    get_voucher_import_template,
+    preview_vouchers_import,
+)
 from app.services.voucher_service import VoucherValidationError, save_voucher
 from app.services.voucher_template_service import VoucherTemplateError, build_template_preview
+from app.services.voucher_template_service import (
+    build_template_draft,
+    get_template_detail,
+    list_template_candidates,
+)
 from app.services.voucher_status_service import VoucherStatusError, change_voucher_status
 
 
 def _get_operator_from_headers():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        payload = {}
+
     operator = request.headers.get("X-User", "").strip()
     role = request.headers.get("X-Role", "").strip()
+
+    if not operator:
+        operator = str(payload.get("operator") or payload.get("user") or payload.get("username") or payload.get("maker") or "").strip()
+    if not role:
+        role = str(payload.get("role") or payload.get("operator_role") or "").strip()
+
+    if not operator:
+        operator = request.form.get("operator", "").strip() or request.args.get("operator", "").strip()
+    if not role:
+        role = request.form.get("role", "").strip() or request.args.get("role", "").strip()
+
+    auth_ctx = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
+    if not operator:
+        operator = str(auth_ctx.get("username") or "").strip()
+    if not role:
+        role = str(auth_ctx.get("role") or "").strip()
     return operator, role
+
+
+def _build_main_nav(path: str):
+    current = str(path or "").strip() or "/dashboard"
+    nav_groups = [
+        {
+            "key": "system",
+            "label": "系统管理",
+            "items": [
+                {"label": "工作台", "url": "/dashboard", "prefixes": ["/dashboard"]},
+                {"label": "系统用户", "url": "/system/users", "prefixes": ["/system/users"]},
+                {"label": "系统角色", "url": "/system/roles", "prefixes": ["/system/roles"]},
+                {"label": "系统规则", "url": "/system/rules", "prefixes": ["/system/rules"]},
+                {"label": "账套管理", "url": "/system/books", "prefixes": ["/system/books"]},
+                {"label": "账套关系与合并管理", "url": "/system/consolidation", "prefixes": ["/system/consolidation"]},
+                {"label": "建账初始化", "url": "/system/book-init", "prefixes": ["/system/book-init"]},
+                {"label": "系统测试初始化（样本）", "url": "/system/init", "prefixes": ["/system/init"]},
+                {"label": "系统审计日志", "url": "/system/audit", "prefixes": ["/system/audit"]},
+            ],
+        },
+        {
+            "key": "master",
+            "label": "基础资料 / 辅助管理",
+            "items": [
+                {"label": "科目辅助挂接", "url": "/masters/subjects/aux", "prefixes": ["/masters/subjects/aux"]},
+                {"label": "部门", "url": "/masters/departments", "prefixes": ["/masters/departments"]},
+                {"label": "个人", "url": "/masters/persons", "prefixes": ["/masters/persons"]},
+                {"label": "单位", "url": "/masters/entities", "prefixes": ["/masters/entities"]},
+                {"label": "项目", "url": "/masters/projects", "prefixes": ["/masters/projects"]},
+                {"label": "银行账户", "url": "/masters/bank_accounts", "prefixes": ["/masters/bank_accounts"]},
+            ],
+        },
+        {
+            "key": "voucher",
+            "label": "凭证与账务",
+            "items": [
+                {"label": "凭证录入", "url": "/voucher/entry", "prefixes": ["/voucher/entry"]},
+                {"label": "批量导入序时账", "url": "/voucher/import", "prefixes": ["/voucher/import"]},
+            ],
+        },
+        {
+            "key": "reports",
+            "label": "报表",
+            "items": [
+                {"label": "发生余额表", "url": "/reports/trial_balance", "prefixes": ["/reports/trial_balance"]},
+                {"label": "科目明细账", "url": "/reports/subject_ledger", "prefixes": ["/reports/subject_ledger"]},
+                {"label": "辅助余额与明细", "url": "/reports/aux_reports", "prefixes": ["/reports/aux_reports"]},
+                {"label": "应收应付账龄", "url": "/reports/ar_ap", "prefixes": ["/reports/ar_ap"]},
+            ],
+        },
+        {
+            "key": "tax",
+            "label": "税务",
+            "items": [
+                {"label": "税务发票", "url": "/tax/invoices", "prefixes": ["/tax/invoices"]},
+                {"label": "税务汇总", "url": "/tax/summary", "prefixes": ["/tax/summary"]},
+                {"label": "税务规则", "url": "/tax/rules", "prefixes": ["/tax/rules"]},
+            ],
+        },
+        {
+            "key": "funds",
+            "label": "资金",
+            "items": [
+                {"label": "银行导入", "url": "/banks/import", "prefixes": ["/banks/import"]},
+                {"label": "银行对账", "url": "/banks/reconcile", "prefixes": ["/banks/reconcile"]},
+                {"label": "支付申请", "url": "/payments", "prefixes": ["/payments", "/payments/"]},
+                {"label": "新建支付申请", "url": "/payments/new", "prefixes": ["/payments/new"]},
+            ],
+        },
+        {
+            "key": "reimbursement",
+            "label": "费用报销",
+            "items": [
+                {"label": "报销管理", "url": "/reimbursements", "prefixes": ["/reimbursements", "/reimbursements/"]},
+                {"label": "新建报销单", "url": "/reimbursements/new", "prefixes": ["/reimbursements/new"]},
+            ],
+        },
+        {
+            "key": "assets",
+            "label": "资产",
+            "items": [
+                {"label": "资产台账", "url": "/assets", "prefixes": ["/assets", "/assets/"]},
+                {"label": "新建资产卡片", "url": "/assets/new", "prefixes": ["/assets/new"]},
+                {"label": "资产类别", "url": "/assets/categories", "prefixes": ["/assets/categories"]},
+                {"label": "资产变动", "url": "/assets/changes", "prefixes": ["/assets/changes"]},
+                {"label": "资产折旧", "url": "/assets/depreciation", "prefixes": ["/assets/depreciation"]},
+                {"label": "资产台账报表", "url": "/assets/reports/ledger", "prefixes": ["/assets/reports/ledger"]},
+                {"label": "资产折旧汇总", "url": "/assets/reports/depreciation", "prefixes": ["/assets/reports/depreciation"]},
+            ],
+        },
+    ]
+
+    current_title = "工作台"
+    for group in nav_groups:
+        group["active"] = False
+        for item in group["items"]:
+            active = current == item["url"] or any(current.startswith(p) for p in item.get("prefixes", []))
+            item["active"] = bool(active)
+            if active:
+                group["active"] = True
+                current_title = item["label"]
+    return nav_groups, current_title
 
 
 def create_app() -> Flask:
@@ -128,6 +300,143 @@ def create_app() -> Flask:
         sys.exit(1)
 
     app = Flask(__name__)
+    app.secret_key = "xinyi_ai_dev_secret_key"
+
+    @app.context_processor
+    def _inject_main_nav():
+        nav_groups, current_title = _build_main_nav(request.path)
+        auth_ctx = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
+        book_ctx = session.get("book_ctx") if isinstance(session.get("book_ctx"), dict) else {}
+        subject_ctx = session.get("subject_ctx") if isinstance(session.get("subject_ctx"), dict) else {}
+        current_subject_type = (
+            request.headers.get("X-Subject-Type")
+            or request.args.get("subject_type")
+            or request.form.get("subject_type")
+            or str(subject_ctx.get("subject_type") or "")
+        ).strip()
+        current_subject_id = (
+            request.headers.get("X-Subject-Id")
+            or request.args.get("subject_id")
+            or request.form.get("subject_id")
+            or str(subject_ctx.get("subject_id") or "")
+        ).strip()
+        if not current_subject_type and current_subject_id:
+            current_subject_type = "book"
+        if not current_subject_type:
+            current_subject_type = "book"
+        return {
+            "nav_groups": nav_groups,
+            "current_nav_title": current_title,
+            "current_user_name": (
+                request.headers.get("X-User") or request.args.get("user") or str(auth_ctx.get("username") or "")
+            ).strip(),
+            "current_user_role": (
+                request.headers.get("X-Role") or request.args.get("role") or str(auth_ctx.get("role") or "")
+            ).strip(),
+            "current_book_id": (
+                request.headers.get("X-Book-Id")
+                or request.args.get("book_id")
+                or request.form.get("book_id")
+                or str(book_ctx.get("book_id") or "")
+            ).strip()
+            if current_subject_type == "book"
+            else "",
+            "current_subject_type": current_subject_type,
+            "current_subject_id": current_subject_id,
+        }
+
+    def _extract_route_context():
+        tenant_id = (request.headers.get("X-Tenant-Id") or "").strip()
+        book_id = (request.headers.get("X-Book-Id") or "").strip()
+
+        if request.view_args and "book_id" in request.view_args:
+            book_id = str(request.view_args.get("book_id") or "").strip()
+        if not book_id:
+            book_id = (request.args.get("book_id") or "").strip()
+        if not book_id:
+            book_id = (request.form.get("book_id") or "").strip()
+
+        payload = request.get_json(silent=True)
+        if isinstance(payload, dict):
+            if not tenant_id:
+                tenant_id = str(payload.get("tenant_id") or "").strip()
+            if not book_id:
+                book_id = str(payload.get("book_id") or "").strip()
+
+        if not tenant_id:
+            tenant_id = (request.args.get("tenant_id") or "").strip()
+        if not tenant_id:
+            tenant_id = (request.form.get("tenant_id") or "").strip()
+
+        return tenant_id or None, book_id or None
+
+    @app.before_request
+    def _bind_route_context():
+        tenant_id, book_id = _extract_route_context()
+        set_request_route_context(tenant_id=tenant_id, book_id=book_id)
+        operator, role = _get_operator_from_headers()
+        if operator or role:
+            current = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
+            session["auth_ctx"] = {
+                "username": operator or str(current.get("username") or ""),
+                "role": role or str(current.get("role") or ""),
+            }
+        payload = request.get_json(silent=True)
+        subject_type = (
+            request.headers.get("X-Subject-Type")
+            or request.args.get("subject_type")
+            or request.form.get("subject_type")
+            or (str(payload.get("subject_type") or "").strip() if isinstance(payload, dict) else "")
+        ).strip().lower()
+        subject_id = (
+            request.headers.get("X-Subject-Id")
+            or request.args.get("subject_id")
+            or request.form.get("subject_id")
+            or (str(payload.get("subject_id") or "").strip() if isinstance(payload, dict) else "")
+        ).strip()
+        if not subject_type and subject_id:
+            subject_type = "book"
+        if not subject_type and book_id:
+            subject_type = "book"
+            subject_id = str(book_id)
+        if subject_type in ("book", "virtual") and subject_id:
+            session["subject_ctx"] = {
+                "subject_type": subject_type,
+                "subject_id": str(subject_id),
+            }
+
+        if book_id and str(subject_type or "book") == "book":
+            session["book_ctx"] = {"book_id": str(book_id)}
+
+    @app.teardown_request
+    def _clear_route_context(_err):
+        clear_request_route_context()
+
+    @app.after_request
+    def _inject_request_context_script(response):
+        try:
+            content_type = (response.headers.get("Content-Type") or "").lower()
+            if "text/html" not in content_type:
+                return response
+            html = response.get_data(as_text=True)
+            inject = ""
+            if "/static/js/request_context.js" not in html:
+                inject += '<script src="/static/js/request_context.js"></script>'
+            if "/static/js/navigation_rules.js" not in html:
+                inject += '<script src="/static/js/navigation_rules.js"></script>'
+            if inject:
+                html2 = re.sub(
+                    r"(<body[^>]*>)",
+                    r"\1" + inject,
+                    html,
+                    count=1,
+                    flags=re.IGNORECASE,
+                )
+                if html2 != html:
+                    response.set_data(html2)
+        except Exception:
+            return response
+        return response
 
     @app.get("/")
     def health():
@@ -152,6 +461,10 @@ def create_app() -> Flask:
     @app.get("/voucher/entry")
     def voucher_entry():
         return render_template("voucher_entry.html")
+
+    @app.get("/voucher/import")
+    def voucher_import_page():
+        return render_template("voucher_import.html")
 
     @app.get("/reports/trial_balance")
     def trial_balance_page():
@@ -203,6 +516,32 @@ def create_app() -> Flask:
     def bank_reconcile_page():
         return render_template("bank_reconcile.html")
 
+    @app.get("/masters/departments")
+    def master_departments_page():
+        return render_template("master_data.html", master_kind="departments", master_label="部门")
+
+    @app.get("/masters/persons")
+    def master_persons_page():
+        return render_template("master_data.html", master_kind="persons", master_label="个人")
+
+    @app.get("/masters/entities")
+    def master_entities_page():
+        return render_template("master_data.html", master_kind="entities", master_label="单位")
+
+    @app.get("/masters/projects")
+    def master_projects_page():
+        return render_template("master_data.html", master_kind="projects", master_label="项目")
+
+    @app.get("/masters/bank_accounts")
+    def master_bank_accounts_page():
+        return render_template(
+            "master_data.html", master_kind="bank_accounts", master_label="银行账户"
+        )
+
+    @app.get("/masters/subjects/aux")
+    def subject_aux_config_page():
+        return render_template("subject_aux_config.html")
+
     @app.get("/tax/rules")
     def tax_rules_page():
         return render_template("tax_rules.html")
@@ -247,9 +586,25 @@ def create_app() -> Flask:
     def system_rules_page():
         return render_template("system_rules.html")
 
+    @app.get("/system/books")
+    def system_books_page():
+        return render_template("system_books.html")
+
+    @app.get("/system/consolidation")
+    def system_consolidation_page():
+        return render_template("system_consolidation.html")
+
+    @app.get("/system/book-init")
+    def system_book_init_page():
+        return render_template("system_book_init.html")
+
     @app.get("/system/audit")
     def system_audit_page():
         return render_template("audit_logs.html")
+
+    @app.get("/system/init")
+    def system_init_page():
+        return render_template("system_init.html")
 
     @app.get("/assets")
     def assets_list_page():
@@ -270,10 +625,70 @@ def create_app() -> Flask:
             result = create_book_with_subject_init(payload)
             return jsonify(result), 201
         except BookCreateError as err:
-            app.logger.error("book_create_error: %s", err)
+            app.logger.exception("book_create_error")
             return jsonify({"error": str(err)}), 400
         except Exception as err:
-            app.logger.exception("book_create_unexpected_error")
+            app.logger.exception("book_create_unexpected_error: %s", err)
+            return jsonify({"error": "建账失败，请联系管理员并查看服务日志(book_create_unexpected_error)"}), 500
+
+    @app.get("/api/books")
+    def api_list_books():
+        try:
+            result = list_books(request.args)
+            return jsonify(result), 200
+        except BookManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("book_list_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/subjects/switchable")
+    def api_switchable_subjects():
+        try:
+            books_result = list_books(request.args)
+            relation = list_relation_overview(request.args.to_dict(flat=True))
+            books = books_result.get("items") or []
+            virtual_entities = relation.get("virtual_entities") or []
+
+            items = []
+            for b in books:
+                items.append(
+                    {
+                        "subject_type": "book",
+                        "subject_id": int(b.get("book_id") or b.get("id")),
+                        "subject_name": str(b.get("book_name") or ""),
+                        "subject_code": str(b.get("book_code") or ""),
+                        "status": str(b.get("status") or ""),
+                        "is_enabled": int(b.get("is_enabled") or 0),
+                        "book_id": int(b.get("book_id") or b.get("id")),
+                        "book_name": str(b.get("book_name") or ""),
+                        "book_code": str(b.get("book_code") or ""),
+                    }
+                )
+            for v in virtual_entities:
+                sid = int(v.get("id") or 0)
+                if not sid:
+                    continue
+                items.append(
+                    {
+                        "subject_type": "virtual",
+                        "subject_id": sid,
+                        "subject_name": str(v.get("virtual_name") or ""),
+                        "subject_code": str(v.get("virtual_code") or ""),
+                        "status": "enabled" if int(v.get("is_enabled") or 0) == 1 else "disabled",
+                        "is_enabled": int(v.get("is_enabled") or 0),
+                        "virtual_id": sid,
+                        "virtual_name": str(v.get("virtual_name") or ""),
+                        "virtual_code": str(v.get("virtual_code") or ""),
+                        "member_count": int(v.get("member_count") or 0),
+                    }
+                )
+
+            return jsonify({"items": items, "books": books, "virtual_entities": virtual_entities}), 200
+        except (BookManageError, ConsolidationManageError) as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("switchable_subjects_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
 
     @app.get("/api/books/<int:book_id>/init-integrity")
@@ -356,7 +771,7 @@ def create_app() -> Flask:
 
     @app.get("/api/dashboard/boss")
     def api_dashboard_boss():
-        role = request.headers.get("X-Role", "").strip()
+        _, role = _get_operator_from_headers()
         if role not in ("boss", "admin"):
             return jsonify({"error": "forbidden"}), 403
         try:
@@ -365,10 +780,70 @@ def create_app() -> Flask:
         except DashboardError as err:
             return jsonify({"error": str(err)}), 400
 
+    @app.post("/api/system/init/reset-and-seed")
+    def api_system_init_reset_and_seed():
+        operator, role = _get_operator_from_headers()
+        role = str(role or "").strip().lower()
+        if role not in ("admin", "tester"):
+            return jsonify({"error": "forbidden"}), 403
+
+        payload = request.get_json(silent=True) or {}
+
+        def _as_bool(value) -> bool:
+            if isinstance(value, bool):
+                return value
+            return str(value or "").strip().lower() in ("1", "true", "yes", "y", "on")
+
+        standards_raw = payload.get("standards")
+        if isinstance(standards_raw, list):
+            standards = ",".join([str(x).strip() for x in standards_raw if str(x).strip()])
+        else:
+            standards = str(standards_raw or "small,enterprise").strip()
+
+        dry_run = _as_bool(payload.get("dry_run"))
+        force = _as_bool(payload.get("force")) or (not dry_run)
+        allow_production = _as_bool(payload.get("allow_production"))
+        seed_batch_code = str(payload.get("seed_batch_code") or f"UI-INIT-{date.today().strftime('%Y%m%d')}").strip()
+
+        args = Namespace(
+            dry_run=dry_run,
+            force=force,
+            allow_production=allow_production,
+            standards=standards,
+            seed_batch_code=seed_batch_code,
+        )
+
+        try:
+            from scripts.reset_and_seed_sample_data import run as run_data_init
+
+            summary = run_data_init(args)
+            log_audit(
+                "system",
+                "data_init_run",
+                "system_init",
+                None,
+                operator,
+                role,
+                {
+                    "dry_run": 1 if dry_run else 0,
+                    "standards": standards,
+                    "seed_batch_code": seed_batch_code,
+                },
+            )
+            return jsonify({"ok": True, "summary": summary}), 200
+        except Exception as err:
+            app.logger.exception("system_init_run_failed")
+            return jsonify({"error": str(err)}), 400
+
     @app.get("/api/autocomplete")
     def api_autocomplete():
         try:
-            result = autocomplete(request.args)
+            params = request.args.to_dict(flat=True)
+            _, role = _get_operator_from_headers()
+            role = str(role or "").strip().lower()
+            if "include_hidden" not in params and role in ("tester", "admin"):
+                params["include_hidden"] = "1"
+            result = autocomplete(params)
             return jsonify({"items": result}), 200
         except AutocompleteError as err:
             app.logger.error("autocomplete_error: %s", err)
@@ -397,6 +872,275 @@ def create_app() -> Flask:
             return jsonify({"error": str(err)}), 400
         except Exception:
             app.logger.exception("subject_ledger_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/masters/<string:kind>")
+    def api_list_master_items(kind: str):
+        try:
+            params = request.args.to_dict(flat=True)
+            _, role = _get_operator_from_headers()
+            role = str(role or "").strip().lower()
+            if "include_hidden" not in params and role in ("tester", "admin"):
+                params["include_hidden"] = "1"
+            result = list_master_items(kind, params)
+            return jsonify(result), 200
+        except MasterDataError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("master_list_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/masters/<string:kind>")
+    def api_save_master_item(kind: str):
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = upsert_master_item(kind, payload)
+            return jsonify(result), 200
+        except MasterDataError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("master_save_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/subjects/aux")
+    def api_list_subject_aux_configs():
+        try:
+            result = list_subject_aux_configs(request.args)
+            return jsonify(result), 200
+        except MasterDataError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("subject_aux_list_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/subjects/aux")
+    def api_save_subject_aux_config():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = save_subject_aux_config(payload)
+            return jsonify(result), 200
+        except MasterDataError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("subject_aux_save_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/subjects/aux/effective")
+    def api_subject_aux_effective():
+        try:
+            result = get_subject_aux_effective(request.args)
+            return jsonify(result), 200
+        except MasterDataError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("subject_aux_effective_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/groups")
+    def api_create_consolidation_group():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_consolidation_group(payload)
+            return jsonify(result), 201
+        except ConsolidationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_group_create_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/groups/<int:group_id>/members")
+    def api_add_consolidation_group_member(group_id: int):
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = add_consolidation_group_member(group_id, payload)
+            return jsonify(result), 201
+        except ConsolidationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_group_member_add_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/groups/<int:group_id>/members/effective")
+    def api_get_consolidation_group_members_effective(group_id: int):
+        try:
+            result = get_effective_group_members(group_id, request.args)
+            return jsonify(result), 200
+        except ConsolidationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_group_member_effective_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/relations/overview")
+    def api_consolidation_relations_overview():
+        try:
+            result = list_relation_overview(request.args.to_dict(flat=True))
+            return jsonify(result), 200
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_relations_overview_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/relations/non-legal-bind")
+    def api_consolidation_bind_non_legal():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = bind_non_legal_to_legal(payload)
+            return jsonify(result), 200
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_bind_non_legal_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/virtual-entities")
+    def api_consolidation_virtual_entities():
+        try:
+            result = list_relation_overview(request.args.to_dict(flat=True))
+            return jsonify({"items": result.get("virtual_entities") or []}), 200
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_virtual_entities_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/virtual-entities")
+    def api_consolidation_virtual_entities_create():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_virtual_entity(payload)
+            return jsonify(result), 201
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_virtual_entities_create_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/virtual-entities/<int:virtual_id>")
+    def api_consolidation_virtual_detail(virtual_id: int):
+        try:
+            result = get_virtual_entity_detail(virtual_id)
+            return jsonify(result), 200
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_virtual_detail_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/virtual-entities/<int:virtual_id>/members")
+    def api_consolidation_virtual_members(virtual_id: int):
+        try:
+            result = list_virtual_entity_members(virtual_id)
+            return jsonify(result), 200
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_virtual_members_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/virtual-entities/<int:virtual_id>/members")
+    def api_consolidation_virtual_members_add(virtual_id: int):
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = add_virtual_entity_member(virtual_id, payload)
+            return jsonify(result), 201
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_virtual_members_add_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/members/<int:member_id>/disable")
+    def api_consolidation_member_disable(member_id: int):
+        try:
+            result = disable_virtual_entity_member(member_id)
+            return jsonify(result), 200
+        except ConsolidationManageError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_member_disable_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/authorizations")
+    def api_consolidation_authorization_create():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_authorization(payload, operator=operator, role=role)
+            return jsonify(result), 201
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_authorization_create_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/authorizations")
+    def api_consolidation_authorization_list():
+        try:
+            result = list_authorizations(request.args.to_dict(flat=True))
+            return jsonify(result), 200
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_authorization_list_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.patch("/api/authorizations/<int:authorization_id>/activate")
+    def api_consolidation_authorization_activate(authorization_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = set_authorization_status(
+                authorization_id,
+                "active",
+                operator=operator,
+                role=role,
+                payload=payload,
+            )
+            return jsonify(result), 200
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_authorization_activate_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.patch("/api/authorizations/<int:authorization_id>/suspend")
+    def api_consolidation_authorization_suspend(authorization_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = set_authorization_status(
+                authorization_id,
+                "suspended",
+                operator=operator,
+                role=role,
+                payload=payload,
+            )
+            return jsonify(result), 200
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_authorization_suspend_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.patch("/api/authorizations/<int:authorization_id>/revoke")
+    def api_consolidation_authorization_revoke(authorization_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = set_authorization_status(
+                authorization_id,
+                "revoked",
+                operator=operator,
+                role=role,
+                payload=payload,
+            )
+            return jsonify(result), 200
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_authorization_revoke_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
 
     @app.get("/api/aux_balance")
@@ -696,6 +1440,7 @@ def create_app() -> Flask:
         username = payload.get("username") or ""
         operator = (payload.get("operator") or username or "").strip()
         role = (payload.get("role") or "").strip()
+        session["auth_ctx"] = {"username": operator, "role": role}
         log_audit("auth", "login", "user", None, operator, role, {"username": username})
         return jsonify({"status": "ok"}), 200
 
@@ -705,6 +1450,7 @@ def create_app() -> Flask:
         username = payload.get("username") or ""
         operator = (payload.get("operator") or username or "").strip()
         role = (payload.get("role") or "").strip()
+        session.pop("auth_ctx", None)
         log_audit("auth", "logout", "user", None, operator, role, {"username": username})
         return jsonify({"status": "ok"}), 200
 
@@ -886,6 +1632,43 @@ def create_app() -> Flask:
         except ReimbursementError as err:
             return jsonify({"error": str(err)}), 400
 
+    @app.post("/api/reimbursements/<int:reimbursement_id>/void")
+    def api_reimbursement_void(reimbursement_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = void_reimbursement(reimbursement_id, operator, role, payload.get("reason"))
+            log_audit(
+                "reimbursement",
+                "void",
+                "reimbursement",
+                reimbursement_id,
+                operator,
+                role,
+                {"reason": payload.get("reason") or "", "from_status": result.get("from_status"), "to_status": result.get("to_status")},
+            )
+            return jsonify(result), 200
+        except ReimbursementError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.delete("/api/reimbursements/<int:reimbursement_id>")
+    def api_reimbursement_delete(reimbursement_id: int):
+        operator, role = _get_operator_from_headers()
+        try:
+            result = delete_reimbursement(reimbursement_id, operator, role)
+            log_audit(
+                "reimbursement",
+                "delete",
+                "reimbursement",
+                reimbursement_id,
+                operator,
+                role,
+                {"from_status": result.get("from_status"), "to_status": result.get("to_status")},
+            )
+            return jsonify(result), 200
+        except ReimbursementError as err:
+            return jsonify({"error": str(err)}), 400
+
     @app.get("/api/payments")
     def api_payments_list():
         try:
@@ -965,6 +1748,43 @@ def create_app() -> Flask:
         try:
             result = execute_payment(payment_id, operator, role)
             log_audit("payment", "execute", "payment", payment_id, operator, role, {})
+            return jsonify(result), 200
+        except PaymentError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/payments/<int:payment_id>/void")
+    def api_payment_void(payment_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = void_payment(payment_id, operator, role, payload.get("reason"))
+            log_audit(
+                "payment",
+                "void",
+                "payment",
+                payment_id,
+                operator,
+                role,
+                {"reason": payload.get("reason") or "", "from_status": result.get("from_status"), "to_status": result.get("to_status")},
+            )
+            return jsonify(result), 200
+        except PaymentError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.delete("/api/payments/<int:payment_id>")
+    def api_payment_delete(payment_id: int):
+        operator, role = _get_operator_from_headers()
+        try:
+            result = delete_payment(payment_id, operator, role)
+            log_audit(
+                "payment",
+                "delete",
+                "payment",
+                payment_id,
+                operator,
+                role,
+                {"from_status": result.get("from_status"), "to_status": result.get("to_status")},
+            )
             return jsonify(result), 200
         except PaymentError as err:
             return jsonify({"error": str(err)}), 400
@@ -1204,6 +2024,86 @@ def create_app() -> Flask:
             app.logger.exception("voucher_save_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
 
+    @app.get("/api/vouchers/import/template")
+    def api_voucher_import_template():
+        try:
+            filename, content = get_voucher_import_template()
+            return send_file(
+                io.BytesIO(content),
+                as_attachment=True,
+                download_name=filename,
+                mimetype="text/csv",
+            )
+        except Exception:
+            app.logger.exception("voucher_import_template_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/vouchers/import/preview")
+    def api_voucher_import_preview():
+        operator, role = _get_operator_from_headers()
+        file = request.files.get("file")
+        if not file:
+            return jsonify({"error": "file required"}), 400
+        payload = {
+            "book_id": request.form.get("book_id") or request.args.get("book_id") or request.headers.get("X-Book-Id"),
+            "maker": request.form.get("maker") or operator,
+        }
+        try:
+            result = preview_vouchers_import(payload, file.filename or "voucher_import.csv", file.read())
+            log_audit(
+                "voucher_import",
+                "preview",
+                "voucher_import_batch",
+                None,
+                operator,
+                role,
+                {
+                    "book_id": payload.get("book_id"),
+                    "error_count": int(result.get("error_count") or 0),
+                    "voucher_groups": int((result.get("summary") or {}).get("voucher_groups") or 0),
+                },
+            )
+            return jsonify(result), 200
+        except VoucherImportError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("voucher_import_preview_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/vouchers/import/commit")
+    def api_voucher_import_commit():
+        operator, role = _get_operator_from_headers()
+        file = request.files.get("file")
+        if not file:
+            return jsonify({"error": "file required"}), 400
+        payload = {
+            "book_id": request.form.get("book_id") or request.args.get("book_id") or request.headers.get("X-Book-Id"),
+            "maker": request.form.get("maker") or operator,
+        }
+        try:
+            result = commit_vouchers_import(payload, file.filename or "voucher_import.csv", file.read())
+            status = 200 if int(result.get("error_count") or 0) == 0 else 400
+            log_audit(
+                "voucher_import",
+                "commit",
+                "voucher_import_batch",
+                None,
+                operator,
+                role,
+                {
+                    "book_id": payload.get("book_id"),
+                    "error_count": int(result.get("error_count") or 0),
+                    "imported_voucher_count": int((result.get("summary") or {}).get("imported_voucher_count") or 0),
+                    "imported_line_count": int((result.get("summary") or {}).get("imported_line_count") or 0),
+                },
+            )
+            return jsonify(result), status
+        except VoucherImportError as err:
+            return jsonify({"error": str(err)}), 400
+        except Exception:
+            app.logger.exception("voucher_import_commit_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
     def _run_voucher_template_preview(action_name: str):
         operator, role = _get_operator_from_headers()
         payload = request.get_json(silent=True) or {}
@@ -1245,6 +2145,65 @@ def create_app() -> Flask:
     @app.post("/api/vouchers/template-suggest")
     def api_voucher_template_suggest():
         return _run_voucher_template_preview("template_suggest")
+
+    @app.get("/api/voucher-templates/search")
+    def api_voucher_template_search():
+        try:
+            result = list_template_candidates(request.args.to_dict(flat=True))
+            return jsonify(result), 200
+        except VoucherTemplateError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+        except Exception:
+            app.logger.exception("voucher_template_search_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/voucher-templates/detail")
+    def api_voucher_template_detail():
+        try:
+            result = get_template_detail(request.args.to_dict(flat=True))
+            return jsonify(result), 200
+        except VoucherTemplateError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+        except Exception:
+            app.logger.exception("voucher_template_detail_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/vouchers/template-draft")
+    def api_voucher_template_draft():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = build_template_draft(
+                payload.get("book_id"),
+                payload.get("template_code"),
+                payload.get("params") or {},
+                standard_type=payload.get("standard_type") or "",
+                aux_context=payload.get("aux_context") or {},
+                operator=operator,
+                role=role,
+            )
+            log_audit(
+                "voucher",
+                "template_draft",
+                "voucher_template",
+                None,
+                operator,
+                role,
+                {
+                    "book_id": payload.get("book_id"),
+                    "template_code": payload.get("template_code"),
+                    "success": bool(result.get("success")),
+                    "error_count": len(result.get("errors") or []),
+                    "aux_missing_count": len(result.get("required_aux_inputs") or []),
+                },
+            )
+            status = 200 if result.get("success") else 400
+            return jsonify(result), status
+        except VoucherTemplateError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+        except Exception:
+            app.logger.exception("voucher_template_draft_unexpected_error")
+            return jsonify({"error": "internal_error"}), 500
 
     @app.post("/api/vouchers/<int:voucher_id>/approve")
     def api_voucher_approve(voucher_id: int):
