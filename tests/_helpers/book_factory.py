@@ -3,7 +3,7 @@ from uuid import uuid4
 
 def make_book_payload(
     sid: str,
-    suffix: str | None = None,
+    suffix: str = "",
     account_book_type: str = "legal",
     start_period: str = "2026-01",
 ) -> dict:
