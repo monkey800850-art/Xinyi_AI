@@ -1,0 +1,101 @@
+{% extends "main_layout.html" %}
+{% block page_title %}账套关系与合并管理{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/system_consolidation.css" />
+{% endblock %}
+{% block content %}
+<div class="conso-page">
+  <header class="conso-header">
+    <div>
+      <h1>账套关系与合并管理</h1>
+      <p>维护天然合并关系（法人/非法人）与虚拟合并主体成员。本页面只做关系维护，不改报表查询口径。</p>
+      <div class="conso-version" id="conso-version-marker">CONSOLIDATION_REL_FIX2_V1</div>
+    </div>
+    <div class="conso-actions">
+      <a class="btn secondary" href="/system/books">返回账套管理</a>
+    </div>
+  </header>
+
+  <section class="conso-tabs">
+    <button type="button" class="tab-btn active" data-tab="natural">法人/非法人关系</button>
+    <button type="button" class="tab-btn" data-tab="virtual">虚拟合并主体</button>
+    <button type="button" class="tab-btn" data-tab="members">成员管理</button>
+  </section>
+
+  <div id="conso-error" class="msg error hidden"></div>
+  <div id="conso-ok" class="msg ok hidden"></div>
+
+  <section class="conso-card tab-panel active" id="tab-natural">
+    <h2>非法人所属法人（天然合并关系）</h2>
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th>非法人账套</th>
+          <th>当前所属法人</th>
+          <th>设置所属法人</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="natural-body">
+        <tr><td colspan="4">加载中...</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="conso-card tab-panel" id="tab-virtual">
+    <h2>虚拟合并主体</h2>
+    <div class="form-inline">
+      <input id="virtual-code" class="field-input" type="text" maxlength="64" placeholder="虚拟主体编码（必填）" />
+      <input id="virtual-name" class="field-input" type="text" maxlength="128" placeholder="虚拟主体名称（必填）" />
+      <input id="virtual-note" class="field-input" type="text" maxlength="255" placeholder="备注（可选）" />
+      <button type="button" class="btn" id="create-virtual-btn">新建虚拟主体</button>
+    </div>
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>编码</th>
+          <th>名称</th>
+          <th>状态</th>
+          <th>成员数</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="virtual-body">
+        <tr><td colspan="6">加载中...</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="conso-card tab-panel" id="tab-members">
+    <h2>虚拟主体成员管理（仅法人成员可加入）</h2>
+    <div class="form-inline">
+      <select id="member-virtual-id" class="field-input"></select>
+      <select id="member-legal-book-id" class="field-input"></select>
+      <button type="button" class="btn" id="add-member-btn">添加法人成员</button>
+      <button type="button" class="btn secondary" id="refresh-member-btn">刷新成员</button>
+    </div>
+    <div class="member-meta">
+      当前虚拟主体：<strong id="member-virtual-name">-</strong>
+    </div>
+    <table class="grid-table">
+      <thead>
+        <tr>
+          <th>成员ID</th>
+          <th>法人账套</th>
+          <th>账套编码</th>
+          <th>状态</th>
+          <th>是否启用</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="member-body">
+        <tr><td colspan="6">请选择虚拟主体后查看</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/system_consolidation.js"></script>
+{% endblock %}

@@ -1,0 +1,156 @@
+.conso-page {
+  display: grid;
+  gap: 14px;
+}
+
+.conso-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.conso-header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.conso-header p {
+  margin: 6px 0 0;
+  color: #5b6678;
+}
+
+.conso-version {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.conso-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1f2937;
+  border-radius: 8px;
+  height: 34px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  background: #1967d2;
+  border-color: #1967d2;
+  color: #fff;
+}
+
+.conso-card {
+  background: #fff;
+  border: 1px solid #d7deea;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.conso-card h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+.form-inline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.field-input {
+  border: 1px solid #cfd8e4;
+  border-radius: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #1967d2;
+  background: #1967d2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn.secondary {
+  border-color: #cfd8e4;
+  background: #fff;
+  color: #1f2937;
+}
+
+.grid-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.grid-table th,
+.grid-table td {
+  border-bottom: 1px solid #e5e9f0;
+  padding: 8px 6px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.grid-table th {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.msg {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.msg.hidden {
+  display: none;
+}
+
+.msg.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.msg.ok {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.member-meta {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.natural-debug {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
