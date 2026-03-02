@@ -224,7 +224,7 @@ class Arch18PurchaseMethodGenerateTest(unittest.TestCase):
         self.assertTrue(first_body.get("ok"))
         set_id = str(first_body.get("adjustment_set_id") or "")
         self.assertTrue(set_id)
-        self.assertGreaterEqual(int((first_body.get("counts") or {}).get("lines") or 0), 3)
+        self.assertGreaterEqual(int((first_body.get("counts") or {}).get("lines") or 0), 4)
         self.assertTrue(isinstance(first_body.get("preview_lines"), list))
 
         second = self.client.post("/api/consolidation/purchase_method/generate", json=payload)
@@ -272,7 +272,13 @@ class Arch18PurchaseMethodGenerateTest(unittest.TestCase):
         self.assertEqual(str(adj.rule_code or ""), "PPA_PURCHASE_METHOD")
         self.assertEqual(str(adj.evidence_ref or ""), set_id)
         self.assertEqual(str(adj.batch_id or ""), set_id)
-        self.assertTrue(len(json.loads(str(adj.lines_json or "[]"))) >= 3)
+        lines = json.loads(str(adj.lines_json or "[]"))
+        self.assertTrue(len(lines) >= 4)
+        line_map = {str(line.get("subject_code") or ""): line for line in lines}
+        self.assertIn("PPA_DEFERRED_TAX_LIABILITY", line_map)
+        self.assertEqual(str(line_map["PPA_DEFERRED_TAX_LIABILITY"].get("credit") or ""), "2.00")
+        self.assertIn("PPA_BARGAIN_GAIN", line_map)
+        self.assertEqual(str(line_map["PPA_BARGAIN_GAIN"].get("credit") or ""), "28.00")
         self.assertEqual(int(evt.created_by or 0), 1)
         self.assertEqual(int(evt.updated_by or 0), 1)
         self.assertEqual(str(evt.notes or ""), "arch18")

@@ -81,6 +81,98 @@ def _json_or_empty(value: object, field: str) -> str:
     raise ConsolidationPurchaseMethodError(f"{field}_invalid")
 
 
+def _sum_numeric_values(value: object) -> Decimal:
+    if isinstance(value, dict):
+        total = Decimal("0")
+        for item in value.values():
+            total += _sum_numeric_values(item)
+        return total
+    if isinstance(value, list):
+        total = Decimal("0")
+        for item in value:
+            total += _sum_numeric_values(item)
+        return total
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal("0")
+
+
+def _parse_deferred_tax(
+    *,
+    fv_adjustments_json: str,
+    deferred_tax_json: str,
+) -> Dict[str, Decimal]:
+    try:
+        fv_adjustments = json.loads(fv_adjustments_json or "{}")
+    except Exception:
+        fv_adjustments = {}
+    try:
+        deferred_tax = json.loads(deferred_tax_json or "{}")
+    except Exception:
+        deferred_tax = {}
+    if not isinstance(fv_adjustments, dict):
+        fv_adjustments = {}
+    if not isinstance(deferred_tax, dict):
+        deferred_tax = {}
+
+    dtl_raw = deferred_tax.get("dtl")
+    dta_raw = deferred_tax.get("dta")
+    if dtl_raw is not None or dta_raw is not None:
+        dtl = _to_decimal(dtl_raw or 0, "deferred_tax_json_dtl")
+        dta = _to_decimal(dta_raw or 0, "deferred_tax_json_dta")
+        if dtl < 0 or dta < 0:
+            raise ConsolidationPurchaseMethodError("deferred_tax_json_invalid")
+        return {
+            "dtl": dtl.quantize(Decimal("0.01")),
+            "dta": dta.quantize(Decimal("0.01")),
+            "temporary_difference": Decimal("0.00"),
+            "tax_rate": Decimal("0.00"),
+        }
+
+    tax_rate = _to_decimal(
+        deferred_tax.get("tax_rate", deferred_tax.get("effective_tax_rate", 0)),
+        "deferred_tax_json_tax_rate",
+    )
+    if tax_rate < 0:
+        raise ConsolidationPurchaseMethodError("deferred_tax_json_invalid")
+    temporary_difference = _to_decimal(
+        deferred_tax.get("temporary_difference", _sum_numeric_values(fv_adjustments)),
+        "deferred_tax_json_temporary_difference",
+    )
+    dt_amount = (temporary_difference * tax_rate).quantize(Decimal("0.01"))
+    if dt_amount >= 0:
+        dtl = dt_amount
+        dta = Decimal("0.00")
+    else:
+        dtl = Decimal("0.00")
+        dta = abs(dt_amount)
+    return {
+        "dtl": dtl,
+        "dta": dta,
+        "temporary_difference": temporary_difference.quantize(Decimal("0.01")),
+        "tax_rate": tax_rate.quantize(Decimal("0.0001")),
+    }
+
+
+def _resolve_acquiree(payload: Dict[str, object]) -> Dict[str, int]:
+    acquiree_book_id = _parse_optional_positive_int(payload.get("acquiree_book_id"), "acquiree_book_id")
+    acquiree_entity_id = _parse_optional_positive_int(payload.get("acquiree_entity_id"), "acquiree_entity_id")
+    acquiree = payload.get("acquiree")
+    if (acquiree_book_id <= 0 and acquiree_entity_id <= 0) and acquiree is not None:
+        if isinstance(acquiree, dict):
+            acquiree_book_id = _parse_optional_positive_int(acquiree.get("book_id"), "acquiree_book_id")
+            acquiree_entity_id = _parse_optional_positive_int(acquiree.get("entity_id"), "acquiree_entity_id")
+        else:
+            acquiree_entity_id = _parse_optional_positive_int(acquiree, "acquiree_entity_id")
+    if acquiree_book_id <= 0 and acquiree_entity_id <= 0:
+        raise ConsolidationPurchaseMethodError("acquiree_book_id_or_entity_id_required")
+    return {
+        "acquiree_book_id": acquiree_book_id,
+        "acquiree_entity_id": acquiree_entity_id,
+    }
+
+
 def _table_columns(conn, table_name: str) -> set[str]:
     rows = conn.execute(
         text(
@@ -130,6 +222,8 @@ def _build_lines(
     consideration: Decimal,
     nci_fv: Decimal,
     goodwill: Decimal,
+    dtl: Decimal,
+    dta: Decimal,
 ) -> List[Dict[str, object]]:
     lines: List[Dict[str, object]] = []
 
@@ -150,6 +244,10 @@ def _build_lines(
     lines.append(_line("PPA_CONSIDERATION", Decimal("0"), consideration, "确认购买对价"))
     if nci_fv > 0:
         lines.append(_line("PPA_NCI", Decimal("0"), nci_fv, "确认少数股东权益公允价值"))
+    if dta > 0:
+        lines.append(_line("PPA_DEFERRED_TAX_ASSET", dta, Decimal("0"), "确认PPA递延所得税资产"))
+    if dtl > 0:
+        lines.append(_line("PPA_DEFERRED_TAX_LIABILITY", Decimal("0"), dtl, "确认PPA递延所得税负债"))
 
     if goodwill >= 0:
         if goodwill > 0:
@@ -258,10 +356,9 @@ def _upsert_event(
 
 def generate_purchase_method(payload: Dict[str, object], operator_id: object = 1) -> Dict[str, object]:
     group_id = _parse_positive_int(payload.get("consolidation_group_id") or payload.get("group_id"), "consolidation_group_id")
-    acquiree_book_id = _parse_optional_positive_int(payload.get("acquiree_book_id"), "acquiree_book_id")
-    acquiree_entity_id = _parse_optional_positive_int(payload.get("acquiree_entity_id"), "acquiree_entity_id")
-    if acquiree_book_id <= 0 and acquiree_entity_id <= 0:
-        raise ConsolidationPurchaseMethodError("acquiree_book_id_or_entity_id_required")
+    acquiree_info = _resolve_acquiree(payload)
+    acquiree_book_id = int(acquiree_info["acquiree_book_id"])
+    acquiree_entity_id = int(acquiree_info["acquiree_entity_id"])
     acquisition_date = _parse_date(payload.get("acquisition_date"), "acquisition_date")
     consideration_amount = _to_decimal(payload.get("consideration_amount"), "consideration_amount")
     acquired_pct = _to_decimal(payload.get("acquired_pct"), "acquired_pct")
@@ -311,7 +408,13 @@ def generate_purchase_method(payload: Dict[str, object], operator_id: object = 1
         )
 
     nci_fv = _resolve_nci_fv(group_id, acquisition_date, acquiree_entity_id if acquiree_entity_id > 0 else acquiree_book_id, fv_net_assets)
-    goodwill = (consideration_amount + nci_fv - fv_net_assets).quantize(Decimal("0.01"))
+    deferred_tax = _parse_deferred_tax(
+        fv_adjustments_json=fv_adjustments_json,
+        deferred_tax_json=deferred_tax_json,
+    )
+    dtl = deferred_tax["dtl"]
+    dta = deferred_tax["dta"]
+    goodwill = (consideration_amount + nci_fv - fv_net_assets + dtl - dta).quantize(Decimal("0.01"))
     set_id = _set_id(group_id, acquisition_date, acquiree_book_id, acquiree_entity_id)
     period = _period(acquisition_date)
     lines = _build_lines(
@@ -322,6 +425,8 @@ def generate_purchase_method(payload: Dict[str, object], operator_id: object = 1
         consideration=consideration_amount,
         nci_fv=nci_fv,
         goodwill=goodwill,
+        dtl=dtl,
+        dta=dta,
     )
 
     upserted = regenerate_generated_adjustment_set(
@@ -343,6 +448,8 @@ def generate_purchase_method(payload: Dict[str, object], operator_id: object = 1
         "period": period,
         "goodwill": float(goodwill),
         "nci_fv": float(nci_fv),
+        "deferred_tax_dtl": float(dtl),
+        "deferred_tax_dta": float(dta),
         "preview_lines": list(item.get("lines") or lines),
         "line_count": len(list(item.get("lines") or lines)),
         "reused_existing_set": bool(upserted.get("reused_existing_set")),
