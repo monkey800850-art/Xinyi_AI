@@ -83,6 +83,10 @@ from app.services.consolidation_control_service import (
     get_consolidation_control_decision,
 )
 from app.services.consolidation_nci_service import ConsolidationNciError, get_consolidation_nci
+from app.services.consolidation_onboarding_ic_match_service import (
+    ConsolidationOnboardingIcMatchError,
+    run_onboarding_ic_match,
+)
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
@@ -1304,6 +1308,80 @@ def create_app() -> Flask:
                 code=500,
                 operator_id=operator_id,
                 payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/onboarding/ic_match")
+    def api_consolidation_onboarding_ic_match():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(payload.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = run_onboarding_ic_match(group_id, as_of.isoformat(), operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="onboarding_ic_match",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"matched={result.get('matched_count',0)} unmatched={result.get('unmatched_count',0)}",
+            )
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "set_id": result.get("set_id"),
+                        "stats": {
+                            "matched": result.get("matched_count", 0),
+                            "unmatched": result.get("unmatched_count", 0),
+                            "line_count": result.get("line_count", 0),
+                        },
+                        "matched_pairs": result.get("matched_pairs") or [],
+                        "unmatched": result.get("unmatched") or [],
+                        "adjustment_id": result.get("adjustment_id"),
+                    }
+                ),
+                200,
+            )
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="onboarding_ic_match",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationOnboardingIcMatchError) as err:
+            _safe_log_consolidation_audit(
+                action="onboarding_ic_match",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_onboarding_ic_match_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="onboarding_ic_match",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
                 note="internal_error",
             )
             return jsonify({"ok": False, "error": "internal_error"}), 500

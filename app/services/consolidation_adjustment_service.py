@@ -69,43 +69,97 @@ def _normalize_lines(lines: object) -> List[Dict[str, str]]:
     return out
 
 
+def _table_columns(conn, table_name: str) -> set[str]:
+    rows = conn.execute(
+        text(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+              AND table_name=:table_name
+            """
+        ),
+        {"table_name": table_name},
+    ).fetchall()
+    return {str(r[0] or "").strip().lower() for r in rows}
+
+
 def create_consolidation_adjustment(payload: Dict[str, object]) -> Dict[str, object]:
     group_id = _parse_positive_int(payload.get("consolidation_group_id") or payload.get("group_id"), "consolidation_group_id")
     period = _parse_period(payload.get("period"))
     operator_id = _parse_positive_int(payload.get("operator_id"), "operator_id")
     lines = _normalize_lines(payload.get("lines"))
 
+    status = str(payload.get("status") or "active").strip().lower() or "active"
+    if status not in ("active", "draft", "disabled"):
+        raise ConsolidationAdjustmentError("status_invalid")
+    source = str(payload.get("source") or "").strip() or None
+    tag = str(payload.get("tag") or "").strip() or None
+    rule_code = str(payload.get("rule_code") or "").strip() or None
+    evidence_ref = str(payload.get("evidence_ref") or "").strip() or None
+    batch_id = str(payload.get("batch_id") or payload.get("set_id") or "").strip() or None
+
     provider = get_connection_provider()
     with provider.begin() as conn:
+        cols = _table_columns(conn, "consolidation_adjustments")
         row = conn.execute(
             text("SELECT id FROM consolidation_groups WHERE id=:group_id LIMIT 1"),
             {"group_id": group_id},
         ).fetchone()
         if not row:
             raise ConsolidationAdjustmentError("consolidation_group_not_found")
+        insert_cols = ["group_id", "period", "status", "operator_id", "lines_json"]
+        insert_vals = [":group_id", ":period", ":status", ":operator_id", ":lines_json"]
+        params = {
+            "group_id": group_id,
+            "period": period,
+            "status": status,
+            "operator_id": operator_id,
+            "lines_json": json.dumps(lines, ensure_ascii=False),
+            "source": source,
+            "tag": tag,
+            "rule_code": rule_code,
+            "evidence_ref": evidence_ref,
+            "batch_id": batch_id,
+        }
+        if "source" in cols:
+            insert_cols.append("source")
+            insert_vals.append(":source")
+        if "tag" in cols:
+            insert_cols.append("tag")
+            insert_vals.append(":tag")
+        if "rule_code" in cols:
+            insert_cols.append("rule_code")
+            insert_vals.append(":rule_code")
+        if "evidence_ref" in cols:
+            insert_cols.append("evidence_ref")
+            insert_vals.append(":evidence_ref")
+        if "batch_id" in cols:
+            insert_cols.append("batch_id")
+            insert_vals.append(":batch_id")
         result = conn.execute(
             text(
-                """
+                f"""
                 INSERT INTO consolidation_adjustments
-                    (group_id, period, status, operator_id, lines_json)
+                    ({', '.join(insert_cols)})
                 VALUES
-                    (:group_id, :period, 'active', :operator_id, :lines_json)
+                    ({', '.join(insert_vals)})
                 """
             ),
-            {
-                "group_id": group_id,
-                "period": period,
-                "operator_id": operator_id,
-                "lines_json": json.dumps(lines, ensure_ascii=False),
-            },
+            params,
         )
         adjustment_id = int(result.lastrowid)
     return {
         "id": adjustment_id,
         "group_id": group_id,
         "period": period,
-        "status": "active",
+        "status": status,
         "operator_id": operator_id,
+        "source": source or "",
+        "tag": tag or "",
+        "rule_code": rule_code or "",
+        "evidence_ref": evidence_ref or "",
+        "batch_id": batch_id or "",
         "lines": lines,
     }
 
@@ -115,10 +169,17 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
     period = _parse_period(params.get("period"))
     provider = get_connection_provider()
     with provider.connect() as conn:
+        cols = _table_columns(conn, "consolidation_adjustments")
+        source_col = "source" if "source" in cols else "'' AS source"
+        tag_col = "tag" if "tag" in cols else "'' AS tag"
+        rule_col = "rule_code" if "rule_code" in cols else "'' AS rule_code"
+        evidence_col = "evidence_ref" if "evidence_ref" in cols else "'' AS evidence_ref"
+        batch_col = "batch_id" if "batch_id" in cols else "'' AS batch_id"
         rows = conn.execute(
             text(
-                """
-                SELECT id, group_id, period, status, operator_id, lines_json, created_at
+                f"""
+                SELECT id, group_id, period, status, operator_id, lines_json, created_at,
+                       {source_col}, {tag_col}, {rule_col}, {evidence_col}, {batch_col}
                 FROM consolidation_adjustments
                 WHERE group_id=:group_id
                   AND period=:period
@@ -144,6 +205,11 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
                 "status": str(row.status or ""),
                 "operator_id": int(row.operator_id or 0),
                 "created_at": str(row.created_at or ""),
+                "source": str(row.source or ""),
+                "tag": str(row.tag or ""),
+                "rule_code": str(row.rule_code or ""),
+                "evidence_ref": str(row.evidence_ref or ""),
+                "batch_id": str(row.batch_id or ""),
                 "lines": parsed_lines,
             }
         )
