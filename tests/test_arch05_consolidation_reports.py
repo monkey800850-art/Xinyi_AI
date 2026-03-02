@@ -92,6 +92,24 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
                     """
                 )
             )
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS consolidation_authorizations (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        virtual_subject_id BIGINT NOT NULL,
+                        approval_document_number VARCHAR(255) NOT NULL,
+                        approval_document_name VARCHAR(255) NOT NULL,
+                        effective_start DATE NOT NULL,
+                        effective_end DATE NOT NULL,
+                        status VARCHAR(16) NOT NULL DEFAULT 'active',
+                        operator_id BIGINT NOT NULL DEFAULT 0,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
 
     def _create_book(self, suffix: str) -> int:
         payload = make_book_payload(self.sid, suffix=suffix)
@@ -223,6 +241,41 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
                 )
         return gid
 
+    def _grant_authorization(self, group_id: int):
+        with self.engine.begin() as conn:
+            conn.execute(
+                text("DELETE FROM consolidation_authorizations WHERE virtual_subject_id=:gid"),
+                {"gid": int(group_id)},
+            )
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO consolidation_authorizations (
+                        virtual_subject_id,
+                        approval_document_number,
+                        approval_document_name,
+                        effective_start,
+                        effective_end,
+                        status,
+                        operator_id
+                    ) VALUES (
+                        :gid,
+                        :doc_no,
+                        :doc_name,
+                        '2025-01-01',
+                        '2099-12-31',
+                        'active',
+                        1
+                    )
+                    """
+                ),
+                {
+                    "gid": int(group_id),
+                    "doc_no": f"AUTH-ARCH05-{group_id}",
+                    "doc_name": "ARCH05 AUTH",
+                },
+            )
+
     def test_01_trial_balance_single_and_consolidation_modes(self):
         book_a = self._create_book("A")
         book_b = self._create_book("B")
@@ -230,6 +283,7 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
         debit_code_b = self._post_voucher(book_b, f"B{self.sid}", "200.00")
         self.assertEqual(debit_code_a, debit_code_b)
         gid = self._create_consolidation_group(f"G{self.sid}", f"ARCH05组{self.sid}", [book_a, book_b])
+        self._grant_authorization(gid)
 
         single = self.client.get(
             "/api/trial_balance",

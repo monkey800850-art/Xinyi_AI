@@ -39,6 +39,7 @@ echo "[gate] 2/3 unit test"
 python3 -m pytest -q tests/test_cons_auth_gate_unit.py || fail_gate "unit_test"
 python3 -m pytest -q tests/test_arch06_consolidation_parameters_api.py || fail_gate "parameters_api_test"
 python3 -m pytest -q tests/test_arch08_consolidation_onboarding_and_audit.py || fail_gate "onboarding_audit_test"
+python3 -m pytest -q tests/test_arch09_consolidation_scope_effective_members.py || fail_gate "scope_effective_members_test"
 python3 -m pytest -q tests/test_arch07_system_consolidation_page_smoke.py || fail_gate "consolidation_page_smoke_test"
 
 echo "[gate] 3/3 app endpoints"

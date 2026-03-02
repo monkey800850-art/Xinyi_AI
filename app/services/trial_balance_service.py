@@ -9,7 +9,6 @@ from app.services.consolidation_authorization_service import (
     ConsolidationAuthorizationError,
     assert_virtual_authorized,
 )
-from app.services.consolidation_service import ConsolidationError, resolve_consolidation_group
 from app.services.subject_category_service import resolve_subject_category
 
 
@@ -339,6 +338,8 @@ def _resolve_scope(
     book_id: Optional[int],
     virtual_entity_id: Optional[int],
     consolidation_group_id: Optional[int],
+    start_date: date,
+    end_date: date,
 ) -> Dict[str, object]:
     try:
         books = _book_info_map(conn, only_enabled=True)
@@ -349,11 +350,61 @@ def _resolve_scope(
     warnings: List[str] = []
 
     if consolidation_group_id is not None:
-        try:
-            consolidation = resolve_consolidation_group(conn, consolidation_group_id)
-        except ConsolidationError as err:
-            raise TrialBalanceError(str(err)) from err
-        scope_book_ids = [bid for bid in consolidation["member_book_ids"] if bid in books]
+        gcols = _table_columns(conn, "consolidation_groups")
+        mcols = _table_columns(conn, "consolidation_group_members")
+        member_book_col = "member_book_id" if "member_book_id" in mcols else ("book_id" if "book_id" in mcols else "")
+        effective_from_col = "effective_from" if "effective_from" in mcols else ("valid_from" if "valid_from" in mcols else "")
+        effective_to_col = "effective_to" if "effective_to" in mcols else ("valid_to" if "valid_to" in mcols else "")
+        if not gcols or not mcols or not member_book_col:
+            raise TrialBalanceError("consolidation_member_model_not_ready")
+
+        group_where_parts = ["id=:group_id"]
+        if "status" in gcols:
+            group_where_parts.append("status='active'")
+        if "is_enabled" in gcols:
+            group_where_parts.append("is_enabled=1")
+        group_row = conn.execute(
+            text(
+                f"""
+                SELECT id, group_code, group_name
+                FROM consolidation_groups
+                WHERE {' AND '.join(group_where_parts)}
+                LIMIT 1
+                """
+            ),
+            {"group_id": int(consolidation_group_id)},
+        ).fetchone()
+        if not group_row:
+            raise TrialBalanceError("consolidation_group_not_found")
+
+        member_where_parts = ["group_id=:group_id", f"{member_book_col} IS NOT NULL"]
+        if "status" in mcols:
+            member_where_parts.append("status='active'")
+        if "is_enabled" in mcols:
+            member_where_parts.append("is_enabled=1")
+        if effective_from_col:
+            member_where_parts.append(f"({effective_from_col} IS NULL OR {effective_from_col}<=:end_date)")
+        if effective_to_col:
+            member_where_parts.append(f"({effective_to_col} IS NULL OR {effective_to_col}>=:start_date)")
+        member_rows = conn.execute(
+            text(
+                f"""
+                SELECT {member_book_col} AS member_book_id
+                FROM consolidation_group_members
+                WHERE {' AND '.join(member_where_parts)}
+                ORDER BY id ASC
+                """
+            ),
+            {"group_id": int(consolidation_group_id), "start_date": start_date, "end_date": end_date},
+        ).fetchall()
+        scope_book_ids = sorted(
+            {
+                int(r.member_book_id)
+                for r in member_rows
+                if r.member_book_id is not None and int(r.member_book_id) in books
+            }
+        )
+        effective_member_count = len(scope_book_ids)
         tree_children = []
         for bid in scope_book_ids:
             b = books.get(bid) or {"book_name": f"账套{bid}"}
@@ -363,7 +414,7 @@ def _resolve_scope(
         scope_tree = [
             _build_scope_tree_node(
                 "scope",
-                f"合并组 {consolidation.get('consolidation_group_name') or consolidation_group_id}",
+                f"合并组 {str(group_row.group_name or consolidation_group_id)}",
                 None,
                 None,
                 tree_children,
@@ -374,14 +425,14 @@ def _resolve_scope(
             "scope_type_label": "合并组视角（兼容）",
             "scope_book_ids": scope_book_ids,
             "scope_tree": scope_tree,
-            "current_subject_name": consolidation.get("consolidation_group_name") or f"合并组{consolidation_group_id}",
-            "scope_notice": "当前为合并组汇总口径（仅汇总未抵销）",
+            "current_subject_name": str(group_row.group_name or f"合并组{consolidation_group_id}"),
+            "scope_notice": f"当前为合并组汇总口径（仅汇总未抵销）；有效成员 {effective_member_count}",
             "is_eliminated": False,
             "query_mode": "consolidation_group",
             "query_mode_label": "合并组模式（成员汇总）",
-            "consolidation_group_id": consolidation.get("consolidation_group_id"),
-            "consolidation_group_name": consolidation.get("consolidation_group_name", ""),
-            "consolidation_group_code": consolidation.get("consolidation_group_code", ""),
+            "consolidation_group_id": int(group_row.id),
+            "consolidation_group_name": str(group_row.group_name or ""),
+            "consolidation_group_code": str(group_row.group_code or ""),
             "virtual_entity_id": None,
             "virtual_entity_name": "",
             "scope_warnings": [],
@@ -803,17 +854,18 @@ def get_trial_balance(params: Dict[str, str]) -> Dict[str, object]:
     tenant_id = (params.get("tenant_id") or "").strip() or None
     provider = get_connection_provider()
     with provider.connect(tenant_id=tenant_id, book_id=book_id) as conn:
+        if consolidation_group_id is not None:
+            assert_virtual_authorized(conn, int(consolidation_group_id), end_date)
         scope_data = _resolve_scope(
             conn,
             book_id=book_id,
             virtual_entity_id=virtual_entity_id,
             consolidation_group_id=consolidation_group_id,
+            start_date=start_date,
+            end_date=end_date,
         )
-        try:
-            if scope_data.get("scope_type") == SCOPE_VIRTUAL and scope_data.get("virtual_entity_id"):
-                assert_virtual_authorized(conn, int(scope_data.get("virtual_entity_id")), end_date)
-        except ConsolidationAuthorizationError as err:
-            raise TrialBalanceError(str(err)) from err
+        if scope_data.get("scope_type") == SCOPE_VIRTUAL and scope_data.get("virtual_entity_id"):
+            assert_virtual_authorized(conn, int(scope_data.get("virtual_entity_id")), end_date)
 
         scope_book_ids = list(scope_data.get("scope_book_ids") or [])
         amount_scope_tree = scope_data.get("amount_scope_tree") or []

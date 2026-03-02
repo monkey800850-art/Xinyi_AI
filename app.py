@@ -910,6 +910,8 @@ def create_app() -> Flask:
         try:
             result = get_trial_balance(request.args)
             return jsonify(result), 200
+        except ConsolidationAuthorizationError:
+            return jsonify({"error": "forbidden"}), 403
         except TrialBalanceError as err:
             return jsonify({"error": str(err)}), 400
         except Exception:
