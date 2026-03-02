@@ -995,8 +995,23 @@ def create_app() -> Flask:
         group_code = str(request.args.get("group_code") or "").strip()
         tenant_id = str(request.args.get("tenant_id") or "").strip() or None
         try:
+            if not group_id_raw and not group_code:
+                return (
+                    jsonify(
+                        {
+                            "ok": True,
+                            "items": [],
+                            "version": "cons-params-v1",
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                            "message": "未指定合并组/返回空",
+                        }
+                    ),
+                    200,
+                )
             with get_connection_provider().connect(tenant_id=tenant_id) as conn:
                 if group_id_raw:
+                    if not group_id_raw.isdigit():
+                        raise ConsolidationParameterError("consolidation_group_id_invalid")
                     gid = int(group_id_raw)
                 elif group_code:
                     row = conn.execute(

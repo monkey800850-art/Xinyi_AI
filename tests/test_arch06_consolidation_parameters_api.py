@@ -128,6 +128,16 @@ class Arch06ConsolidationParametersApiTest(unittest.TestCase):
         body = resp.get_json()
         self.assertEqual(body.get("error"), "forbidden")
 
+    def test_01b_get_without_scope_returns_empty_200(self):
+        resp = self.client.get("/api/consolidation/parameters")
+        self.assertEqual(resp.status_code, 200, resp.get_data(as_text=True))
+        body = resp.get_json()
+        self.assertTrue(body.get("ok"))
+        self.assertEqual(body.get("items"), [])
+        self.assertIn("version", body)
+        self.assertIn("ts", body)
+        self.assertIn("message", body)
+
     def test_02_authorized_get_returns_contract(self):
         self._grant_authorization()
         resp = self.client.get(

@@ -115,10 +115,18 @@ probe_http_code() {
   fi
 }
 
-is_valid_http_code() {
+is_valid_ui_http_code() {
   local code="$1"
   case "$code" in
     200|302|400|401|403|404) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_valid_api_http_code() {
+  local code="$1"
+  case "$code" in
+    200|302|401|403) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -128,7 +136,7 @@ api_code="$(probe_http_code "http://127.0.0.1:5000/api/consolidation/parameters"
 echo "[gate] /system/consolidation -> ${ui_code}"
 echo "[gate] /api/consolidation/parameters -> ${api_code}"
 
-if ! is_valid_http_code "$ui_code" || ! is_valid_http_code "$api_code"; then
+if ! is_valid_ui_http_code "$ui_code" || ! is_valid_api_http_code "$api_code"; then
   fail_gate "gate3_http_probe_invalid" 1
 fi
 
