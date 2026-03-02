@@ -10,3 +10,26 @@ __pycache__/
 !.env.prod.example
 
 *.log
+
+# Windows download metadata noise
+*:Zone.Identifier
+
+# local diagnostics artifacts
+_selfcheck/
+_health/
+
+# accidental files created by mis-pasted HTTP headers
+Accept:
+Content-Length:
+Content-Type:
+Host:
+PATCH
+Proxy-Connection:
+User-Agent:
+X-Role:
+X-User:
+
+# editor backups
+*.save
+*.bak
+*~
