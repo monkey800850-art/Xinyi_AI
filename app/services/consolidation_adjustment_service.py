@@ -124,6 +124,17 @@ def create_consolidation_adjustment(payload: Dict[str, object]) -> Dict[str, obj
     evidence_ref = str(payload.get("evidence_ref") or "").strip() or None
     batch_id = str(payload.get("batch_id") or payload.get("set_id") or "").strip() or None
     note = str(payload.get("note") or "").strip() or None
+    period_start = str(payload.get("period_start") or "").strip() or None
+    period_end = str(payload.get("period_end") or "").strip() or None
+    origin_period_start = str(payload.get("origin_period_start") or "").strip() or None
+    origin_period_end = str(payload.get("origin_period_end") or "").strip() or None
+    original_unrealized_profit = payload.get("original_unrealized_profit")
+    remaining_unrealized_profit = payload.get("remaining_unrealized_profit")
+    original_amount = payload.get("original_amount")
+    remaining_amount = payload.get("remaining_amount")
+    original_tax_amount = payload.get("original_tax_amount")
+    remaining_tax_amount = payload.get("remaining_tax_amount")
+    tax_rate_snapshot = payload.get("tax_rate_snapshot")
 
     provider = get_connection_provider()
     with provider.begin() as conn:
@@ -148,6 +159,17 @@ def create_consolidation_adjustment(payload: Dict[str, object]) -> Dict[str, obj
             "evidence_ref": evidence_ref,
             "batch_id": batch_id,
             "note": note,
+            "period_start": period_start,
+            "period_end": period_end,
+            "origin_period_start": origin_period_start,
+            "origin_period_end": origin_period_end,
+            "original_unrealized_profit": str(original_unrealized_profit) if original_unrealized_profit is not None else None,
+            "remaining_unrealized_profit": str(remaining_unrealized_profit) if remaining_unrealized_profit is not None else None,
+            "original_amount": str(original_amount) if original_amount is not None else None,
+            "remaining_amount": str(remaining_amount) if remaining_amount is not None else None,
+            "original_tax_amount": str(original_tax_amount) if original_tax_amount is not None else None,
+            "remaining_tax_amount": str(remaining_tax_amount) if remaining_tax_amount is not None else None,
+            "tax_rate_snapshot": str(tax_rate_snapshot) if tax_rate_snapshot is not None else None,
         }
         if "source" in cols:
             insert_cols.append("source")
@@ -167,6 +189,39 @@ def create_consolidation_adjustment(payload: Dict[str, object]) -> Dict[str, obj
         if "note" in cols:
             insert_cols.append("note")
             insert_vals.append(":note")
+        if "period_start" in cols:
+            insert_cols.append("period_start")
+            insert_vals.append(":period_start")
+        if "period_end" in cols:
+            insert_cols.append("period_end")
+            insert_vals.append(":period_end")
+        if "origin_period_start" in cols:
+            insert_cols.append("origin_period_start")
+            insert_vals.append(":origin_period_start")
+        if "origin_period_end" in cols:
+            insert_cols.append("origin_period_end")
+            insert_vals.append(":origin_period_end")
+        if "original_unrealized_profit" in cols:
+            insert_cols.append("original_unrealized_profit")
+            insert_vals.append(":original_unrealized_profit")
+        if "remaining_unrealized_profit" in cols:
+            insert_cols.append("remaining_unrealized_profit")
+            insert_vals.append(":remaining_unrealized_profit")
+        if "original_amount" in cols:
+            insert_cols.append("original_amount")
+            insert_vals.append(":original_amount")
+        if "remaining_amount" in cols:
+            insert_cols.append("remaining_amount")
+            insert_vals.append(":remaining_amount")
+        if "original_tax_amount" in cols:
+            insert_cols.append("original_tax_amount")
+            insert_vals.append(":original_tax_amount")
+        if "remaining_tax_amount" in cols:
+            insert_cols.append("remaining_tax_amount")
+            insert_vals.append(":remaining_tax_amount")
+        if "tax_rate_snapshot" in cols:
+            insert_cols.append("tax_rate_snapshot")
+            insert_vals.append(":tax_rate_snapshot")
         result = conn.execute(
             text(
                 f"""
@@ -191,6 +246,17 @@ def create_consolidation_adjustment(payload: Dict[str, object]) -> Dict[str, obj
         "evidence_ref": evidence_ref or "",
         "batch_id": batch_id or "",
         "note": note or "",
+        "period_start": period_start or "",
+        "period_end": period_end or "",
+        "origin_period_start": origin_period_start or "",
+        "origin_period_end": origin_period_end or "",
+        "original_unrealized_profit": str(original_unrealized_profit) if original_unrealized_profit is not None else "",
+        "remaining_unrealized_profit": str(remaining_unrealized_profit) if remaining_unrealized_profit is not None else "",
+        "original_amount": str(original_amount) if original_amount is not None else "",
+        "remaining_amount": str(remaining_amount) if remaining_amount is not None else "",
+        "original_tax_amount": str(original_tax_amount) if original_tax_amount is not None else "",
+        "remaining_tax_amount": str(remaining_tax_amount) if remaining_tax_amount is not None else "",
+        "tax_rate_snapshot": str(tax_rate_snapshot) if tax_rate_snapshot is not None else "",
         "lines": lines,
     }
 
@@ -207,6 +273,17 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
         evidence_col = "evidence_ref" if "evidence_ref" in cols else "'' AS evidence_ref"
         batch_col = "batch_id" if "batch_id" in cols else "'' AS batch_id"
         note_col = "note" if "note" in cols else "'' AS note"
+        period_start_col = "period_start" if "period_start" in cols else "NULL AS period_start"
+        period_end_col = "period_end" if "period_end" in cols else "NULL AS period_end"
+        origin_period_start_col = "origin_period_start" if "origin_period_start" in cols else "NULL AS origin_period_start"
+        origin_period_end_col = "origin_period_end" if "origin_period_end" in cols else "NULL AS origin_period_end"
+        orig_up_col = "original_unrealized_profit" if "original_unrealized_profit" in cols else "NULL AS original_unrealized_profit"
+        remain_up_col = "remaining_unrealized_profit" if "remaining_unrealized_profit" in cols else "NULL AS remaining_unrealized_profit"
+        original_amount_col = "original_amount" if "original_amount" in cols else "NULL AS original_amount"
+        remaining_amount_col = "remaining_amount" if "remaining_amount" in cols else "NULL AS remaining_amount"
+        original_tax_amount_col = "original_tax_amount" if "original_tax_amount" in cols else "NULL AS original_tax_amount"
+        remaining_tax_amount_col = "remaining_tax_amount" if "remaining_tax_amount" in cols else "NULL AS remaining_tax_amount"
+        tax_rate_snapshot_col = "tax_rate_snapshot" if "tax_rate_snapshot" in cols else "NULL AS tax_rate_snapshot"
         reviewed_by_col = "reviewed_by" if "reviewed_by" in cols else "NULL AS reviewed_by"
         reviewed_at_col = "reviewed_at" if "reviewed_at" in cols else "NULL AS reviewed_at"
         locked_by_col = "locked_by" if "locked_by" in cols else "NULL AS locked_by"
@@ -216,7 +293,10 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
                 f"""
                 SELECT id, group_id, period, status, operator_id, lines_json, created_at,
                        {source_col}, {tag_col}, {rule_col}, {evidence_col}, {batch_col},
-                       {note_col}, {reviewed_by_col}, {reviewed_at_col}, {locked_by_col}, {locked_at_col}
+                       {note_col}, {period_start_col}, {period_end_col}, {origin_period_start_col}, {origin_period_end_col},
+                       {orig_up_col}, {remain_up_col}, {original_amount_col}, {remaining_amount_col},
+                       {original_tax_amount_col}, {remaining_tax_amount_col}, {tax_rate_snapshot_col},
+                       {reviewed_by_col}, {reviewed_at_col}, {locked_by_col}, {locked_at_col}
                 FROM consolidation_adjustments
                 WHERE group_id=:group_id
                   AND period=:period
@@ -242,6 +322,17 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
                 "evidence_ref": str(row.evidence_ref or ""),
                 "batch_id": str(row.batch_id or ""),
                 "note": str(row.note or ""),
+                "period_start": str(row.period_start or ""),
+                "period_end": str(row.period_end or ""),
+                "origin_period_start": str(row.origin_period_start or ""),
+                "origin_period_end": str(row.origin_period_end or ""),
+                "original_unrealized_profit": str(row.original_unrealized_profit or ""),
+                "remaining_unrealized_profit": str(row.remaining_unrealized_profit or ""),
+                "original_amount": str(row.original_amount or ""),
+                "remaining_amount": str(row.remaining_amount or ""),
+                "original_tax_amount": str(row.original_tax_amount or ""),
+                "remaining_tax_amount": str(row.remaining_tax_amount or ""),
+                "tax_rate_snapshot": str(row.tax_rate_snapshot or ""),
                 "reviewed_by": int(row.reviewed_by or 0) if row.reviewed_by is not None else None,
                 "reviewed_at": str(row.reviewed_at or ""),
                 "locked_by": int(row.locked_by or 0) if row.locked_by is not None else None,

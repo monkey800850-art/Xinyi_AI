@@ -90,6 +90,22 @@ from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
 )
+from app.services.consolidation_purchase_method_service import (
+    ConsolidationPurchaseMethodError,
+    generate_purchase_method,
+)
+from app.services.consolidation_unrealized_profit_service import (
+    ConsolidationUnrealizedProfitError,
+    generate_inventory_unrealized_profit,
+)
+from app.services.consolidation_unrealized_profit_reversal_service import (
+    ConsolidationUnrealizedProfitReversalError,
+    generate_inventory_unrealized_profit_reversal,
+)
+from app.services.consolidation_ic_asset_transfer_service import (
+    ConsolidationIcAssetTransferError,
+    generate_ic_asset_transfer_onboard,
+)
 from app.services.consolidation_type_service import ConsolidationTypeError, get_type, set_type
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
@@ -1530,6 +1546,257 @@ def create_app() -> Flask:
             app.logger.exception("consolidation_onboarding_ic_match_unexpected_error")
             _safe_log_consolidation_audit(
                 action="onboarding_ic_match",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/purchase_method/generate")
+    def api_consolidation_purchase_method_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(payload.get("acquisition_date") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = generate_purchase_method(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="purchase_method_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set={result.get('adjustment_set_id','')}",
+            )
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "adjustment_set_id": result.get("adjustment_set_id"),
+                        "counts": {"lines": int(result.get("line_count") or 0)},
+                        "preview_lines": result.get("preview_lines") or [],
+                        **result,
+                    }
+                ),
+                200,
+            )
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="purchase_method_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationPurchaseMethodError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            status_code = 409 if msg in {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"} else 400
+            _safe_log_consolidation_audit(
+                action="purchase_method_generate",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_purchase_method_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="purchase_method_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/generate")
+    def api_consolidation_inventory_up_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("group_id") or payload.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("group_id_invalid")
+            end_date = date.fromisoformat(str(payload.get("end_date") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, end_date)
+            result = generate_inventory_unrealized_profit(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="inventory_up_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set={result.get('adjustment_set_id','')}",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="inventory_up_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationUnrealizedProfitError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            status_code = 409 if msg in {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"} else 400
+            _safe_log_consolidation_audit(
+                action="inventory_up_generate",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_inventory_up_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="inventory_up_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
+    def api_consolidation_inventory_up_reversal_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("group_id") or payload.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("group_id_invalid")
+            end_date = date.fromisoformat(str(payload.get("end_date") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, end_date)
+            result = generate_inventory_unrealized_profit_reversal(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="inventory_up_reversal_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set={result.get('adjustment_set_id','')}",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="inventory_up_reversal_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationUnrealizedProfitReversalError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            status_code = 409 if msg in {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"} else 400
+            _safe_log_consolidation_audit(
+                action="inventory_up_reversal_generate",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_inventory_up_reversal_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="inventory_up_reversal_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/eliminations/ic_asset_transfer/generate")
+    def api_consolidation_ic_asset_transfer_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("group_id") or payload.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("group_id_invalid")
+            as_of = date.fromisoformat(str(payload.get("as_of") or payload.get("as_of_date") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = generate_ic_asset_transfer_onboard(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="ic_asset_transfer_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set={result.get('adjustment_set_id','')}",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="ic_asset_transfer_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationIcAssetTransferError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            status_code = 409 if msg in {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"} else 400
+            _safe_log_consolidation_audit(
+                action="ic_asset_transfer_generate",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_ic_asset_transfer_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="ic_asset_transfer_generate",
                 group_id=group_id,
                 status="failed",
                 code=500,

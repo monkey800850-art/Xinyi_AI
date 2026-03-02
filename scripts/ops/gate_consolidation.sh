@@ -48,6 +48,11 @@ python3 -m pytest -q tests/test_arch14_consolidation_nci.py || fail_gate "nci_co
 python3 -m pytest -q tests/test_arch15_consolidation_onboarding_ic_match.py || fail_gate "onboarding_ic_match_test"
 python3 -m pytest -q tests/test_arch16_adjustment_set_workflow.py || fail_gate "adjustment_set_workflow_test"
 python3 -m pytest -q tests/test_arch17_consolidation_type.py || fail_gate "consolidation_type_test"
+python3 -m pytest -q tests/test_arch18_purchase_method_generate.py || fail_gate "purchase_method_generate_test"
+python3 -m pytest -q tests/test_arch19_up_inventory_generate.py || fail_gate "inventory_up_generate_test"
+python3 -m pytest -q tests/test_arch20_up_inventory_deferred_tax.py || fail_gate "inventory_up_deferred_tax_test"
+python3 -m pytest -q tests/test_arch21_up_inventory_reversal.py || fail_gate "inventory_up_reversal_test"
+python3 -m pytest -q tests/test_arch22_ic_asset_transfer_onboard.py || fail_gate "ic_asset_transfer_onboard_test"
 python3 -m pytest -q tests/test_arch07_system_consolidation_page_smoke.py || fail_gate "consolidation_page_smoke_test"
 
 echo "[gate] 3/3 app endpoints"
