@@ -46,6 +46,7 @@ python3 -m pytest -q tests/test_arch12_consolidation_ownership_api.py || fail_ga
 python3 -m pytest -q tests/test_arch13_consolidation_control_decision.py || fail_gate "control_decision_test"
 python3 -m pytest -q tests/test_arch14_consolidation_nci.py || fail_gate "nci_contract_test"
 python3 -m pytest -q tests/test_arch15_consolidation_onboarding_ic_match.py || fail_gate "onboarding_ic_match_test"
+python3 -m pytest -q tests/test_arch16_adjustment_set_workflow.py || fail_gate "adjustment_set_workflow_test"
 python3 -m pytest -q tests/test_arch07_system_consolidation_page_smoke.py || fail_gate "consolidation_page_smoke_test"
 
 echo "[gate] 3/3 app endpoints"

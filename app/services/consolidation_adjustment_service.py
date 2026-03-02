@@ -1,5 +1,7 @@
 import json
+import calendar
 from decimal import Decimal
+from datetime import date
 from typing import Dict, List
 
 from sqlalchemy import text
@@ -36,6 +38,25 @@ def _parse_period(value: object) -> str:
     if month < 1 or month > 12:
         raise ConsolidationAdjustmentError("period_invalid")
     return f"{int(yy):04d}-{month:02d}"
+
+
+def _period_to_as_of_date(period: str) -> date:
+    normalized = _parse_period(period)
+    year = int(normalized[:4])
+    month = int(normalized[5:])
+    day = calendar.monthrange(year, month)[1]
+    return date(year, month, day)
+
+
+def _as_of_to_period(value: object) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        raise ConsolidationAdjustmentError("as_of_required")
+    try:
+        parsed = date.fromisoformat(raw)
+    except Exception as err:
+        raise ConsolidationAdjustmentError("as_of_invalid") from err
+    return parsed.strftime("%Y-%m")
 
 
 def _to_decimal(value: object, field: str) -> Decimal:
@@ -87,6 +108,14 @@ def _table_columns(conn, table_name: str) -> set[str]:
         {"table_name": table_name},
     ).fetchall()
     return {str(r[0] or "").strip().lower() for r in rows}
+
+
+def _parse_lines_json(value: object) -> List[Dict[str, object]]:
+    try:
+        parsed = json.loads(str(value or "[]"))
+        return parsed if isinstance(parsed, list) else []
+    except Exception:
+        return []
 
 
 def create_consolidation_adjustment(payload: Dict[str, object]) -> Dict[str, object]:
@@ -195,13 +224,7 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
         ).fetchall()
     items: List[Dict[str, object]] = []
     for row in rows:
-        parsed_lines = []
-        try:
-            parsed_lines = json.loads(str(row.lines_json or "[]"))
-            if not isinstance(parsed_lines, list):
-                parsed_lines = []
-        except Exception:
-            parsed_lines = []
+        parsed_lines = _parse_lines_json(row.lines_json)
         items.append(
             {
                 "id": int(row.id),
@@ -219,6 +242,307 @@ def list_consolidation_adjustments(params: Dict[str, object]) -> Dict[str, objec
             }
         )
     return {"items": items, "group_id": group_id, "period": period}
+
+
+def list_consolidation_adjustment_sets(params: Dict[str, object]) -> Dict[str, object]:
+    group_id = _parse_positive_int(params.get("consolidation_group_id") or params.get("group_id"), "consolidation_group_id")
+    period_raw = str(params.get("period") or "").strip()
+    as_of_raw = str(params.get("as_of") or "").strip()
+    if period_raw:
+        period = _parse_period(period_raw)
+    elif as_of_raw:
+        period = _as_of_to_period(as_of_raw)
+    else:
+        raise ConsolidationAdjustmentError("period_or_as_of_required")
+    provider = get_connection_provider()
+    with provider.connect() as conn:
+        cols = _table_columns(conn, "consolidation_adjustments")
+        source_col = "source" if "source" in cols else "'' AS source"
+        rule_col = "rule_code" if "rule_code" in cols else "'' AS rule_code"
+        evidence_col = "evidence_ref" if "evidence_ref" in cols else "'' AS evidence_ref"
+        tag_col = "tag" if "tag" in cols else "'' AS tag"
+        batch_expr = "batch_id" if "batch_id" in cols else "CAST(id AS CHAR)"
+        batch_col = f"{batch_expr} AS batch_id"
+        rows = conn.execute(
+            text(
+                f"""
+                SELECT id, group_id, period, status, operator_id, created_at,
+                       {source_col}, {rule_col}, {evidence_col}, {tag_col}, {batch_col}, lines_json
+                FROM consolidation_adjustments
+                WHERE group_id=:group_id
+                  AND period=:period
+                  AND COALESCE({batch_expr}, '') <> ''
+                ORDER BY id DESC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+    set_map: Dict[str, Dict[str, object]] = {}
+    for row in rows:
+        set_id = str(row.batch_id or "").strip()
+        if not set_id:
+            continue
+        parsed_lines = _parse_lines_json(row.lines_json)
+        item = set_map.get(set_id)
+        if not item:
+            item = {
+                "set_id": set_id,
+                "group_id": int(row.group_id),
+                "period": str(row.period or ""),
+                "status": str(row.status or ""),
+                "operator_id": int(row.operator_id or 0),
+                "created_at": str(row.created_at or ""),
+                "source": str(row.source or ""),
+                "rule_code": str(row.rule_code or ""),
+                "evidence_ref": str(row.evidence_ref or ""),
+                "tag": str(row.tag or ""),
+                "adjustment_ids": [],
+                "line_count": 0,
+            }
+            set_map[set_id] = item
+        item["adjustment_ids"].append(int(row.id))
+        item["line_count"] = int(item["line_count"]) + len(parsed_lines)
+    items = list(set_map.values())
+    items.sort(key=lambda it: str(it.get("created_at") or ""), reverse=True)
+    return {"items": items, "group_id": group_id, "period": period}
+
+
+def transition_adjustment_set_status(set_id_value: object, action: str, operator_id: object) -> Dict[str, object]:
+    set_id = str(set_id_value or "").strip()
+    if not set_id:
+        raise ConsolidationAdjustmentError("adjustment_set_id_required")
+    operator = _parse_positive_int(operator_id, "operator_id")
+    act = str(action or "").strip().lower()
+    if act not in ("review", "lock", "reopen"):
+        raise ConsolidationAdjustmentError("action_invalid")
+    provider = get_connection_provider()
+    with provider.begin() as conn:
+        cols = _table_columns(conn, "consolidation_adjustments")
+        if "batch_id" not in cols:
+            raise ConsolidationAdjustmentError("adjustment_set_not_supported")
+        row = conn.execute(
+            text(
+                """
+                SELECT id, group_id, period, status
+                FROM consolidation_adjustments
+                WHERE batch_id=:set_id
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {"set_id": set_id},
+        ).fetchone()
+        if not row:
+            raise ConsolidationAdjustmentError("adjustment_set_not_found")
+        current = str(row.status or "").strip().lower()
+        if act == "review":
+            if current != "draft":
+                raise ConsolidationAdjustmentError("adjustment_set_transition_invalid")
+            target = "reviewed"
+        elif act == "lock":
+            if current != "reviewed":
+                raise ConsolidationAdjustmentError("adjustment_set_transition_invalid")
+            target = "locked"
+        else:
+            if current not in ("reviewed", "locked"):
+                raise ConsolidationAdjustmentError("adjustment_set_transition_invalid")
+            target = "draft"
+        conn.execute(
+            text(
+                """
+                UPDATE consolidation_adjustments
+                SET status=:status, operator_id=:operator_id
+                WHERE batch_id=:set_id
+                """
+            ),
+            {"status": target, "operator_id": operator, "set_id": set_id},
+        )
+    return {
+        "set_id": set_id,
+        "group_id": int(row.group_id),
+        "period": str(row.period or ""),
+        "from_status": current,
+        "status": target,
+        "operator_id": operator,
+    }
+
+
+def get_adjustment_set_meta(set_id_value: object) -> Dict[str, object]:
+    set_id = str(set_id_value or "").strip()
+    if not set_id:
+        raise ConsolidationAdjustmentError("adjustment_set_id_required")
+    provider = get_connection_provider()
+    with provider.connect() as conn:
+        cols = _table_columns(conn, "consolidation_adjustments")
+        if "batch_id" not in cols:
+            raise ConsolidationAdjustmentError("adjustment_set_not_supported")
+        row = conn.execute(
+            text(
+                """
+                SELECT id, group_id, period, status, source, tag, rule_code, evidence_ref, batch_id
+                FROM consolidation_adjustments
+                WHERE batch_id=:set_id
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {"set_id": set_id},
+        ).fetchone()
+        if not row:
+            raise ConsolidationAdjustmentError("adjustment_set_not_found")
+    return {
+        "id": int(row.id),
+        "set_id": str(row.batch_id or ""),
+        "group_id": int(row.group_id),
+        "period": str(row.period or ""),
+        "status": str(row.status or "").strip().lower(),
+        "source": str(row.source or ""),
+        "tag": str(row.tag or ""),
+        "rule_code": str(row.rule_code or ""),
+        "evidence_ref": str(row.evidence_ref or ""),
+    }
+
+
+def regenerate_generated_adjustment_set(
+    *,
+    group_id: int,
+    period: str,
+    operator_id: int,
+    set_id: str,
+    rule_code: str,
+    evidence_ref: str,
+    tag: str,
+    generated_lines: List[Dict[str, object]],
+) -> Dict[str, object]:
+    normalized_group_id = _parse_positive_int(group_id, "consolidation_group_id")
+    normalized_period = _parse_period(period)
+    normalized_operator = _parse_positive_int(operator_id, "operator_id")
+    normalized_set_id = str(set_id or "").strip()
+    normalized_rule = str(rule_code or "").strip()
+    normalized_evidence = str(evidence_ref or "").strip()
+    normalized_tag = str(tag or "").strip()
+    if not normalized_set_id:
+        raise ConsolidationAdjustmentError("adjustment_set_id_required")
+    if not normalized_rule:
+        raise ConsolidationAdjustmentError("rule_code_required")
+    if not normalized_evidence:
+        raise ConsolidationAdjustmentError("evidence_ref_required")
+
+    normalized_generated_lines = _normalize_lines(generated_lines)
+    provider = get_connection_provider()
+    with provider.begin() as conn:
+        cols = _table_columns(conn, "consolidation_adjustments")
+        if not {"source", "rule_code", "evidence_ref", "batch_id", "tag"}.issubset(cols):
+            raise ConsolidationAdjustmentError("generated_adjustment_model_not_ready")
+        row = conn.execute(
+            text(
+                """
+                SELECT id, status, lines_json
+                FROM consolidation_adjustments
+                WHERE group_id=:group_id
+                  AND period=:period
+                  AND source='generated'
+                  AND rule_code=:rule_code
+                  AND evidence_ref=:evidence_ref
+                  AND batch_id=:batch_id
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {
+                "group_id": normalized_group_id,
+                "period": normalized_period,
+                "rule_code": normalized_rule,
+                "evidence_ref": normalized_evidence,
+                "batch_id": normalized_set_id,
+            },
+        ).fetchone()
+        if not row:
+            insert_result = conn.execute(
+                text(
+                    """
+                    INSERT INTO consolidation_adjustments
+                        (group_id, period, status, operator_id, lines_json, source, tag, rule_code, evidence_ref, batch_id)
+                    VALUES
+                        (:group_id, :period, 'draft', :operator_id, :lines_json, 'generated', :tag, :rule_code, :evidence_ref, :batch_id)
+                    """
+                ),
+                {
+                    "group_id": normalized_group_id,
+                    "period": normalized_period,
+                    "operator_id": normalized_operator,
+                    "lines_json": json.dumps(normalized_generated_lines, ensure_ascii=False),
+                    "tag": normalized_tag,
+                    "rule_code": normalized_rule,
+                    "evidence_ref": normalized_evidence,
+                    "batch_id": normalized_set_id,
+                },
+            )
+            created_id = int(insert_result.lastrowid)
+            return {
+                "created": True,
+                "reused_existing_set": False,
+                "item": {
+                    "id": created_id,
+                    "group_id": normalized_group_id,
+                    "period": normalized_period,
+                    "status": "draft",
+                    "operator_id": normalized_operator,
+                    "source": "generated",
+                    "tag": normalized_tag,
+                    "rule_code": normalized_rule,
+                    "evidence_ref": normalized_evidence,
+                    "batch_id": normalized_set_id,
+                    "lines": normalized_generated_lines,
+                },
+            }
+
+        current_status = str(row.status or "").strip().lower()
+        if current_status == "reviewed":
+            raise ConsolidationAdjustmentError("adjustment_set_reviewed_blocked")
+        if current_status == "locked":
+            raise ConsolidationAdjustmentError("adjustment_set_locked_blocked")
+        if current_status != "draft":
+            raise ConsolidationAdjustmentError("adjustment_set_status_invalid")
+
+        existing_lines = _parse_lines_json(row.lines_json)
+        retained_lines: List[Dict[str, object]] = []
+        for line in existing_lines:
+            if not isinstance(line, dict):
+                continue
+            source = str(line.get("source") or "").strip()
+            line_rule = str(line.get("rule") or "").strip()
+            if source == "generated" and line_rule == normalized_rule:
+                continue
+            retained_lines.append(line)
+        merged_lines = retained_lines + normalized_generated_lines
+        conn.execute(
+            text(
+                """
+                UPDATE consolidation_adjustments
+                SET lines_json=:lines_json, operator_id=:operator_id, status='draft'
+                WHERE id=:id
+                """
+            ),
+            {"lines_json": json.dumps(merged_lines, ensure_ascii=False), "operator_id": normalized_operator, "id": int(row.id)},
+        )
+        return {
+            "created": False,
+            "reused_existing_set": True,
+            "item": {
+                "id": int(row.id),
+                "group_id": normalized_group_id,
+                "period": normalized_period,
+                "status": "draft",
+                "operator_id": normalized_operator,
+                "source": "generated",
+                "tag": normalized_tag,
+                "rule_code": normalized_rule,
+                "evidence_ref": normalized_evidence,
+                "batch_id": normalized_set_id,
+                "lines": merged_lines,
+            },
+        }
 
 
 def get_adjustment_totals_by_subject(conn, group_id: int, period: str) -> Dict[str, Dict[str, Decimal]]:

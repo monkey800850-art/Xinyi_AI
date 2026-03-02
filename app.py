@@ -71,7 +71,10 @@ from app.services.consolidation_authorization_service import (
 from app.services.consolidation_adjustment_service import (
     ConsolidationAdjustmentError,
     create_consolidation_adjustment,
+    get_adjustment_set_meta,
+    list_consolidation_adjustment_sets,
     list_consolidation_adjustments,
+    transition_adjustment_set_status,
 )
 from app.services.consolidation_ownership_service import (
     ConsolidationOwnershipError,
@@ -1312,6 +1315,143 @@ def create_app() -> Flask:
             )
             return jsonify({"ok": False, "error": "internal_error"}), 500
 
+    @app.get("/api/consolidation/adjustment_sets")
+    def api_consolidation_adjustment_sets_list():
+        args = request.args.to_dict(flat=True)
+        operator_id = _get_operator_id()
+        group_id = None
+        try:
+            group_id = int(args.get("consolidation_group_id") or args.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of_raw = str(args.get("as_of") or "").strip()
+            if as_of_raw:
+                as_of = date.fromisoformat(as_of_raw)
+            else:
+                as_of = _period_to_as_of_date(str(args.get("period") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = list_consolidation_adjustment_sets(args)
+            _safe_log_consolidation_audit(
+                action="adjustment_sets_get",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=args,
+                note="adjustment_set_listed",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="adjustment_sets_get",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationAdjustmentError) as err:
+            _safe_log_consolidation_audit(
+                action="adjustment_sets_get",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_adjustment_sets_list_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="adjustment_sets_get",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    def _api_consolidation_adjustment_set_transition(set_id: str, action: str):
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            meta = get_adjustment_set_meta(set_id)
+            group_id = int(meta.get("group_id") or 0)
+            as_of = _period_to_as_of_date(str(meta.get("period") or ""))
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = transition_adjustment_set_status(set_id, action=action, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action=f"adjustment_set_{action}",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload={"set_id": set_id, **payload},
+                note=f"status={result.get('status','')}",
+            )
+            return jsonify({"ok": True, "item": result}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action=f"adjustment_set_{action}",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload={"set_id": set_id, **payload},
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except ConsolidationAdjustmentError as err:
+            msg = str(err)
+            conflict_errors = {
+                "adjustment_set_reviewed_blocked",
+                "adjustment_set_locked_blocked",
+                "adjustment_set_transition_invalid",
+            }
+            status_code = 409 if msg in conflict_errors else 400
+            _safe_log_consolidation_audit(
+                action=f"adjustment_set_{action}",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload={"set_id": set_id, **payload},
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_adjustment_set_transition_unexpected_error")
+            _safe_log_consolidation_audit(
+                action=f"adjustment_set_{action}",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload={"set_id": set_id, **payload},
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/adjustment_sets/<string:set_id>/review")
+    def api_consolidation_adjustment_set_review(set_id: str):
+        return _api_consolidation_adjustment_set_transition(set_id, "review")
+
+    @app.post("/api/consolidation/adjustment_sets/<string:set_id>/lock")
+    def api_consolidation_adjustment_set_lock(set_id: str):
+        return _api_consolidation_adjustment_set_transition(set_id, "lock")
+
+    @app.post("/api/consolidation/adjustment_sets/<string:set_id>/reopen")
+    def api_consolidation_adjustment_set_reopen(set_id: str):
+        return _api_consolidation_adjustment_set_transition(set_id, "reopen")
+
     @app.post("/api/consolidation/onboarding/ic_match")
     def api_consolidation_onboarding_ic_match():
         payload = request.get_json(silent=True) or {}
@@ -1366,17 +1506,20 @@ def create_app() -> Flask:
                 note=str(err),
             )
             return jsonify({"error": "forbidden"}), 403
-        except (TypeError, ValueError, ConsolidationOnboardingIcMatchError) as err:
+        except (TypeError, ValueError, ConsolidationOnboardingIcMatchError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            conflict_errors = {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"}
+            status_code = 409 if msg in conflict_errors else 400
             _safe_log_consolidation_audit(
                 action="onboarding_ic_match",
                 group_id=group_id,
                 status="failed",
-                code=400,
+                code=status_code,
                 operator_id=operator_id,
                 payload=payload,
-                note=str(err),
+                note=msg,
             )
-            return jsonify({"ok": False, "error": str(err)}), 400
+            return jsonify({"ok": False, "error": msg}), status_code
         except Exception:
             app.logger.exception("consolidation_onboarding_ic_match_unexpected_error")
             _safe_log_consolidation_audit(

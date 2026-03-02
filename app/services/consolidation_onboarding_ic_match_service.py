@@ -1,12 +1,11 @@
-import json
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from typing import Dict, List, Set, Tuple
 
 from sqlalchemy import bindparam, text
 
 from app.db_router import get_connection_provider
-from app.services.consolidation_adjustment_service import create_consolidation_adjustment
+from app.services.consolidation_adjustment_service import regenerate_generated_adjustment_set
 
 
 class ConsolidationOnboardingIcMatchError(RuntimeError):
@@ -193,38 +192,6 @@ def _build_unmatched_export_csv(unmatched: List[Dict[str, object]]) -> str:
     return "\n".join(lines)
 
 
-def _find_existing_adjustment_set(conn, group_id: int, period: str, as_of: date) -> Dict[str, object] | None:
-    cols = _table_columns(conn, "consolidation_adjustments")
-    if not {"batch_id", "tag", "source", "rule_code", "evidence_ref", "lines_json"}.issubset(cols):
-        return None
-    row = conn.execute(
-        text(
-            """
-            SELECT id, batch_id, lines_json
-            FROM consolidation_adjustments
-            WHERE group_id=:group_id
-              AND period=:period
-              AND status='draft'
-              AND tag='onboarding_ic'
-              AND source='generated'
-              AND rule_code='ONBOARD_IC'
-              AND evidence_ref=:evidence_ref
-            ORDER BY id DESC
-            LIMIT 1
-            """
-        ),
-        {"group_id": int(group_id), "period": period, "evidence_ref": f"as_of:{as_of.isoformat()}"},
-    ).fetchone()
-    if not row:
-        return None
-    lines = []
-    try:
-        lines = json.loads(str(row.lines_json or "[]"))
-    except Exception:
-        lines = []
-    return {"id": int(row.id), "set_id": str(row.batch_id or ""), "lines": lines if isinstance(lines, list) else []}
-
-
 def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operator_id: int = 1) -> Dict[str, object]:
     group_id = _parse_positive_int(group_id_value, "consolidation_group_id")
     as_of = _parse_date(as_of_value, "as_of")
@@ -235,7 +202,6 @@ def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operato
     with provider.connect() as conn:
         member_book_ids = _effective_member_book_ids(conn, group_id, as_of)
         rows = _load_ic_balances(conn, member_book_ids, as_of)
-        existing = _find_existing_adjustment_set(conn, group_id, period, as_of)
 
     matched_pairs, unmatched = _match_by_key(rows)
     draft_lines: List[Dict[str, object]] = []
@@ -270,26 +236,21 @@ def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operato
 
     adjustment = None
     reused = False
-    if existing:
-        reused = True
-        set_id = str(existing.get("set_id") or set_id)
-        adjustment = {"id": int(existing.get("id") or 0)}
-        draft_lines = list(existing.get("lines") or [])
-    elif draft_lines:
-        adjustment = create_consolidation_adjustment(
-            {
-                "consolidation_group_id": group_id,
-                "period": period,
-                "operator_id": int(operator_id or 1),
-                "status": "draft",
-                "source": "generated",
-                "tag": "onboarding_ic",
-                "rule_code": "ONBOARD_IC",
-                "evidence_ref": f"as_of:{as_of.isoformat()}",
-                "batch_id": set_id,
-                "lines": draft_lines,
-            }
+    if draft_lines:
+        upserted = regenerate_generated_adjustment_set(
+            group_id=group_id,
+            period=period,
+            operator_id=int(operator_id or 1),
+            set_id=set_id,
+            rule_code="ONBOARD_IC",
+            evidence_ref=f"as_of:{as_of.isoformat()}",
+            tag="onboarding_ic",
+            generated_lines=draft_lines,
         )
+        reused = bool(upserted.get("reused_existing_set"))
+        item = dict(upserted.get("item") or {})
+        adjustment = {"id": int(item.get("id") or 0)}
+        draft_lines = list(item.get("lines") or draft_lines)
 
     return {
         "set_id": set_id,
