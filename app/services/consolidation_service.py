@@ -270,6 +270,47 @@ def _ensure_member_identity_exists(
         return
 
 
+def _resolve_member_book_id(
+    conn,
+    member_type: str,
+    member_book_id: Optional[int],
+    member_entity_id: Optional[int],
+) -> Optional[int]:
+    if member_book_id is not None:
+        return member_book_id
+    if member_entity_id is None:
+        return None
+    if member_type in ("LEGAL", "NON_LEGAL"):
+        row = conn.execute(
+            text(
+                """
+                SELECT book_id
+                FROM legal_entities
+                WHERE id=:id
+                LIMIT 1
+                """
+            ),
+            {"id": int(member_entity_id)},
+        ).fetchone()
+        if row and row.book_id is not None:
+            return int(row.book_id)
+    if member_type == "VIRTUAL":
+        row = conn.execute(
+            text(
+                """
+                SELECT book_id
+                FROM virtual_entities
+                WHERE id=:id
+                LIMIT 1
+                """
+            ),
+            {"id": int(member_entity_id)},
+        ).fetchone()
+        if row and row.book_id is not None:
+            return int(row.book_id)
+    return None
+
+
 def add_consolidation_group_member(group_id: int, payload: Dict[str, object]) -> Dict[str, object]:
     member_type = _normalize_member_type(payload.get("member_type"))
     member_book_id_raw = payload.get("member_book_id")
@@ -333,6 +374,12 @@ def add_consolidation_group_member(group_id: int, payload: Dict[str, object]) ->
                 raise ConsolidationError("consolidation_group_not_found")
 
         _ensure_member_identity_exists(
+            conn,
+            member_type=member_type,
+            member_book_id=member_book_id,
+            member_entity_id=member_entity_id,
+        )
+        member_book_id = _resolve_member_book_id(
             conn,
             member_type=member_type,
             member_book_id=member_book_id,

@@ -67,6 +67,7 @@ from app.services.consolidation_authorization_service import (
     list_authorizations,
     set_authorization_status,
 )
+from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
     list_consolidation_parameters_contract,
@@ -189,6 +190,51 @@ def _get_operator_from_headers():
     if not role:
         role = str(auth_ctx.get("role") or "").strip()
     return operator, role
+
+
+def _parse_operator_id(value) -> int | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        parsed = int(raw)
+    except Exception:
+        return None
+    return parsed if parsed > 0 else None
+
+
+def _get_operator_id(payload: dict | None = None) -> int | None:
+    payload = payload if isinstance(payload, dict) else {}
+    candidate = (
+        request.headers.get("X-Operator-Id")
+        or payload.get("operator_id")
+        or request.args.get("operator_id")
+        or request.form.get("operator_id")
+    )
+    return _parse_operator_id(candidate)
+
+
+def _safe_log_consolidation_audit(
+    action: str,
+    group_id: int | None,
+    status: str,
+    code: int,
+    operator_id: int | None = None,
+    payload: dict | None = None,
+    note: str = "",
+) -> None:
+    try:
+        log_consolidation_audit(
+            action=action,
+            group_id=group_id,
+            status=status,
+            code=code,
+            operator_id=operator_id,
+            payload=payload,
+            note=note,
+        )
+    except Exception:
+        app.logger.exception("consolidation_audit_log_failed action=%s group_id=%s", action, group_id)
 
 
 def _build_main_nav(path: str):
@@ -966,6 +1012,155 @@ def create_app() -> Flask:
         except Exception:
             app.logger.exception("consolidation_group_member_add_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/members")
+    def api_consolidation_members_onboard():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload)
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, date.today())
+            member_payload = {
+                "member_book_id": payload.get("member_book_id"),
+                "member_entity_id": payload.get("member_entity_id"),
+                "member_type": payload.get("member_type"),
+                "effective_from": payload.get("effective_from"),
+                "effective_to": payload.get("effective_to"),
+                "note": payload.get("note"),
+                "is_enabled": payload.get("is_enabled", 1),
+            }
+            result = add_consolidation_group_member(group_id, member_payload)
+            _safe_log_consolidation_audit(
+                action="members_post",
+                group_id=group_id,
+                status="success",
+                code=201,
+                operator_id=operator_id,
+                payload=payload,
+                note="member_onboarded",
+            )
+            return jsonify({"ok": True, "item": result}), 201
+        except (TypeError, ValueError):
+            _safe_log_consolidation_audit(
+                action="members_post",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note="consolidation_group_id_invalid",
+            )
+            return jsonify({"ok": False, "error": "consolidation_group_id_invalid"}), 400
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="members_post",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except ConsolidationError as err:
+            _safe_log_consolidation_audit(
+                action="members_post",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_members_onboard_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="members_post",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/read_probe")
+    def api_consolidation_read_probe():
+        args = request.args.to_dict(flat=True)
+        operator_id = _get_operator_id()
+        group_id = None
+        try:
+            group_raw = str(args.get("consolidation_group_id") or "").strip()
+            group_id = int(group_raw)
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, date.today())
+                exists = conn.execute(
+                    text("SELECT id FROM consolidation_groups WHERE id=:group_id LIMIT 1"),
+                    {"group_id": group_id},
+                ).fetchone()
+                if not exists:
+                    _safe_log_consolidation_audit(
+                        action="read_probe",
+                        group_id=group_id,
+                        status="failed",
+                        code=404,
+                        operator_id=operator_id,
+                        payload=args,
+                        note="consolidation_group_not_found",
+                    )
+                    return jsonify({"ok": False, "error": "consolidation_group_not_found"}), 404
+            _safe_log_consolidation_audit(
+                action="read_probe",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=args,
+                note="authorized",
+            )
+            return jsonify({"ok": True, "consolidation_group_id": group_id}), 200
+        except (TypeError, ValueError):
+            _safe_log_consolidation_audit(
+                action="read_probe",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=args,
+                note="consolidation_group_id_invalid",
+            )
+            return jsonify({"ok": False, "error": "consolidation_group_id_invalid"}), 400
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="read_probe",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except Exception:
+            app.logger.exception("consolidation_read_probe_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="read_probe",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
 
     @app.get("/api/consolidation/groups/<int:group_id>/members/effective")
     def api_get_consolidation_group_members_effective(group_id: int):
