@@ -16,11 +16,11 @@
 
 | 检查项ID | 检查项描述 | 所属阶段 | 前置条件 | 验收要点 | 当前状态 | 证据示例（接口/页面/表字段） | 备注 |
 |---|---|---|---|---|---|---|---|
-| CONS-A01 | 建立合并授权主表（授权单号、授权类型、审批状态） | Phase A | 关系模型可用 | 能新增/查询授权记录，单号唯一 | TODO | 表：`consolidation_authorizations.authorization_code` 唯一索引 | 设计表：`consolidation_authorizations` |
-| CONS-A02 | 授权有效期控制（生效/失效） | Phase A | CONS-A01 | 查询时按有效期过滤纳入范围 | TODO | 接口：`GET /api/consolidation/authorizations?as_of=YYYY-MM-DD` | 边界日期需可审计 |
-| CONS-A03 | 授权撤销流程 | Phase A | CONS-A01 | 撤销后范围立即失效并留痕 | TODO | 接口：`POST /api/consolidation/authorizations/{id}/revoke` | 禁止物理删除 |
-| CONS-A04 | 虚拟主体纳入法人前置授权校验 | Phase A | CONS-A01 | 未授权法人不可纳入虚拟主体 | TODO | 拦截错误码：`authorization_not_active` | 接口层强校验 |
-| CONS-A05 | 授权变更审计留痕 | Phase E | 审计日志机制可用 | before/after、操作者、时间完整 | TODO | 表：`audit_logs(module='consolidation_auth')` | 对接 `audit_logs` |
+| CONS-A01 | 建立合并授权主表（授权单号、授权类型、审批状态） | Phase A | 关系模型可用 | 能新增/查询授权记录，单号唯一 | DONE | 表：`consolidation_authorizations(approval_document_number,approval_document_name,status)` | 已按 TASK-CONS-AUTH-01 落地首版结构 |
+| CONS-A02 | 授权有效期控制（生效/失效） | Phase A | CONS-A01 | 查询时按有效期过滤纳入范围 | DONE | 接口：`GET /api/authorizations?virtual_subject_id=...` + 服务层按 `effective_start/effective_end` 校验 | 当前校验接入余额表合并查询 |
+| CONS-A03 | 授权撤销流程 | Phase A | CONS-A01 | 撤销后范围立即失效并留痕 | DONE | 接口：`PATCH /api/authorizations/{id}/revoke` | 采用状态更新，未做物理删除 |
+| CONS-A04 | 虚拟主体纳入法人前置授权校验 | Phase A | CONS-A01 | 未授权法人不可纳入虚拟主体 | DONE | 拦截错误码：`authorization_missing/suspended/revoked/expired` | 首批接入：`/api/trial_balance` 虚拟主体口径 |
+| CONS-A05 | 授权变更审计留痕 | Phase E | 审计日志机制可用 | before/after、操作者、时间完整 | PARTIAL | 表：`audit_logs(module='consolidation_auth')` | 已记录 create/status 变更，before/after 细化待补强 |
 
 ## B. 合并参数表（股权比例、全并标记等）
 
@@ -118,4 +118,3 @@
   - `Phase C 完成率 = E`
   - `Phase D 完成率 = F`
   - `Phase E 完成率 = G+H(合规拦截)`
-
