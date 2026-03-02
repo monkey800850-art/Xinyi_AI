@@ -82,6 +82,7 @@ from app.services.consolidation_control_service import (
     ConsolidationControlError,
     get_consolidation_control_decision,
 )
+from app.services.consolidation_nci_service import ConsolidationNciError, get_consolidation_nci
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
@@ -1443,6 +1444,26 @@ def create_app() -> Flask:
             return jsonify({"ok": False, "error": str(err)}), 400
         except Exception:
             app.logger.exception("consolidation_control_decision_unexpected_error")
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/nci")
+    def api_consolidation_nci():
+        args = request.args.to_dict(flat=True)
+        try:
+            group_id = int(args.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(args.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = get_consolidation_nci(group_id, as_of.isoformat())
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError:
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationNciError) as err:
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_nci_unexpected_error")
             return jsonify({"ok": False, "error": "internal_error"}), 500
 
     @app.get("/api/consolidation/groups/<int:group_id>/members/effective")
