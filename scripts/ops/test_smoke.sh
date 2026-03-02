@@ -30,8 +30,34 @@ run_isolated() {
 echo "[smoke] start"
 echo "[smoke] db=${DB_HOST}:${DB_PORT}/${DB_NAME} user=${DB_USER}"
 
-# DB probe: retry 5 times to reduce flaky startup failures.
-if run_isolated python3 - <<'PY'
+# DB probe step 1: TCP reachability is a hard gate.
+tcp_probe_err=""
+if ! tcp_probe_err="$(run_isolated python3 - <<'PY' 2>&1
+import os
+import socket
+import sys
+
+host = os.getenv("DB_HOST", "127.0.0.1")
+port = int(os.getenv("DB_PORT", "3306"))
+
+try:
+    with socket.create_connection((host, port), timeout=2):
+        pass
+except Exception as exc:
+    print(f"tcp_connect_failed: {exc}", file=sys.stderr)
+    sys.exit(2)
+PY
+)"; then
+  elapsed="$(( $(date +%s) - START_TS ))"
+  reason="$(echo "$tcp_probe_err" | tail -n 1)"
+  echo "[smoke] db probe failed: ${reason}"
+  echo "[smoke] summary: FAIL (db_probe) elapsed=${elapsed}s"
+  exit 2
+fi
+
+# DB probe step 2: retry pymysql probe to reduce flaky startup failures.
+set +e
+db_probe_err="$(run_isolated python3 - <<'PY' 2>&1
 import os
 import sys
 import time
@@ -42,6 +68,20 @@ port = int(os.getenv("DB_PORT", "3306"))
 db = os.getenv("DB_NAME", "xinyi_ai")
 user = os.getenv("DB_USER", "root")
 password = os.getenv("DB_PASSWORD", "88888888")
+
+def should_fallback(exc):
+    text = str(exc).lower()
+    if "operation not permitted" in text:
+        return True
+    if "errno 1" in text:
+        return True
+    if "2003" in text:
+        return True
+    if getattr(exc, "args", None):
+        first = exc.args[0]
+        if first in (1, 2003):
+            return True
+    return False
 
 last_err = None
 for i in range(5):
@@ -67,16 +107,52 @@ for i in range(5):
         if i < 4:
             time.sleep(0.4)
 
+if last_err is None:
+    print("DB probe failed after 5 attempts: unknown error", file=sys.stderr)
+    sys.exit(2)
+
+if should_fallback(last_err):
+    print(f"DB probe failed after 5 attempts: {last_err}", file=sys.stderr)
+    sys.exit(10)
+
 print(f"DB probe failed after 5 attempts: {last_err}", file=sys.stderr)
 sys.exit(2)
 PY
-then :; else
-  elapsed="$(( $(date +%s) - START_TS ))"
-  echo "[smoke] summary: FAIL (db_probe) elapsed=${elapsed}s"
-  exit $?
-fi
+)"; db_probe_rc=$?
+set -e
 
-echo "[smoke] db probe ok"
+if [ "$db_probe_rc" -eq 0 ]; then
+  echo "[smoke] db probe ok: pymysql"
+elif [ "$db_probe_rc" -eq 10 ]; then
+  set +e
+  mysql_probe_err="$(run_isolated mysql \
+    --protocol=TCP \
+    --connect-timeout=2 \
+    -h"$DB_HOST" \
+    -P"$DB_PORT" \
+    -u"$DB_USER" \
+    -p"$DB_PASSWORD" \
+    "$DB_NAME" \
+    -e "SELECT 1;" 2>&1)"
+  mysql_probe_rc=$?
+  set -e
+
+  if [ "$mysql_probe_rc" -eq 0 ]; then
+    echo "[smoke] db probe ok: mysql_cli_fallback"
+  else
+    elapsed="$(( $(date +%s) - START_TS ))"
+    reason="$(echo "${mysql_probe_err:-$db_probe_err}" | tail -n 1)"
+    echo "[smoke] db probe failed: ${reason}"
+    echo "[smoke] summary: FAIL (db_probe) elapsed=${elapsed}s"
+    exit 2
+  fi
+else
+  elapsed="$(( $(date +%s) - START_TS ))"
+  reason="$(echo "$db_probe_err" | tail -n 1)"
+  echo "[smoke] db probe failed: ${reason}"
+  echo "[smoke] summary: FAIL (db_probe) elapsed=${elapsed}s"
+  exit 2
+fi
 
 set +e
 run_isolated python3 -m pytest -q --maxfail=1 \
