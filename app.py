@@ -65,6 +65,10 @@ from app.services.consolidation_authorization_service import (
     list_authorizations,
     set_authorization_status,
 )
+from app.services.consolidation_parameters_service import (
+    ConsolidationParameterError,
+    list_consolidation_parameters,
+)
 from app.services.dashboard_service import DashboardError, get_boss_metrics, get_workbench_metrics
 from app.services.depreciation_service import (
     DepreciationError,
@@ -981,6 +985,18 @@ def create_app() -> Flask:
         except Exception:
             app.logger.exception("consolidation_relations_overview_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/parameters")
+    def api_consolidation_parameters():
+        try:
+            result = list_consolidation_parameters(request.args.to_dict(flat=True))
+            items = result.get("items") if isinstance(result, dict) else []
+            return jsonify({"ok": True, "items": items or []}), 200
+        except ConsolidationParameterError as err:
+            return jsonify({"ok": False, "error": str(err), "items": []}), 400
+        except Exception:
+            app.logger.exception("consolidation_parameters_unexpected_error")
+            return jsonify({"ok": True, "message": "consolidation_parameters_unavailable", "items": []}), 200
 
     @app.post("/api/consolidation/relations/non-legal-bind")
     def api_consolidation_bind_non_legal():
