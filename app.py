@@ -1339,13 +1339,17 @@ def create_app() -> Flask:
                     {
                         "ok": True,
                         "set_id": result.get("set_id"),
+                        "adjustment_set_id": result.get("set_id"),
                         "stats": {
                             "matched": result.get("matched_count", 0),
                             "unmatched": result.get("unmatched_count", 0),
                             "line_count": result.get("line_count", 0),
                         },
+                        "preview_lines": result.get("draft_adjustment_lines") or [],
                         "matched_pairs": result.get("matched_pairs") or [],
                         "unmatched": result.get("unmatched") or [],
+                        "unmatched_export_csv": result.get("unmatched_export_csv") or "",
+                        "reused_existing_set": bool(result.get("reused_existing_set")),
                         "adjustment_id": result.get("adjustment_id"),
                     }
                 ),

@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Dict, List, Set, Tuple
@@ -172,16 +173,69 @@ def _match_by_key(balance_rows: List[Dict[str, object]]) -> Tuple[List[Dict[str,
     return matched_pairs, unmatched
 
 
+def _build_unmatched_export_csv(unmatched: List[Dict[str, object]]) -> str:
+    head = "entity,subject_code,aux_code,side,amount"
+    if not unmatched:
+        return head
+    lines = [head]
+    for u in unmatched:
+        lines.append(
+            ",".join(
+                [
+                    str(u.get("entity") or ""),
+                    str(u.get("subject_code") or ""),
+                    str(u.get("aux_code") or ""),
+                    str(u.get("side") or ""),
+                    str(u.get("amount") or ""),
+                ]
+            )
+        )
+    return "\n".join(lines)
+
+
+def _find_existing_adjustment_set(conn, group_id: int, period: str, as_of: date) -> Dict[str, object] | None:
+    cols = _table_columns(conn, "consolidation_adjustments")
+    if not {"batch_id", "tag", "source", "rule_code", "evidence_ref", "lines_json"}.issubset(cols):
+        return None
+    row = conn.execute(
+        text(
+            """
+            SELECT id, batch_id, lines_json
+            FROM consolidation_adjustments
+            WHERE group_id=:group_id
+              AND period=:period
+              AND status='draft'
+              AND tag='onboarding_ic'
+              AND source='generated'
+              AND rule_code='ONBOARD_IC'
+              AND evidence_ref=:evidence_ref
+            ORDER BY id DESC
+            LIMIT 1
+            """
+        ),
+        {"group_id": int(group_id), "period": period, "evidence_ref": f"as_of:{as_of.isoformat()}"},
+    ).fetchone()
+    if not row:
+        return None
+    lines = []
+    try:
+        lines = json.loads(str(row.lines_json or "[]"))
+    except Exception:
+        lines = []
+    return {"id": int(row.id), "set_id": str(row.batch_id or ""), "lines": lines if isinstance(lines, list) else []}
+
+
 def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operator_id: int = 1) -> Dict[str, object]:
     group_id = _parse_positive_int(group_id_value, "consolidation_group_id")
     as_of = _parse_date(as_of_value, "as_of")
     period = as_of.strftime("%Y-%m")
-    set_id = f"ICM-{group_id}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    set_id = f"ICM-{group_id}-{as_of.strftime('%Y%m%d')}"
 
     provider = get_connection_provider()
     with provider.connect() as conn:
         member_book_ids = _effective_member_book_ids(conn, group_id, as_of)
         rows = _load_ic_balances(conn, member_book_ids, as_of)
+        existing = _find_existing_adjustment_set(conn, group_id, period, as_of)
 
     matched_pairs, unmatched = _match_by_key(rows)
     draft_lines: List[Dict[str, object]] = []
@@ -193,6 +247,11 @@ def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operato
                 "debit": str(amount),
                 "credit": "0",
                 "note": f"onboarding_ic set={set_id} {pair['a_entity']}->{pair['b_entity']} aux={pair['aux_code']}",
+                "set_id": set_id,
+                "source": "generated",
+                "rule": "ONBOARD_IC",
+                "evidence_ref": f"as_of:{as_of.isoformat()}",
+                "operator_id": str(int(operator_id or 1)),
             }
         )
         draft_lines.append(
@@ -201,11 +260,22 @@ def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operato
                 "debit": "0",
                 "credit": str(amount),
                 "note": f"onboarding_ic set={set_id} {pair['a_entity']}->{pair['b_entity']} aux={pair['aux_code']}",
+                "set_id": set_id,
+                "source": "generated",
+                "rule": "ONBOARD_IC",
+                "evidence_ref": f"as_of:{as_of.isoformat()}",
+                "operator_id": str(int(operator_id or 1)),
             }
         )
 
     adjustment = None
-    if draft_lines:
+    reused = False
+    if existing:
+        reused = True
+        set_id = str(existing.get("set_id") or set_id)
+        adjustment = {"id": int(existing.get("id") or 0)}
+        draft_lines = list(existing.get("lines") or [])
+    elif draft_lines:
         adjustment = create_consolidation_adjustment(
             {
                 "consolidation_group_id": group_id,
@@ -214,7 +284,7 @@ def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operato
                 "status": "draft",
                 "source": "generated",
                 "tag": "onboarding_ic",
-                "rule_code": "IC_MATCH",
+                "rule_code": "ONBOARD_IC",
                 "evidence_ref": f"as_of:{as_of.isoformat()}",
                 "batch_id": set_id,
                 "lines": draft_lines,
@@ -228,8 +298,10 @@ def run_onboarding_ic_match(group_id_value: object, as_of_value: object, operato
         "member_count": len(member_book_ids),
         "matched_pairs": matched_pairs,
         "unmatched": unmatched,
+        "unmatched_export_csv": _build_unmatched_export_csv(unmatched),
         "draft_adjustment_lines": draft_lines,
         "adjustment_id": (adjustment or {}).get("id"),
+        "reused_existing_set": reused,
         "matched_count": len(matched_pairs),
         "unmatched_count": len(unmatched),
         "line_count": len(draft_lines),

@@ -64,6 +64,11 @@ def _normalize_lines(lines: object) -> List[Dict[str, str]]:
                 "debit": str(debit),
                 "credit": str(credit),
                 "note": note,
+                "set_id": str(item.get("set_id") or "").strip(),
+                "source": str(item.get("source") or "").strip(),
+                "rule": str(item.get("rule") or "").strip(),
+                "evidence_ref": str(item.get("evidence_ref") or "").strip(),
+                "operator_id": str(item.get("operator_id") or "").strip(),
             }
         )
     return out

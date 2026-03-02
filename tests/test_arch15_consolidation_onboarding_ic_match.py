@@ -235,9 +235,22 @@ class Arch15ConsolidationOnboardingIcMatchTest(unittest.TestCase):
         body = resp.get_json() or {}
         self.assertTrue(body.get("ok"))
         self.assertTrue(body.get("set_id"))
+        self.assertEqual(body.get("adjustment_set_id"), body.get("set_id"))
         self.assertGreaterEqual(int((body.get("stats") or {}).get("matched") or 0), 1)
         self.assertEqual(int((body.get("stats") or {}).get("unmatched") or 0), 0)
         self.assertEqual(body.get("unmatched"), [])
+        self.assertTrue(isinstance(body.get("preview_lines"), list))
+        self.assertIn("entity,subject_code,aux_code,side,amount", str(body.get("unmatched_export_csv") or ""))
+        self.assertFalse(bool(body.get("reused_existing_set")))
+
+        rerun = self.client.post(
+            "/api/consolidation/onboarding/ic_match",
+            json={"consolidation_group_id": gid, "as_of": "2025-03-31", "operator_id": 1},
+        )
+        self.assertEqual(rerun.status_code, 200, rerun.get_data(as_text=True))
+        body2 = rerun.get_json() or {}
+        self.assertTrue(bool(body2.get("reused_existing_set")))
+        self.assertEqual(str(body2.get("set_id") or ""), str(body.get("set_id") or ""))
 
         with self.engine.connect() as conn:
             row = conn.execute(
@@ -253,11 +266,24 @@ class Arch15ConsolidationOnboardingIcMatchTest(unittest.TestCase):
                 ),
                 {"gid": gid},
             ).fetchone()
+            cnt_row = conn.execute(
+                text(
+                    """
+                    SELECT COUNT(1) AS c
+                    FROM consolidation_adjustments
+                    WHERE group_id=:gid
+                      AND period='2025-03'
+                      AND batch_id=:batch_id
+                    """
+                ),
+                {"gid": gid, "batch_id": str(body.get("set_id") or "")},
+            ).fetchone()
         self.assertIsNotNone(row)
+        self.assertEqual(int(cnt_row.c or 0), 1)
         self.assertEqual(str(row.status or ""), "draft")
         self.assertEqual(str(row.source or ""), "generated")
         self.assertEqual(str(row.tag or ""), "onboarding_ic")
-        self.assertEqual(str(row.rule_code or ""), "IC_MATCH")
+        self.assertEqual(str(row.rule_code or ""), "ONBOARD_IC")
         self.assertEqual(str(row.batch_id or ""), str(body.get("set_id") or ""))
         lines = json.loads(str(row.lines_json or "[]"))
         self.assertGreaterEqual(len(lines), 2)
