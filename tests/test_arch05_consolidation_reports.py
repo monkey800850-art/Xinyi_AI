@@ -192,7 +192,14 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
             )
             gid = int(result.lastrowid)
             for bid in book_ids:
-                member_book_col = "member_book_id" if "member_book_id" in mcols else "book_id"
+                has_book_id = "book_id" in mcols
+                has_member_book_id = "member_book_id" in mcols
+                if has_book_id and has_member_book_id:
+                    member_book_col = "book_id, member_book_id"
+                    member_book_val = ":book_id, :book_id"
+                else:
+                    member_book_col = "member_book_id" if has_member_book_id else "book_id"
+                    member_book_val = ":book_id"
                 member_entity_part = ", member_entity_id" if "member_entity_id" in mcols else ""
                 member_entity_val = ", NULL" if "member_entity_id" in mcols else ""
                 member_type_part = ", member_type" if "member_type" in mcols else ""
@@ -208,7 +215,7 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
                             group_id, {member_book_col}{member_entity_part}{member_type_part}{period_cols}, status, is_enabled
                         )
                         VALUES (
-                            :gid, :book_id{member_entity_val}{member_type_val}{period_vals}, 'active', 1
+                            :gid, {member_book_val}{member_entity_val}{member_type_val}{period_vals}, 'active', 1
                         )
                         """
                     ),
