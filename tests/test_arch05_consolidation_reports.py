@@ -7,6 +7,7 @@ import unittest
 from sqlalchemy import text
 
 from app.db import get_engine
+from tests._helpers.book_factory import make_book_payload
 
 
 class Arch05ConsolidationReportsTest(unittest.TestCase):
@@ -93,9 +94,7 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
             )
 
     def _create_book(self, suffix: str) -> int:
-        payload = {"name": f"ARCH05_{suffix}_{self.sid}", "accounting_standard": "enterprise"}
-        payload.setdefault("book_code", payload.get("book_name") or f"BK_{self.sid}")
-        payload.setdefault("start_period", "2026-01")
+        payload = make_book_payload(self.sid, suffix=suffix)
         resp = self.client.post(
             "/books",
             json=payload,
