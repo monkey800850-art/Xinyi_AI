@@ -37,6 +37,7 @@ bash scripts/ops/smoke.sh || fail_gate "smoke"
 
 echo "[gate] 2/3 unit test"
 python3 -m pytest -q tests/test_cons_auth_gate_unit.py || fail_gate "unit_test"
+python3 -m pytest -q tests/test_arch06_consolidation_parameters_api.py || fail_gate "parameters_api_test"
 
 echo "[gate] 3/3 app endpoints"
 python3 - <<'PY' >"$APP_LOG" 2>&1 &

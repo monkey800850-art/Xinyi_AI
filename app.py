@@ -2,13 +2,13 @@ import io
 import re
 import sys
 from argparse import Namespace
-from datetime import date
+from datetime import date, datetime, timezone
 
 from flask import Flask, jsonify, render_template, request, send_file, session
 
 from app.config import DatabaseConfigError, load_env
 from app.db import test_db_connection
-from app.db_router import clear_request_route_context, set_request_route_context
+from app.db_router import clear_request_route_context, get_connection_provider, set_request_route_context
 from app.services.ar_ap_service import ArApError, get_aging_report, get_due_warnings, get_warning_summary
 from app.services.asset_service import (
     AssetError,
@@ -61,13 +61,15 @@ from app.services.consolidation_manage_service import (
 )
 from app.services.consolidation_authorization_service import (
     ConsolidationAuthorizationError,
+    assert_virtual_authorized,
     create_authorization,
     list_authorizations,
     set_authorization_status,
 )
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
-    list_consolidation_parameters,
+    list_consolidation_parameters_contract,
+    upsert_consolidation_parameters_contract,
 )
 from app.services.dashboard_service import DashboardError, get_boss_metrics, get_workbench_metrics
 from app.services.depreciation_service import (
@@ -988,15 +990,64 @@ def create_app() -> Flask:
 
     @app.get("/api/consolidation/parameters")
     def api_consolidation_parameters():
+        group_id = str(request.args.get("group_id") or "").strip()
+        tenant_id = str(request.args.get("tenant_id") or "").strip() or None
         try:
-            result = list_consolidation_parameters(request.args.to_dict(flat=True))
-            items = result.get("items") if isinstance(result, dict) else []
-            return jsonify({"ok": True, "items": items or []}), 200
+            if not group_id:
+                raise ConsolidationParameterError("group_id_required")
+            gid = int(group_id)
+            with get_connection_provider().connect(tenant_id=tenant_id) as conn:
+                assert_virtual_authorized(conn, gid, date.today())
+            result = list_consolidation_parameters_contract(gid, tenant_id=tenant_id)
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "items": result.get("items") or [],
+                        "version": "cons-params-v1",
+                        "ts": datetime.now(timezone.utc).isoformat(),
+                    }
+                ),
+                200,
+            )
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"ok": False, "error": str(err)}), 403
         except ConsolidationParameterError as err:
-            return jsonify({"ok": False, "error": str(err), "items": []}), 400
+            return jsonify({"ok": False, "error": str(err)}), 400
         except Exception:
             app.logger.exception("consolidation_parameters_unexpected_error")
-            return jsonify({"ok": True, "message": "consolidation_parameters_unavailable", "items": []}), 200
+            return jsonify({"ok": False, "error": "consolidation_parameters_invalid"}), 400
+
+    @app.post("/api/consolidation/parameters")
+    @app.put("/api/consolidation/parameters")
+    def api_upsert_consolidation_parameters():
+        payload = request.get_json(silent=True) or {}
+        tenant_id = str(payload.get("tenant_id") or "").strip() or None
+        try:
+            gid = int(payload.get("group_id") or 0)
+            if gid <= 0:
+                raise ConsolidationParameterError("group_id_required")
+            with get_connection_provider().connect(tenant_id=tenant_id) as conn:
+                assert_virtual_authorized(conn, gid, date.today())
+            result = upsert_consolidation_parameters_contract(payload, tenant_id=tenant_id)
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "item": result.get("item") or {},
+                        "version": "cons-params-v1",
+                        "ts": datetime.now(timezone.utc).isoformat(),
+                    }
+                ),
+                200,
+            )
+        except ConsolidationAuthorizationError as err:
+            return jsonify({"ok": False, "error": str(err)}), 403
+        except ConsolidationParameterError as err:
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_parameters_upsert_unexpected_error")
+            return jsonify({"ok": False, "error": "consolidation_parameters_invalid"}), 400
 
     @app.post("/api/consolidation/relations/non-legal-bind")
     def api_consolidation_bind_non_legal():
