@@ -90,6 +90,7 @@ from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
 )
+from app.services.consolidation_type_service import ConsolidationTypeError, get_type, set_type
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
@@ -1834,6 +1835,120 @@ def create_app() -> Flask:
         except Exception:
             app.logger.exception("consolidation_parameters_upsert_unexpected_error")
             return jsonify({"ok": False, "error": "consolidation_parameters_invalid"}), 400
+
+    @app.get("/api/consolidation/type")
+    def api_consolidation_type_get():
+        args = request.args.to_dict(flat=True)
+        operator_id = _get_operator_id()
+        group_id = None
+        try:
+            group_id = int(args.get("group_id") or args.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("group_id_invalid")
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, date.today())
+            item = get_type(group_id)
+            _safe_log_consolidation_audit(
+                action="type_get",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=args,
+                note="type_loaded",
+            )
+            return jsonify({"ok": True, "item": item}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="type_get",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationTypeError) as err:
+            _safe_log_consolidation_audit(
+                action="type_get",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=args,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_type_get_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="type_get",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/type")
+    def api_consolidation_type_set():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("group_id") or payload.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("group_id_invalid")
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, date.today())
+            item = set_type(group_id, payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="type_post",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set_to={item.get('consolidation_type','')}",
+            )
+            return jsonify({"ok": True, "item": item}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="type_post",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationTypeError) as err:
+            _safe_log_consolidation_audit(
+                action="type_post",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_type_set_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="type_post",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
 
     @app.post("/api/consolidation/relations/non-legal-bind")
     def api_consolidation_bind_non_legal():
