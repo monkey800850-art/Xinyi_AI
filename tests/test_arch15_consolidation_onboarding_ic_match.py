@@ -90,6 +90,16 @@ class Arch15ConsolidationOnboardingIcMatchTest(unittest.TestCase):
                 conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN batch_id VARCHAR(64) NULL"))
             if not _has_column("tag"):
                 conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN tag VARCHAR(64) NULL"))
+            if not _has_column("reviewed_by"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN reviewed_by BIGINT NULL"))
+            if not _has_column("reviewed_at"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN reviewed_at DATETIME NULL"))
+            if not _has_column("locked_by"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN locked_by BIGINT NULL"))
+            if not _has_column("locked_at"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN locked_at DATETIME NULL"))
+            if not _has_column("note"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN note VARCHAR(255) NULL"))
 
     def _create_book(self, suffix: str) -> int:
         payload = make_book_payload(self.sid, suffix=suffix)

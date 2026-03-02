@@ -1387,7 +1387,12 @@ def create_app() -> Flask:
             as_of = _period_to_as_of_date(str(meta.get("period") or ""))
             with get_connection_provider().connect() as conn:
                 assert_virtual_authorized(conn, group_id, as_of)
-            result = transition_adjustment_set_status(set_id, action=action, operator_id=operator_id)
+            result = transition_adjustment_set_status(
+                set_id,
+                action=action,
+                operator_id=operator_id,
+                note=payload.get("note") or payload.get("reason") or "",
+            )
             _safe_log_consolidation_audit(
                 action=f"adjustment_set_{action}",
                 group_id=group_id,

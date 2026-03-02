@@ -107,6 +107,16 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
                 conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN batch_id VARCHAR(64) NULL"))
             if not _has_column("tag"):
                 conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN tag VARCHAR(64) NULL"))
+            if not _has_column("reviewed_by"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN reviewed_by BIGINT NULL"))
+            if not _has_column("reviewed_at"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN reviewed_at DATETIME NULL"))
+            if not _has_column("locked_by"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN locked_by BIGINT NULL"))
+            if not _has_column("locked_at"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN locked_at DATETIME NULL"))
+            if not _has_column("note"):
+                conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN note VARCHAR(255) NULL"))
 
     def _create_book(self, suffix: str) -> int:
         payload = make_book_payload(self.sid, suffix=suffix)
@@ -307,9 +317,14 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
         self.assertEqual(forbidden_review.status_code, 403, forbidden_review.get_data(as_text=True))
         self._grant(gid)
 
-        review = self.client.post(f"/api/consolidation/adjustment_sets/{set_id}/review", json={"operator_id": 1})
+        review = self.client.post(
+            f"/api/consolidation/adjustment_sets/{set_id}/review",
+            json={"operator_id": 1, "note": "ready for review"},
+        )
         self.assertEqual(review.status_code, 200, review.get_data(as_text=True))
-        self.assertEqual(str(((review.get_json() or {}).get("item") or {}).get("status") or ""), "reviewed")
+        review_item = (review.get_json() or {}).get("item") or {}
+        self.assertEqual(str(review_item.get("status") or ""), "reviewed")
+        self.assertEqual(str(review_item.get("note") or ""), "ready for review")
 
         blocked_reviewed = self.client.post(
             "/api/consolidation/onboarding/ic_match",
@@ -317,7 +332,10 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
         )
         self.assertEqual(blocked_reviewed.status_code, 409, blocked_reviewed.get_data(as_text=True))
 
-        reopen = self.client.post(f"/api/consolidation/adjustment_sets/{set_id}/reopen", json={"operator_id": 1})
+        reopen = self.client.post(
+            f"/api/consolidation/adjustment_sets/{set_id}/reopen",
+            json={"operator_id": 1, "note": "fix and rerun"},
+        )
         self.assertEqual(reopen.status_code, 200, reopen.get_data(as_text=True))
         self.assertEqual(str(((reopen.get_json() or {}).get("item") or {}).get("status") or ""), "draft")
 
@@ -337,7 +355,7 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
             row = conn.execute(
                 text(
                     """
-                    SELECT status, lines_json
+                    SELECT status, lines_json, reviewed_by, reviewed_at, locked_by, locked_at, note
                     FROM consolidation_adjustments
                     WHERE group_id=:gid
                       AND batch_id=:set_id
@@ -348,6 +366,9 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
                 {"gid": gid, "set_id": set_id},
             ).fetchone()
         self.assertEqual(str(row.status or ""), "draft")
+        self.assertEqual(int(row.reviewed_by or 0), 1)
+        self.assertTrue(str(row.reviewed_at or ""))
+        self.assertEqual(str(row.note or ""), "fix and rerun")
         lines = json.loads(str(row.lines_json or "[]"))
         generated = [
             x
@@ -360,11 +381,19 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
         self.assertGreaterEqual(len(generated), 2)
         self.assertEqual(len(manual), 1)
 
-        review2 = self.client.post(f"/api/consolidation/adjustment_sets/{set_id}/review", json={"operator_id": 1})
+        review2 = self.client.post(
+            f"/api/consolidation/adjustment_sets/{set_id}/review",
+            json={"operator_id": 1, "note": "second review"},
+        )
         self.assertEqual(review2.status_code, 200, review2.get_data(as_text=True))
-        lock_resp = self.client.post(f"/api/consolidation/adjustment_sets/{set_id}/lock", json={"operator_id": 1})
+        lock_resp = self.client.post(
+            f"/api/consolidation/adjustment_sets/{set_id}/lock",
+            json={"operator_id": 1, "note": "final lock"},
+        )
         self.assertEqual(lock_resp.status_code, 200, lock_resp.get_data(as_text=True))
-        self.assertEqual(str(((lock_resp.get_json() or {}).get("item") or {}).get("status") or ""), "locked")
+        lock_item = (lock_resp.get_json() or {}).get("item") or {}
+        self.assertEqual(str(lock_item.get("status") or ""), "locked")
+        self.assertEqual(str(lock_item.get("note") or ""), "final lock")
 
         blocked_locked = self.client.post(
             "/api/consolidation/onboarding/ic_match",
@@ -372,7 +401,34 @@ class Arch16AdjustmentSetWorkflowTest(unittest.TestCase):
         )
         self.assertEqual(blocked_locked.status_code, 409, blocked_locked.get_data(as_text=True))
 
-        self.assertGreaterEqual(self._count_transition_audit(gid), 4)
+        blocked_reopen_locked = self.client.post(
+            f"/api/consolidation/adjustment_sets/{set_id}/reopen",
+            json={"operator_id": 1},
+        )
+        self.assertEqual(blocked_reopen_locked.status_code, 409, blocked_reopen_locked.get_data(as_text=True))
+
+        with self.engine.connect() as conn:
+            locked_row = conn.execute(
+                text(
+                    """
+                    SELECT status, reviewed_by, reviewed_at, locked_by, locked_at, note
+                    FROM consolidation_adjustments
+                    WHERE group_id=:gid
+                      AND batch_id=:set_id
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """
+                ),
+                {"gid": gid, "set_id": set_id},
+            ).fetchone()
+        self.assertEqual(str(locked_row.status or ""), "locked")
+        self.assertEqual(int(locked_row.reviewed_by or 0), 1)
+        self.assertTrue(str(locked_row.reviewed_at or ""))
+        self.assertEqual(int(locked_row.locked_by or 0), 1)
+        self.assertTrue(str(locked_row.locked_at or ""))
+        self.assertEqual(str(locked_row.note or ""), "final lock")
+
+        self.assertGreaterEqual(self._count_transition_audit(gid), 5)
 
 
 if __name__ == "__main__":
