@@ -78,6 +78,10 @@ from app.services.consolidation_ownership_service import (
     create_consolidation_ownership,
     list_consolidation_ownership,
 )
+from app.services.consolidation_control_service import (
+    ConsolidationControlError,
+    get_consolidation_control_decision,
+)
 from app.services.consolidation_audit_service import log_consolidation_audit
 from app.services.consolidation_parameters_service import (
     ConsolidationParameterError,
@@ -1418,6 +1422,27 @@ def create_app() -> Flask:
                 payload=args,
                 note="internal_error",
             )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.get("/api/consolidation/control_decision")
+    def api_consolidation_control_decision():
+        args = request.args.to_dict(flat=True)
+        group_id = None
+        try:
+            group_id = int(args.get("consolidation_group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(args.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = get_consolidation_control_decision(group_id, as_of.isoformat())
+            return jsonify({"ok": True, **result}), 200
+        except ConsolidationAuthorizationError:
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationControlError) as err:
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_control_decision_unexpected_error")
             return jsonify({"ok": False, "error": "internal_error"}), 500
 
     @app.get("/api/consolidation/groups/<int:group_id>/members/effective")

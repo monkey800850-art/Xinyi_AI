@@ -43,6 +43,7 @@ python3 -m pytest -q tests/test_arch09_consolidation_scope_effective_members.py 
 python3 -m pytest -q tests/test_arch10_consolidation_elimination_manual_adjustments.py || fail_gate "manual_elimination_test"
 python3 -m pytest -q tests/test_arch11_consolidation_parameters_drive_default_scope.py || fail_gate "params_drive_scope_test"
 python3 -m pytest -q tests/test_arch12_consolidation_ownership_api.py || fail_gate "ownership_api_test"
+python3 -m pytest -q tests/test_arch13_consolidation_control_decision.py || fail_gate "control_decision_test"
 python3 -m pytest -q tests/test_arch07_system_consolidation_page_smoke.py || fail_gate "consolidation_page_smoke_test"
 
 echo "[gate] 3/3 app endpoints"
