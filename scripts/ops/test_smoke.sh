@@ -4,17 +4,34 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
-DB_HOST="${DB_HOST:-127.0.0.1}"
-DB_PORT="${DB_PORT:-3306}"
-DB_NAME="${DB_NAME:-xinyi_ai}"
-DB_USER="${DB_USER:-root}"
-DB_PASSWORD="${DB_PASSWORD:-88888888}"
+# Fixed smoke DB env; intentionally isolated from caller/.env.
+DB_HOST="127.0.0.1"
+DB_PORT="3306"
+DB_NAME="xinyi_ai"
+DB_USER="root"
+DB_PASSWORD="88888888"
 
 mkdir -p _health
 LOG_FILE="_health/test_smoke_last.txt"
+START_TS="$(date +%s)"
+
+run_isolated() {
+  env -i \
+    PATH="$PATH" \
+    HOME="$HOME" \
+    DB_HOST="$DB_HOST" \
+    DB_PORT="$DB_PORT" \
+    DB_NAME="$DB_NAME" \
+    DB_USER="$DB_USER" \
+    DB_PASSWORD="$DB_PASSWORD" \
+    "$@"
+}
+
+echo "[smoke] start"
+echo "[smoke] db=${DB_HOST}:${DB_PORT}/${DB_NAME} user=${DB_USER}"
 
 # DB probe: retry 5 times to reduce flaky startup failures.
-if python3 - <<'PY'
+if run_isolated python3 - <<'PY'
 import os
 import sys
 import time
@@ -54,26 +71,28 @@ print(f"DB probe failed after 5 attempts: {last_err}", file=sys.stderr)
 sys.exit(2)
 PY
 then :; else
+  elapsed="$(( $(date +%s) - START_TS ))"
+  echo "[smoke] summary: FAIL (db_probe) elapsed=${elapsed}s"
   exit $?
 fi
 
-echo "DB probe ok"
+echo "[smoke] db probe ok"
 
-env -i \
-  PATH="$PATH" \
-  HOME="$HOME" \
-  DB_HOST="$DB_HOST" \
-  DB_PORT="$DB_PORT" \
-  DB_NAME="$DB_NAME" \
-  DB_USER="$DB_USER" \
-  DB_PASSWORD="$DB_PASSWORD" \
-  python3 -m pytest -q --maxfail=1 \
-    tests/test_arch02_db_router.py \
-    tests/test_arch02_service_router_integration.py \
-    tests/test_arch04_consolidation_model.py \
-    tests/test_arch05_consolidation_reports.py \
-    > >(tee "$LOG_FILE") 2>&1 || pytest_rc=$?
+set +e
+run_isolated python3 -m pytest -q --maxfail=1 \
+  tests/test_arch02_db_router.py \
+  tests/test_arch02_service_router_integration.py \
+  tests/test_arch04_consolidation_model.py \
+  tests/test_arch05_consolidation_reports.py \
+  > >(tee "$LOG_FILE") 2>&1
+pytest_rc=$?
+set -e
 
-pytest_rc=${pytest_rc:-0}
 tail -n 20 "$LOG_FILE"
+elapsed="$(( $(date +%s) - START_TS ))"
+if [ "$pytest_rc" -eq 0 ]; then
+  echo "[smoke] summary: PASS elapsed=${elapsed}s log=${LOG_FILE}"
+else
+  echo "[smoke] summary: FAIL (pytest_rc=${pytest_rc}) elapsed=${elapsed}s log=${LOG_FILE}"
+fi
 exit "$pytest_rc"

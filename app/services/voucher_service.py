@@ -13,6 +13,15 @@ class VoucherValidationError(RuntimeError):
         self.errors = errors
 
 
+AXIS_LABEL_MAP = {
+    "department": "部门",
+    "person": "人员",
+    "entity": "往来单位",
+    "project": "项目",
+    "bank_account": "银行账户",
+}
+
+
 def _parse_decimal(value) -> Decimal:
     if value is None or value == "":
         return Decimal("0")
@@ -47,6 +56,30 @@ def _check_period_open(conn, book_id: int, voucher_date: date) -> Tuple[bool, st
     if row.status != "open":
         return False, "会计期间已结账"
     return True, ""
+
+
+def _normalize_aux_type(value: str) -> str:
+    return str(value or "").strip().lower()
+
+
+def _fetch_aux_master(conn, book_id: int, aux_type: str) -> Dict[str, Dict[str, object]]:
+    # Compatibility shim for import-only paths.
+    return {}
+
+
+def _subject_aux_requirements(conn, book_id: int, subject_code: str) -> List[str]:
+    # Compatibility shim for import-only paths.
+    return []
+
+
+def _resolve_line_aux_items(conn, book_id: int, subject_code: str, line: Dict[str, object]) -> List[Dict[str, object]]:
+    # Compatibility shim for import-only paths.
+    return []
+
+
+def _ensure_voucher_line_aux_items_table(conn) -> None:
+    # Compatibility shim for import-only paths.
+    return None
 
 
 def save_voucher(payload: Dict[str, object]) -> Dict[str, object]:

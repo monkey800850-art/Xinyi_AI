@@ -400,3 +400,38 @@ def get_reimbursement_stats(params: Dict[str, str]) -> Dict[str, object]:
         items.append({"status": r.status, "count": int(r.cnt), "amount": float(r.amt or 0)})
 
     return {"book_id": book_id, "items": items}
+
+
+def delete_reimbursement(reimbursement_id: int, operator: str, role: str) -> Dict[str, object]:
+    engine = get_engine()
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT id, status FROM reimbursements WHERE id=:id"),
+            {"id": reimbursement_id},
+        ).fetchone()
+        if not row:
+            raise ReimbursementError("not_found")
+        if row.status not in ("draft", "pending", "rejected"):
+            raise ReimbursementError("invalid_status_transition")
+        conn.execute(text("DELETE FROM reimbursements WHERE id=:id"), {"id": reimbursement_id})
+        _log_action(conn, reimbursement_id, "delete", row.status, "deleted", operator or "", role or "")
+    return {"id": reimbursement_id, "status": "deleted"}
+
+
+def void_reimbursement(reimbursement_id: int, operator: str, role: str, reason: str = "") -> Dict[str, object]:
+    engine = get_engine()
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT id, status FROM reimbursements WHERE id=:id"),
+            {"id": reimbursement_id},
+        ).fetchone()
+        if not row:
+            raise ReimbursementError("not_found")
+        if row.status in ("approved", "paid", "void"):
+            raise ReimbursementError("invalid_status_transition")
+        conn.execute(
+            text("UPDATE reimbursements SET status='void', updated_at=NOW() WHERE id=:id"),
+            {"id": reimbursement_id},
+        )
+        _log_action(conn, reimbursement_id, "void", row.status, "void", operator or "", role or "", reason or "")
+    return {"id": reimbursement_id, "status": "void"}

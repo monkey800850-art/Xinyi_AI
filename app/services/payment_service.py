@@ -347,3 +347,38 @@ def get_payment_detail(payment_id: int) -> Dict[str, object]:
             for l in logs
         ],
     }
+
+
+def delete_payment(payment_id: int, operator: str, role: str) -> Dict[str, object]:
+    engine = get_engine()
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT id, status FROM payment_requests WHERE id=:id"),
+            {"id": payment_id},
+        ).fetchone()
+        if not row:
+            raise PaymentError("not_found")
+        if row.status not in ("draft", "pending", "rejected"):
+            raise PaymentError("invalid_status_transition")
+        conn.execute(text("DELETE FROM payment_requests WHERE id=:id"), {"id": payment_id})
+        _log_action(conn, payment_id, "delete", row.status, "deleted", operator or "", role or "")
+    return {"id": payment_id, "status": "deleted"}
+
+
+def void_payment(payment_id: int, operator: str, role: str, reason: str = "") -> Dict[str, object]:
+    engine = get_engine()
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT id, status FROM payment_requests WHERE id=:id"),
+            {"id": payment_id},
+        ).fetchone()
+        if not row:
+            raise PaymentError("not_found")
+        if row.status in ("paid", "void"):
+            raise PaymentError("invalid_status_transition")
+        conn.execute(
+            text("UPDATE payment_requests SET status='void', updated_at=NOW() WHERE id=:id"),
+            {"id": payment_id},
+        )
+        _log_action(conn, payment_id, "void", row.status, "void", operator or "", role or "", reason or "")
+    return {"id": payment_id, "status": "void"}

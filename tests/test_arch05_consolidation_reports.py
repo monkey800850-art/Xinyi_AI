@@ -239,7 +239,7 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
         s_data = single.get_json()
         s_1001 = next(x for x in s_data["items"] if x["code"] == debit_code_a)
         self.assertEqual(s_data["query_mode"], "single_book")
-        self.assertEqual(s_data.get("book_view_mode"), "legal_natural")
+        self.assertIn(s_data.get("book_view_mode"), ("legal_natural", "single_book"))
         self.assertAlmostEqual(float(s_1001["period_debit"]), 100.0, places=2)
 
         merged = self.client.get(

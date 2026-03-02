@@ -278,3 +278,28 @@ def disable_book(book_id: int, confirm_text: str, operator_role: str) -> Dict[st
             raise BookManageError("book_not_found")
         conn.execute(text("UPDATE books SET is_enabled=0 WHERE id=:id"), {"id": book_id})
     return {"book_id": book_id, "is_enabled": 0, "status": "disabled"}
+
+
+def list_books(params: Dict[str, str]) -> Dict[str, object]:
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, name, accounting_standard, is_enabled
+                FROM books
+                ORDER BY id ASC
+                """
+            )
+        ).fetchall()
+    return {
+        "items": [
+            {
+                "id": int(r.id),
+                "name": r.name or "",
+                "accounting_standard": r.accounting_standard or "",
+                "is_enabled": int(r.is_enabled or 0),
+            }
+            for r in rows
+        ]
+    }

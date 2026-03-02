@@ -5,6 +5,7 @@ from typing import Dict, List
 from sqlalchemy import text
 
 from app.db import get_engine
+from app.db_router import get_connection_provider
 from app.services.audit_service import log_audit
 
 
@@ -146,8 +147,9 @@ def set_user_roles(user_id: int, role_ids: List[int], operator: str, role: str) 
 
 
 def list_roles(params: Dict[str, str]) -> Dict[str, object]:
-    engine = get_engine()
-    with engine.connect() as conn:
+    tenant_id = (params.get("tenant_id") or "").strip() or None
+    provider = get_connection_provider()
+    with provider.connect(tenant_id=tenant_id, book_id=None) as conn:
         rows = conn.execute(
             text("SELECT id, code, name, description, data_scope, is_enabled FROM sys_roles ORDER BY id DESC")
         ).fetchall()

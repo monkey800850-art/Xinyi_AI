@@ -342,3 +342,28 @@ def build_template_preview(
             "note": "preview only, no voucher persisted",
         },
     }
+
+
+def list_template_candidates(book_id: int) -> Dict[str, object]:
+    return {
+        "book_id": int(book_id),
+        "items": [{"code": t["code"], "name": t["name"]} for t in TEMPLATES.values()],
+    }
+
+
+def get_template_detail(template_code: str) -> Dict[str, object]:
+    code = (template_code or "").strip().upper()
+    tpl = TEMPLATES.get(code)
+    if not tpl:
+        raise VoucherTemplateError("template_not_found")
+    return {"template": tpl}
+
+
+def build_template_draft(
+    book_id: int,
+    template_code: str,
+    params: Dict[str, object],
+    operator: str = "",
+    role: str = "",
+) -> Dict[str, object]:
+    return build_template_preview(book_id, template_code, params, operator=operator, role=role)
