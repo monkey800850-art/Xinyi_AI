@@ -47,13 +47,16 @@ import pathlib
 os.environ["FLASK_ENV"] = "production"
 os.environ["FLASK_DEBUG"] = "0"
 
-app_path = pathlib.Path.cwd() / "app.py"
-spec = importlib.util.spec_from_file_location("xinyi_app_main", app_path)
-if spec is None or spec.loader is None:
-    raise RuntimeError(f"cannot load app module from {app_path}")
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-create_app = getattr(module, "create_app")
+try:
+    from app import create_app
+except Exception:
+    app_path = pathlib.Path.cwd() / "app.py"
+    spec = importlib.util.spec_from_file_location("xinyi_app_main", app_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load app module from {app_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    create_app = getattr(module, "create_app")
 
 app = create_app()
 app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
@@ -89,8 +92,13 @@ PY
 )"
 
 if [ "$port_ready" != "OK" ]; then
-  fail_gate "gate3_port_not_ready" 1
+  echo "[gate] PORT5000_NOT_READY"
+  tail -n 80 "$APP_LOG" 2>/dev/null || true
+  echo "summary: FAIL"
+  exit 1
 fi
+
+ss -ltnp 2>/dev/null | grep ':5000' || true
 
 probe_http_code() {
   local url="$1"
@@ -108,7 +116,10 @@ probe_http_code() {
 
 is_valid_http_code() {
   local code="$1"
-  [[ "$code" =~ ^[0-9]{3}$ ]] && [ "$code" != "000" ]
+  case "$code" in
+    200|302|400|401|403|404) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 ui_code="$(probe_http_code "http://127.0.0.1:5000/system/consolidation")"
@@ -117,10 +128,6 @@ echo "[gate] /system/consolidation -> ${ui_code}"
 echo "[gate] /api/consolidation/parameters -> ${api_code}"
 
 if ! is_valid_http_code "$ui_code" || ! is_valid_http_code "$api_code"; then
-  if [ "$ui_code" = "000" ] || [ "$api_code" = "000" ]; then
-    echo "===== proxy env ====="
-    env | grep -i proxy || echo "(no proxy env)"
-  fi
   fail_gate "gate3_http_probe_invalid" 1
 fi
 
