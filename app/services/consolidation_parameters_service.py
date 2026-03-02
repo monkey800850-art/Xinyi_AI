@@ -1,5 +1,3 @@
-from datetime import date
-
 from sqlalchemy import text
 
 from app.db import get_engine
@@ -121,31 +119,73 @@ def _parse_positive_int(value: object, field: str) -> int:
     return parsed
 
 
-def _normalize_period_policy(value: object) -> str:
-    policy = str(value or "").strip().lower()
-    if not policy:
-        raise ConsolidationParameterError("period_policy_required")
-    if policy not in {"monthly", "quarterly", "yearly"}:
-        raise ConsolidationParameterError("period_policy_invalid")
-    return policy
+def _normalize_start_period(value: object) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        raise ConsolidationParameterError("start_period_required")
+    parts = raw.split("-")
+    if len(parts) != 2:
+        raise ConsolidationParameterError("start_period_invalid")
+    try:
+        year = int(parts[0])
+        month = int(parts[1])
+    except Exception as err:
+        raise ConsolidationParameterError("start_period_invalid") from err
+    if year < 2000 or month < 1 or month > 12:
+        raise ConsolidationParameterError("start_period_invalid")
+    return f"{year:04d}-{month:02d}"
 
 
-def _normalize_currency(value: object) -> str:
-    currency = str(value or "").strip().upper()
-    if not currency:
-        raise ConsolidationParameterError("currency_required")
-    if not currency.isalpha() or len(currency) > 8:
-        raise ConsolidationParameterError("currency_invalid")
-    return currency
+def _normalize_note(value: object) -> str:
+    note = str(value or "").strip()
+    if len(note) > 32:
+        note = note[:32]
+    return note
+
+
+def _period_to_date_start(period: str) -> str:
+    return f"{period}-01"
+
+
+def _decode_group_code(raw: str) -> str:
+    prefix = "group_code:"
+    text = str(raw or "").strip()
+    if text.startswith(prefix):
+        return text[len(prefix) :]
+    return ""
+
+
+def _resolve_group_id(conn, group_id_value: object, group_code_value: object) -> int:
+    gid_raw = str(group_id_value or "").strip()
+    if gid_raw:
+        return _parse_positive_int(gid_raw, "consolidation_group_id")
+    code = str(group_code_value or "").strip()
+    if not code:
+        raise ConsolidationParameterError("consolidation_group_id_or_group_code_required")
+    row = conn.execute(
+        text(
+            """
+            SELECT id
+            FROM consolidation_groups
+            WHERE group_code=:group_code
+            ORDER BY id DESC
+            LIMIT 1
+            """
+        ),
+        {"group_code": code},
+    ).fetchone()
+    if not row:
+        raise ConsolidationParameterError("group_code_not_found")
+    return int(row.id)
 
 
 def _row_to_contract_item(row) -> dict:
     return {
         "id": int(row.id),
-        "group_id": int(row.virtual_subject_id),
-        "period_policy": str(row.control_type or ""),
-        "currency": str(row.parent_subject_type or ""),
-        "note": "",
+        "consolidation_group_id": int(row.virtual_subject_id),
+        "group_code": _decode_group_code(row.parent_subject_type),
+        "start_period": str(row.control_type or ""),
+        "note": str(row.child_subject_type or ""),
         "updated_at": str(row.updated_at or ""),
     }
 
@@ -156,7 +196,7 @@ def list_consolidation_parameters_contract(group_id: int, tenant_id: str | None 
         row = conn.execute(
             text(
                 """
-                SELECT id, virtual_subject_id, control_type, parent_subject_type, updated_at
+                SELECT id, virtual_subject_id, control_type, parent_subject_type, child_subject_type, updated_at
                 FROM consolidation_parameters
                 WHERE virtual_subject_id=:group_id
                 ORDER BY id DESC
@@ -171,15 +211,16 @@ def list_consolidation_parameters_contract(group_id: int, tenant_id: str | None 
 
 
 def upsert_consolidation_parameters_contract(payload: dict, tenant_id: str | None = None) -> dict:
-    group_id = _parse_positive_int(payload.get("group_id"), "group_id")
-    period_policy = _normalize_period_policy(payload.get("period_policy"))
-    currency = _normalize_currency(payload.get("currency"))
+    start_period = _normalize_start_period(payload.get("start_period"))
+    note = _normalize_note(payload.get("note"))
+    group_code = str(payload.get("group_code") or "").strip()
     operator_raw = payload.get("operator_id")
     operator_id = int(operator_raw) if str(operator_raw or "").strip().isdigit() else 1
 
-    today = date.today().isoformat()
+    start_date = _period_to_date_start(start_period)
     provider = get_connection_provider()
     with provider.begin(tenant_id=tenant_id) as conn:
+        group_id = _resolve_group_id(conn, payload.get("consolidation_group_id"), payload.get("group_code"))
         existing = conn.execute(
             text(
                 """
@@ -199,14 +240,14 @@ def upsert_consolidation_parameters_contract(payload: dict, tenant_id: str | Non
                 text(
                     """
                     UPDATE consolidation_parameters
-                    SET parent_subject_type=:currency,
+                    SET parent_subject_type=:group_code_tag,
                         parent_subject_id=:group_id,
-                        child_subject_type=:period_policy,
+                        child_subject_type=:note,
                         child_subject_id=:group_id,
-                        control_type=:period_policy,
+                        control_type=:start_period,
                         ownership_ratio=1.000000,
                         include_in_consolidation=1,
-                        effective_start=:today,
+                        effective_start=:start_date,
                         effective_end='2099-12-31',
                         status='active',
                         operator_id=:operator_id,
@@ -217,9 +258,10 @@ def upsert_consolidation_parameters_contract(payload: dict, tenant_id: str | Non
                 {
                     "id": param_id,
                     "group_id": group_id,
-                    "period_policy": period_policy,
-                    "currency": currency,
-                    "today": today,
+                    "group_code_tag": f"group_code:{group_code}" if group_code else "",
+                    "note": note,
+                    "start_period": start_period,
+                    "start_date": start_date,
                     "operator_id": operator_id,
                 },
             )
@@ -242,14 +284,14 @@ def upsert_consolidation_parameters_contract(payload: dict, tenant_id: str | Non
                       operator_id
                     ) VALUES (
                       :group_id,
-                      :currency,
+                      :group_code_tag,
                       :group_id,
-                      :period_policy,
+                      :note,
                       :group_id,
                       1.000000,
-                      :period_policy,
+                      :start_period,
                       1,
-                      :today,
+                      :start_date,
                       '2099-12-31',
                       'active',
                       :operator_id
@@ -258,9 +300,10 @@ def upsert_consolidation_parameters_contract(payload: dict, tenant_id: str | Non
                 ),
                 {
                     "group_id": group_id,
-                    "period_policy": period_policy,
-                    "currency": currency,
-                    "today": today,
+                    "group_code_tag": f"group_code:{group_code}" if group_code else "",
+                    "note": note,
+                    "start_period": start_period,
+                    "start_date": start_date,
                     "operator_id": operator_id,
                 },
             )
@@ -269,7 +312,7 @@ def upsert_consolidation_parameters_contract(payload: dict, tenant_id: str | Non
         row = conn.execute(
             text(
                 """
-                SELECT id, virtual_subject_id, control_type, parent_subject_type, updated_at
+                SELECT id, virtual_subject_id, control_type, parent_subject_type, child_subject_type, updated_at
                 FROM consolidation_parameters
                 WHERE id=:id
                 LIMIT 1

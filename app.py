@@ -5,6 +5,7 @@ from argparse import Namespace
 from datetime import date, datetime, timezone
 
 from flask import Flask, jsonify, render_template, request, send_file, session
+from sqlalchemy import text
 
 from app.config import DatabaseConfigError, load_env
 from app.db import test_db_connection
@@ -990,13 +991,31 @@ def create_app() -> Flask:
 
     @app.get("/api/consolidation/parameters")
     def api_consolidation_parameters():
-        group_id = str(request.args.get("group_id") or "").strip()
+        group_id_raw = str(request.args.get("consolidation_group_id") or "").strip()
+        group_code = str(request.args.get("group_code") or "").strip()
         tenant_id = str(request.args.get("tenant_id") or "").strip() or None
         try:
-            if not group_id:
-                raise ConsolidationParameterError("group_id_required")
-            gid = int(group_id)
             with get_connection_provider().connect(tenant_id=tenant_id) as conn:
+                if group_id_raw:
+                    gid = int(group_id_raw)
+                elif group_code:
+                    row = conn.execute(
+                        text(
+                            """
+                            SELECT id
+                            FROM consolidation_groups
+                            WHERE group_code=:group_code
+                            ORDER BY id DESC
+                            LIMIT 1
+                            """
+                        ),
+                        {"group_code": group_code},
+                    ).fetchone()
+                    if not row:
+                        raise ConsolidationParameterError("group_code_not_found")
+                    gid = int(row.id)
+                else:
+                    raise ConsolidationParameterError("consolidation_group_id_or_group_code_required")
                 assert_virtual_authorized(conn, gid, date.today())
             result = list_consolidation_parameters_contract(gid, tenant_id=tenant_id)
             return (
@@ -1010,24 +1029,45 @@ def create_app() -> Flask:
                 ),
                 200,
             )
-        except ConsolidationAuthorizationError as err:
-            return jsonify({"ok": False, "error": str(err)}), 403
+        except ConsolidationAuthorizationError:
+            return jsonify({"error": "forbidden"}), 403
+        except ValueError:
+            return jsonify({"ok": False, "error": "consolidation_group_id_invalid"}), 400
         except ConsolidationParameterError as err:
             return jsonify({"ok": False, "error": str(err)}), 400
         except Exception:
             app.logger.exception("consolidation_parameters_unexpected_error")
             return jsonify({"ok": False, "error": "consolidation_parameters_invalid"}), 400
 
-    @app.post("/api/consolidation/parameters")
     @app.put("/api/consolidation/parameters")
     def api_upsert_consolidation_parameters():
         payload = request.get_json(silent=True) or {}
         tenant_id = str(payload.get("tenant_id") or "").strip() or None
         try:
-            gid = int(payload.get("group_id") or 0)
-            if gid <= 0:
-                raise ConsolidationParameterError("group_id_required")
             with get_connection_provider().connect(tenant_id=tenant_id) as conn:
+                gid_raw = str(payload.get("consolidation_group_id") or "").strip()
+                group_code = str(payload.get("group_code") or "").strip()
+                if gid_raw:
+                    gid = int(gid_raw)
+                elif group_code:
+                    row = conn.execute(
+                        text(
+                            """
+                            SELECT id
+                            FROM consolidation_groups
+                            WHERE group_code=:group_code
+                            ORDER BY id DESC
+                            LIMIT 1
+                            """
+                        ),
+                        {"group_code": group_code},
+                    ).fetchone()
+                    if not row:
+                        raise ConsolidationParameterError("group_code_not_found")
+                    gid = int(row.id)
+                    payload["consolidation_group_id"] = gid
+                else:
+                    raise ConsolidationParameterError("consolidation_group_id_or_group_code_required")
                 assert_virtual_authorized(conn, gid, date.today())
             result = upsert_consolidation_parameters_contract(payload, tenant_id=tenant_id)
             return (
@@ -1041,8 +1081,10 @@ def create_app() -> Flask:
                 ),
                 200,
             )
-        except ConsolidationAuthorizationError as err:
-            return jsonify({"ok": False, "error": str(err)}), 403
+        except ConsolidationAuthorizationError:
+            return jsonify({"error": "forbidden"}), 403
+        except ValueError:
+            return jsonify({"ok": False, "error": "consolidation_group_id_invalid"}), 400
         except ConsolidationParameterError as err:
             return jsonify({"ok": False, "error": str(err)}), 400
         except Exception:

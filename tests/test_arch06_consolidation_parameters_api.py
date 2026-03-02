@@ -122,17 +122,17 @@ class Arch06ConsolidationParametersApiTest(unittest.TestCase):
     def test_01_get_unauthorized_returns_403(self):
         resp = self.client.get(
             "/api/consolidation/parameters",
-            query_string={"group_id": self.group_id},
+            query_string={"consolidation_group_id": self.group_id},
         )
         self.assertEqual(resp.status_code, 403, resp.get_data(as_text=True))
         body = resp.get_json()
-        self.assertFalse(body.get("ok", True))
+        self.assertEqual(body.get("error"), "forbidden")
 
     def test_02_authorized_get_returns_contract(self):
         self._grant_authorization()
         resp = self.client.get(
             "/api/consolidation/parameters",
-            query_string={"group_id": self.group_id},
+            query_string={"consolidation_group_id": self.group_id},
         )
         self.assertEqual(resp.status_code, 200, resp.get_data(as_text=True))
         body = resp.get_json()
@@ -145,28 +145,27 @@ class Arch06ConsolidationParametersApiTest(unittest.TestCase):
     def test_03_write_then_read_back(self):
         self._grant_authorization()
         payload = {
-            "group_id": self.group_id,
-            "period_policy": "monthly",
-            "currency": "CNY",
+            "consolidation_group_id": self.group_id,
+            "start_period": "2026-03",
             "note": "arch06 write",
             "operator_id": 7,
         }
-        write_resp = self.client.post("/api/consolidation/parameters", json=payload)
+        write_resp = self.client.put("/api/consolidation/parameters", json=payload)
         self.assertEqual(write_resp.status_code, 200, write_resp.get_data(as_text=True))
         self.assertTrue(write_resp.get_json().get("ok"))
 
         read_resp = self.client.get(
             "/api/consolidation/parameters",
-            query_string={"group_id": self.group_id},
+            query_string={"consolidation_group_id": self.group_id},
         )
         self.assertEqual(read_resp.status_code, 200, read_resp.get_data(as_text=True))
         body = read_resp.get_json()
         self.assertTrue(body.get("ok"))
         self.assertGreaterEqual(len(body.get("items") or []), 1)
         latest = body["items"][0]
-        self.assertEqual(int(latest["group_id"]), self.group_id)
-        self.assertEqual(latest["period_policy"], "monthly")
-        self.assertEqual(latest["currency"], "CNY")
+        self.assertEqual(int(latest["consolidation_group_id"]), self.group_id)
+        self.assertEqual(latest["start_period"], "2026-03")
+        self.assertEqual(latest["note"], "arch06 write")
 
 
 if __name__ == "__main__":
