@@ -1,58 +1,60 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:5000}"
-BOOK_ID="${BOOK_ID:-9}"
-DEP_YEAR="${DEP_YEAR:-2025}"
-DEP_MONTH="${DEP_MONTH:-2}"
-TIMEOUT_SEC="${TIMEOUT_SEC:-8}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT_DIR"
 
-ok=0
-fail=0
+echo "=== git status -sb ==="
+git status -sb
 
-check_http() {
-  local name="$1"
-  local path="$2"
-  local expected="$3"
-  local code
-  code=$(curl -m "$TIMEOUT_SEC" -s -o /tmp/step28_health_body.txt -w "%{http_code}" "${BASE_URL}${path}" || echo "000")
-  if [[ "$code" == "$expected" ]]; then
-    echo "[PASS] ${name} ${path} -> ${code}"
-    ok=$((ok + 1))
-  else
-    echo "[FAIL] ${name} ${path} -> ${code} (expect ${expected})"
-    echo "       body: $(head -c 160 /tmp/step28_health_body.txt 2>/dev/null || true)"
-    fail=$((fail + 1))
-  fi
+echo
+echo "=== untracked by top-level dir ==="
+git status --porcelain=v1 -uall | awk '
+BEGIN {
+  dirs["app/"]=0; dirs["tests/"]=0; dirs["migrations/"]=0;
+  dirs["templates/"]=0; dirs["static/"]=0; dirs["docs/"]=0;
+  dirs["scripts/"]=0; dirs["other"]=0;
 }
-
-check_json_contains() {
-  local name="$1"
-  local path="$2"
-  local pattern="$3"
-  local body
-  body=$(curl -m "$TIMEOUT_SEC" -s "${BASE_URL}${path}" || true)
-  if echo "$body" | rg -q "$pattern"; then
-    echo "[PASS] ${name} ${path} contains /${pattern}/"
-    ok=$((ok + 1))
-  else
-    echo "[FAIL] ${name} ${path} missing /${pattern}/"
-    echo "       body: $(echo "$body" | head -c 160)"
-    fail=$((fail + 1))
-  fi
+/^\?\? / {
+  path=substr($0,4)
+  if (index(path,"app/")==1) dirs["app/"]++;
+  else if (index(path,"tests/")==1) dirs["tests/"]++;
+  else if (index(path,"migrations/")==1) dirs["migrations/"]++;
+  else if (index(path,"templates/")==1) dirs["templates/"]++;
+  else if (index(path,"static/")==1) dirs["static/"]++;
+  else if (index(path,"docs/")==1) dirs["docs/"]++;
+  else if (index(path,"scripts/")==1) dirs["scripts/"]++;
+  else dirs["other"]++;
 }
+END {
+  printf("app/: %d\n", dirs["app/"]);
+  printf("tests/: %d\n", dirs["tests/"]);
+  printf("migrations/: %d\n", dirs["migrations/"]);
+  printf("templates/: %d\n", dirs["templates/"]);
+  printf("static/: %d\n", dirs["static/"]);
+  printf("docs/: %d\n", dirs["docs/"]);
+  printf("scripts/: %d\n", dirs["scripts/"]);
+  printf("other: %d\n", dirs["other"]);
+}'
 
-echo "STEP28 health check"
-echo "BASE_URL=${BASE_URL} BOOK_ID=${BOOK_ID} DEP=${DEP_YEAR}-${DEP_MONTH}"
+echo
+echo "=== abnormal file scan ==="
+zone_count="$(find . -type f -name '*:Zone.Identifier' | wc -l | tr -d ' ')"
+dir_count="$(find . -maxdepth 2 -type d \( -name '_selfcheck' -o -name '_health' \) | wc -l | tr -d ' ')"
+mapfile -t colon_files < <(find . -name '*:*' | grep -Ev '^\./https?://')
+colon_count="${#colon_files[@]}"
 
-check_http "health" "/" "200"
-check_json_contains "health-body" "/" '"status"\s*:\s*"ok"'
-check_http "dashboard" "/dashboard" "200"
-check_http "roles-api" "/api/system/roles" "200"
-check_http "asset-changes-api" "/api/assets/changes?book_id=${BOOK_ID}" "200"
-check_http "asset-ledger-api" "/api/assets/ledger?book_id=${BOOK_ID}&dep_year=${DEP_YEAR}&dep_month=${DEP_MONTH}" "200"
-
-echo "summary: pass=${ok} fail=${fail}"
-if (( fail > 0 )); then
-  exit 1
+echo "zone_identifier_count=${zone_count}"
+echo "diagnostic_dir_count=${dir_count}"
+echo "colon_filename_count=${colon_count}"
+echo "colon_filename_sample(top20):"
+if (( colon_count > 0 )); then
+  printf '%s\n' "${colon_files[@]}" | head -n 20
+else
+  echo "(none)"
 fi
+
+if (( zone_count > 0 || dir_count > 0 || colon_count > 0 )); then
+  exit 2
+fi
+exit 0
