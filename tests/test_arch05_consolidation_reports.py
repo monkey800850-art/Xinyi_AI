@@ -94,7 +94,8 @@ class Arch05ConsolidationReportsTest(unittest.TestCase):
 
     def _create_book(self, suffix: str) -> int:
         payload = {"name": f"ARCH05_{suffix}_{self.sid}", "accounting_standard": "enterprise"}
-        payload.setdefault("book_code", f"ARCH05_{suffix}_{self.sid}")
+        payload.setdefault("book_code", payload.get("book_name") or f"BK_{self.sid}")
+        payload.setdefault("start_period", "2026-01")
         resp = self.client.post(
             "/books",
             json=payload,
