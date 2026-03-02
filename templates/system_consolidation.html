@@ -25,6 +25,20 @@
   <div id="conso-error" class="msg error hidden"></div>
   <div id="conso-ok" class="msg ok hidden"></div>
 
+  <section class="conso-card" id="conso-params-card" data-testid="conso-params-card">
+    <h2>合并参数</h2>
+    <div class="form-inline">
+      <input id="conso-param-group-id" class="field-input" type="number" min="1" placeholder="合并组ID（consolidation_group_id）" />
+      <input id="conso-param-start-period" class="field-input" type="text" maxlength="7" placeholder="开始期间（YYYY-MM）" />
+      <input id="conso-param-note" class="field-input" type="text" maxlength="32" placeholder="备注（可选）" />
+      <button type="button" class="btn secondary" id="conso-param-reload-btn">刷新参数</button>
+      <button type="button" class="btn" id="conso-param-save-btn">保存参数</button>
+    </div>
+    <div id="conso-param-empty-hint" class="member-meta">暂无参数（可先输入合并组ID后保存）</div>
+    <div id="conso-param-feedback" class="member-meta"></div>
+    <pre id="conso-param-json" style="white-space: pre-wrap;"></pre>
+  </section>
+
   <section class="conso-card tab-panel active" id="tab-natural">
     <h2>非法人所属法人（天然合并关系）</h2>
     <table class="grid-table">

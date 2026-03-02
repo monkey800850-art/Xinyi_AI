@@ -6,6 +6,7 @@
     virtualEntities: [],
     selectedVirtualId: "",
     naturalDraftByBookId: {},
+    consolidationParams: null,
   };
 
   function $(id) {
@@ -54,6 +55,26 @@
         return res.json().then(function (data) {
           return { ok: res.ok, data: data || {} };
         });
+      });
+  }
+
+  function fetchJsonWithStatus(url, options) {
+    return fetch(url, options || {})
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = {};
+          if (text) {
+            try {
+              data = JSON.parse(text);
+            } catch (e) {
+              data = {};
+            }
+          }
+          return { ok: res.ok, status: res.status, data: data || {}, text: text || "" };
+        });
+      })
+      .catch(function (err) {
+        return { ok: false, status: 0, data: {}, text: String(err || "network_error") };
       });
   }
 
@@ -499,12 +520,103 @@
     }
   }
 
+  function setParamFeedback(text, isError) {
+    var el = $("conso-param-feedback");
+    if (!el) return;
+    el.textContent = text || "";
+    el.style.color = isError ? "#b42318" : "#344054";
+  }
+
+  function renderConsolidationParams(payload) {
+    state.consolidationParams = payload || {};
+    var items = (state.consolidationParams && state.consolidationParams.items) || [];
+    var jsonBox = $("conso-param-json");
+    var hint = $("conso-param-empty-hint");
+    if (hint) {
+      hint.style.display = items.length ? "none" : "";
+    }
+    if (jsonBox) {
+      jsonBox.textContent = JSON.stringify(state.consolidationParams || {}, null, 2);
+    }
+    if (!items.length) return;
+    var latest = items[0] || {};
+    if ($("conso-param-group-id") && !String($("conso-param-group-id").value || "").trim()) {
+      $("conso-param-group-id").value = String(latest.consolidation_group_id || "");
+    }
+    if ($("conso-param-start-period")) {
+      $("conso-param-start-period").value = String(latest.start_period || "");
+    }
+    if ($("conso-param-note")) {
+      $("conso-param-note").value = String(latest.note || "");
+    }
+  }
+
+  function loadConsolidationParams() {
+    var gid = String(($("conso-param-group-id") && $("conso-param-group-id").value) || "").trim();
+    var url = "/api/consolidation/parameters";
+    if (gid) url += "?consolidation_group_id=" + encodeURIComponent(gid);
+    return fetchJsonWithStatus(url).then(function (ret) {
+      if (!ret.ok) {
+        var errText = (ret.data && (ret.data.error || ret.data.message)) || ret.text || "unknown_error";
+        setParamFeedback("参数加载失败 status=" + ret.status + " detail=" + errText, true);
+        return;
+      }
+      renderConsolidationParams(ret.data || {});
+      setParamFeedback("参数已加载 status=" + ret.status, false);
+    });
+  }
+
+  function bindConsolidationParams() {
+    var reloadBtn = $("conso-param-reload-btn");
+    if (reloadBtn) {
+      reloadBtn.addEventListener("click", function () {
+        loadConsolidationParams();
+      });
+    }
+
+    var saveBtn = $("conso-param-save-btn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        var gid = String(($("conso-param-group-id") && $("conso-param-group-id").value) || "").trim();
+        var startPeriod = String(($("conso-param-start-period") && $("conso-param-start-period").value) || "").trim();
+        var note = String(($("conso-param-note") && $("conso-param-note").value) || "").trim();
+        if (!gid) {
+          setParamFeedback("参数保存失败：缺少 consolidation_group_id", true);
+          return;
+        }
+        if (!startPeriod) {
+          setParamFeedback("参数保存失败：缺少 start_period", true);
+          return;
+        }
+        fetchJsonWithStatus("/api/consolidation/parameters", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            consolidation_group_id: Number(gid),
+            start_period: startPeriod,
+            note: note,
+          }),
+        }).then(function (ret) {
+          if (!ret.ok) {
+            var errText = (ret.data && (ret.data.error || ret.data.message)) || ret.text || "unknown_error";
+            setParamFeedback("参数保存失败 status=" + ret.status + " detail=" + errText, true);
+            return;
+          }
+          setParamFeedback("参数保存成功 status=" + ret.status, false);
+          loadConsolidationParams();
+        });
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     syncVersionMarker();
     bindTabs();
     bindNaturalActions();
     bindVirtualActions();
     bindMemberActions();
+    bindConsolidationParams();
     loadOverview();
+    loadConsolidationParams();
   });
 })();
