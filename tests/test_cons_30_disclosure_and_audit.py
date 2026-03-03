@@ -5,6 +5,7 @@ import runpy
 import sys
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from openpyxl import load_workbook
@@ -253,6 +254,44 @@ class Cons30DisclosureAuditPackageTest(unittest.TestCase):
         self.assertEqual(str(wb["Disclosure_Index"]["B5"].value or ""), "=COUNTA(Audit_Trail!A:A)-1")
         self.assertEqual(str(wb["Balance_Sheet"]["C20"].value or ""), "=SUM(C3:C19)")
         self.assertEqual(str(wb["Audit_Trail"]["A1"].value or ""), "index_id")
+
+    def test_02_generate_disclosure_and_audit_package_concurrent_idempotent(self):
+        gid = self._create_group()
+        self._insert_source_adjustment(gid)
+        payload = {"consolidation_group_id": gid, "period": "2025-04", "operator_id": 1}
+
+        self.assertEqual(self.client.post("/task/cons-24", json=payload).status_code, 200)
+        self.assertEqual(self.client.post("/task/cons-28", json=payload).status_code, 200)
+        self.assertEqual(self.client.post("/task/cons-29", json={**payload, "approver_id": 99, "auto_approve": True}).status_code, 200)
+
+        def _call_once() -> tuple[int, dict]:
+            local_client = self.app.test_client()
+            resp = local_client.post("/task/cons-30", json=payload)
+            return resp.status_code, (resp.get_json() or {})
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results = list(pool.map(lambda _: _call_once(), range(32)))
+
+        for code, body in results:
+            self.assertEqual(code, 200, body)
+            self.assertEqual(str(body.get("status") or ""), "success")
+            self.assertEqual(str(body.get("rule_code") or ""), "CONS30_DISCLOSURE_AUDIT_PACKAGE")
+
+        with self.engine.connect() as conn:
+            row = conn.execute(
+                text(
+                    """
+                    SELECT COUNT(*) AS cnt, MIN(id) AS min_id, MAX(id) AS max_id
+                    FROM consolidation_audit_packages
+                    WHERE group_id=:gid AND period='2025-04'
+                    """
+                ),
+                {"gid": gid},
+            ).fetchone()
+
+        self.assertIsNotNone(row)
+        self.assertEqual(int(row.cnt or 0), 1)
+        self.assertEqual(int(row.min_id or 0), int(row.max_id or 0))
 
 
 if __name__ == "__main__":

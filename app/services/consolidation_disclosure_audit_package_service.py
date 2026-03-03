@@ -211,64 +211,42 @@ def generate_disclosure_and_audit_package(payload: Dict[str, object], operator_i
             "sheet_names": ["Disclosure_Index", "Balance_Sheet", "Income_Statement", "Cash_Flow", "Equity_Change", "Audit_Trail"],
         }
 
-        existing = conn.execute(
+        # Use atomic upsert to avoid race-condition 500s under concurrent calls.
+        upsert = conn.execute(
             text(
                 """
-                SELECT id
-                FROM consolidation_audit_packages
-                WHERE group_id=:group_id AND period=:period
-                LIMIT 1
+                INSERT INTO consolidation_audit_packages (
+                    group_id, period, batch_id, file_name, source, rule_code, status,
+                    package_meta_json, package_blob, operator_id
+                ) VALUES (
+                    :group_id, :period, :batch_id, :file_name, 'generated', :rule_code, 'draft',
+                    :meta_json, :package_blob, :operator_id
+                )
+                ON DUPLICATE KEY UPDATE
+                    id=LAST_INSERT_ID(id),
+                    batch_id=VALUES(batch_id),
+                    file_name=VALUES(file_name),
+                    source='generated',
+                    rule_code=VALUES(rule_code),
+                    status='draft',
+                    package_meta_json=VALUES(package_meta_json),
+                    package_blob=VALUES(package_blob),
+                    operator_id=VALUES(operator_id),
+                    updated_at=NOW()
                 """
             ),
-            {"group_id": group_id, "period": period},
-        ).fetchone()
-        if existing:
-            conn.execute(
-                text(
-                    """
-                    UPDATE consolidation_audit_packages
-                    SET batch_id=:batch_id, file_name=:file_name, source='generated', rule_code=:rule_code,
-                        status='draft', package_meta_json=:meta_json, package_blob=:package_blob,
-                        operator_id=:operator_id, updated_at=NOW()
-                    WHERE id=:id
-                    """
-                ),
-                {
-                    "id": int(existing.id),
-                    "batch_id": batch_id,
-                    "file_name": file_name,
-                    "rule_code": RULE_CODE,
-                    "meta_json": json.dumps(meta, ensure_ascii=False),
-                    "package_blob": package_blob,
-                    "operator_id": operator,
-                },
-            )
-            package_id = int(existing.id)
-        else:
-            result = conn.execute(
-                text(
-                    """
-                    INSERT INTO consolidation_audit_packages (
-                        group_id, period, batch_id, file_name, source, rule_code, status,
-                        package_meta_json, package_blob, operator_id
-                    ) VALUES (
-                        :group_id, :period, :batch_id, :file_name, 'generated', :rule_code, 'draft',
-                        :meta_json, :package_blob, :operator_id
-                    )
-                    """
-                ),
-                {
-                    "group_id": group_id,
-                    "period": period,
-                    "batch_id": batch_id,
-                    "file_name": file_name,
-                    "rule_code": RULE_CODE,
-                    "meta_json": json.dumps(meta, ensure_ascii=False),
-                    "package_blob": package_blob,
-                    "operator_id": operator,
-                },
-            )
-            package_id = int(result.lastrowid or 0)
+            {
+                "group_id": group_id,
+                "period": period,
+                "batch_id": batch_id,
+                "file_name": file_name,
+                "rule_code": RULE_CODE,
+                "meta_json": json.dumps(meta, ensure_ascii=False),
+                "package_blob": package_blob,
+                "operator_id": operator,
+            },
+        )
+        package_id = int(upsert.lastrowid or 0)
 
     return {
         "group_id": group_id,
