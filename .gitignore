@@ -34,3 +34,7 @@ X-User:
 *.bak
 *~
 venv/
+
+# evidence / snapshots
+snapshots/
+snapshots/uat/
