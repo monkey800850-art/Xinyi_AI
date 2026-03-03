@@ -10,3 +10,9 @@
 - Files: templates/main_layout.html, static/js/sidebar_toggle.js, static/css/sidebar_toggle.css
 - Evidence: snapshots/uat/P1-UX-SIDEBAR-TOGGLE-01_20260303_191251.txt
 - DoD: button visible; click toggles sidebar; refresh keeps state.
+
+## P1-UX-SIDEBAR-COLLAPSE-02 (20260303_193528)
+- Goal: Shadow DOM injected always-visible sidebar collapse/expand controller.
+- Files: templates/main_layout.html, static/js/sidebar_shadow_toggle.js
+- Evidence: snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-02_20260303_193528.txt
+- DoD: button visible on /system/books; click toggles html class xinyi-sidebar-collapsed; left edge handle appears when collapsed.

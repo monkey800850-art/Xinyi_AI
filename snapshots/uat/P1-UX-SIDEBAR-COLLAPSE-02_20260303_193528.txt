@@ -1,0 +1,18 @@
+== P1-UX-SIDEBAR-COLLAPSE-02 ==
+TIME: 20260303_193528
+HEAD: 1eeaaba
+
+==[1/7] Write static/js/sidebar_shadow_toggle.js ==
+OK: static/js/sidebar_shadow_toggle.js
+
+==[2/7] Inject script into templates/main_layout.html ==
+639:  <script src="{{ url_for('static', filename='js/sidebar_shadow_toggle.js') }}?v=1eeaaba"></script>
+
+==[3/7] Restart server (best-effort) ==
+LISTEN 0      0             0.0.0.0:5000      0.0.0.0:*          
+==[4/7] Fetch rendered HTML (/system/books) and check marker ==
+JS_URL=/static/js/sidebar_shadow_toggle.js
+--- curl JS HEAD ---
+
+==[5/7] Baseline archive ==
+==[6/7] Git commit ==
