@@ -300,6 +300,12 @@ from app.services.user_experience_service import (
     show_error_message,
     show_operation_guide,
 )
+from app.services.user_dashboard_service import (
+    UserDashboardError,
+    get_role_dashboard,
+    send_reminder as send_role_dashboard_reminder,
+    track_task_status,
+)
 from app.utils.errors import APIError, build_api_error_response
 
 
@@ -3671,6 +3677,56 @@ def create_app() -> Flask:
             result = show_operation_guide(process_name)
             return jsonify(result), 200
         except UserExperienceError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/dashboard/role-todos")
+    def api_dashboard_role_todos():
+        _, role = _get_operator_from_headers()
+        query_role = request.args.get("role")
+        if query_role and str(role or "").strip().lower() not in ("admin", "tester") and str(query_role).strip() != str(role).strip():
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = get_role_dashboard(query_role or role, request.args.get("book_id"))
+            return jsonify(result), 200
+        except UserDashboardError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/dashboard/task-status")
+    def api_dashboard_task_status():
+        _, role = _get_operator_from_headers()
+        query_role = request.args.get("role")
+        if query_role and str(role or "").strip().lower() not in ("admin", "tester") and str(query_role).strip() != str(role).strip():
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = track_task_status(
+                query_role or role,
+                request.args.get("task_code"),
+                request.args.get("book_id"),
+            )
+            return jsonify(result), 200
+        except UserDashboardError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/dashboard/task-reminders")
+    def api_dashboard_task_reminders():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        target_role = payload.get("role") or role
+        if str(role or "").strip().lower() not in ("admin", "tester") and str(target_role).strip() != str(role).strip():
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = send_role_dashboard_reminder(
+                role=target_role,
+                task_code=payload.get("task_code"),
+                operator=operator,
+                operator_role=role,
+                assignee=payload.get("assignee"),
+                book_id=payload.get("book_id"),
+                note=payload.get("note"),
+            )
+            log_audit("dashboard", "task_reminder", "dashboard_task_reminders", result.get("id"), operator, role, payload)
+            return jsonify(result), 201
+        except UserDashboardError as err:
             return jsonify({"error": str(err)}), 400
 
     @app.post("/api/auth/login")
