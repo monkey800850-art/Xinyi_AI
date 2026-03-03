@@ -254,16 +254,22 @@ from app.services.reimbursement_service import (
 )
 from app.services.tax_service import (
     TaxError,
+    build_tax_declaration_mapping,
     calc_labor_service_tax,
     calc_year_end_bonus_tax,
     build_tax_alerts,
+    create_tax_diff_entry,
     create_tax_rule,
     get_tax_summary,
     import_invoices,
     list_invoices,
     list_tax_alerts,
+    list_tax_declaration_mappings,
+    list_tax_diff_entries,
     list_tax_rules,
+    map_tax_declaration,
     validate_tax,
+    verify_invoice,
 )
 from app.services.trial_balance_service import TrialBalanceError, get_trial_balance
 from app.services.voucher_import_service import (
@@ -4328,6 +4334,64 @@ def create_app() -> Flask:
     def api_tax_alerts_list():
         try:
             result = list_tax_alerts(request.args)
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/tax/invoices/verify")
+    def api_tax_invoice_verify():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = verify_invoice(payload)
+            log_audit("tax", "invoice_verify", "tax_invoice", payload.get("invoice_id"), operator, role, {"valid": result.get("valid"), "errors": result.get("errors", [])})
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/tax/diff-ledger")
+    def api_tax_diff_ledger_create():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_tax_diff_entry(payload)
+            log_audit("tax", "diff_ledger_create", "tax_difference_ledger", result.get("id"), operator, role, payload)
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/tax/diff-ledger")
+    def api_tax_diff_ledger_list():
+        try:
+            result = list_tax_diff_entries(request.args)
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/tax/declaration-mappings")
+    def api_tax_declaration_mapping_save():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = map_tax_declaration(payload)
+            log_audit("tax", "declaration_mapping_save", "tax_declaration_mapping", None, operator, role, {"book_id": payload.get("book_id"), "declaration_code": payload.get("declaration_code"), "count": result.get("count")})
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/tax/declaration-mappings")
+    def api_tax_declaration_mapping_list():
+        try:
+            result = list_tax_declaration_mappings(request.args)
+            return jsonify(result), 200
+        except TaxError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/tax/declaration-mappings/build")
+    def api_tax_declaration_mapping_build():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = build_tax_declaration_mapping(payload)
             return jsonify(result), 200
         except TaxError as err:
             return jsonify({"error": str(err)}), 400

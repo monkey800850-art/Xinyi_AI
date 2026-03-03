@@ -1,7 +1,7 @@
 import csv
 import hashlib
 import io
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Dict, List, Tuple
 
@@ -212,6 +212,39 @@ def _rows_from_excel(file_bytes: bytes) -> Tuple[List[str], List[List[str]]]:
 def _hash_invoice(book_id: int, invoice_code: str, invoice_no: str, invoice_date: date, amount: Decimal) -> str:
     raw = f"{book_id}|{invoice_code}|{invoice_no}|{invoice_date.isoformat()}|{amount}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _db_value(value):
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, datetime):
+        return value.isoformat(sep=" ")
+    return value
+
+
+def _db_params(params: Dict[str, object]) -> Dict[str, object]:
+    return {k: _db_value(v) for k, v in params.items()}
+
+
+def _table_columns(conn, table_name: str) -> set[str]:
+    try:
+        rows = conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = :table_name
+                """
+            ),
+            {"table_name": table_name},
+        ).fetchall()
+        return {str(r.column_name or "").strip().lower() for r in rows}
+    except Exception:
+        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+        return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
 
 
 def create_tax_rule(payload: Dict[str, object]) -> Dict[str, object]:
@@ -615,3 +648,366 @@ def list_tax_alerts(params: Dict[str, str]) -> Dict[str, object]:
         )
 
     return {"book_id": book_id, "items": items}
+
+
+def validate_invoice(invoice: Dict[str, object]) -> Dict[str, object]:
+    invoice_no = str(invoice.get("invoice_no") or "").strip()
+    invoice_code = str(invoice.get("invoice_code") or "").strip()
+    seller_name = str(invoice.get("seller_name") or "").strip()
+    buyer_name = str(invoice.get("buyer_name") or "").strip()
+    errors: List[Dict[str, str]] = []
+
+    if not invoice_no:
+        errors.append({"field": "invoice_no", "message": "发票号码不能为空"})
+    if not invoice_code:
+        errors.append({"field": "invoice_code", "message": "发票代码不能为空"})
+    if not seller_name:
+        errors.append({"field": "seller_name", "message": "销方名称不能为空"})
+    if not buyer_name:
+        errors.append({"field": "buyer_name", "message": "购方名称不能为空"})
+
+    invoice_date_raw = invoice.get("invoice_date")
+    parsed_date = None
+    try:
+        parsed_date = _parse_date(invoice_date_raw)
+    except Exception:
+        errors.append({"field": "invoice_date", "message": "开票日期非法"})
+    if parsed_date and parsed_date > date.today():
+        errors.append({"field": "invoice_date", "message": "开票日期不能晚于今天"})
+
+    amount = Decimal("0")
+    try:
+        amount = _parse_decimal(invoice.get("amount"))
+        if amount <= 0:
+            errors.append({"field": "amount", "message": "金额必须大于0"})
+    except Exception:
+        errors.append({"field": "amount", "message": "金额格式非法"})
+
+    tax_rate = None
+    tax_amount = None
+    try:
+        if invoice.get("tax_rate") not in (None, ""):
+            tax_rate = _parse_decimal(invoice.get("tax_rate"))
+    except Exception:
+        errors.append({"field": "tax_rate", "message": "税率格式非法"})
+    try:
+        if invoice.get("tax_amount") not in (None, ""):
+            tax_amount = _parse_decimal(invoice.get("tax_amount"))
+    except Exception:
+        errors.append({"field": "tax_amount", "message": "税额格式非法"})
+
+    if tax_rate is not None and tax_amount is not None and amount > 0:
+        expected = (amount * tax_rate).quantize(Decimal("0.01"))
+        actual = tax_amount.quantize(Decimal("0.01"))
+        if expected != actual:
+            errors.append({"field": "tax_amount", "message": "税额与税率计算不一致"})
+
+    return {"valid": len(errors) == 0, "errors": errors}
+
+
+def verify_invoice(payload: Dict[str, object]) -> Dict[str, object]:
+    invoice_id = payload.get("invoice_id")
+    engine = get_engine()
+
+    invoice = dict(payload)
+    if invoice_id not in (None, ""):
+        try:
+            iid = int(invoice_id)
+        except Exception:
+            raise TaxError("invoice_id invalid")
+        with engine.begin() as conn:
+            row = conn.execute(
+                text(
+                    """
+                    SELECT id, invoice_code, invoice_no, invoice_date, amount, tax_rate, tax_amount, seller_name, buyer_name
+                    FROM tax_invoices
+                    WHERE id=:id
+                    """
+                ),
+                {"id": iid},
+            ).fetchone()
+            if not row:
+                raise TaxError("invoice_not_found")
+            invoice = {
+                "invoice_code": row.invoice_code,
+                "invoice_no": row.invoice_no,
+                "invoice_date": row.invoice_date,
+                "amount": row.amount,
+                "tax_rate": row.tax_rate,
+                "tax_amount": row.tax_amount,
+                "seller_name": row.seller_name,
+                "buyer_name": row.buyer_name,
+            }
+            result = validate_invoice(invoice)
+            cols = _table_columns(conn, "tax_invoices")
+            if {"verification_status", "verification_message", "verified_at"}.issubset(cols):
+                conn.execute(
+                    text(
+                        """
+                        UPDATE tax_invoices
+                        SET verification_status=:verification_status,
+                            verification_message=:verification_message,
+                            verified_at=:verified_at
+                        WHERE id=:id
+                        """
+                    ),
+                    _db_params(
+                        {
+                            "id": iid,
+                            "verification_status": "passed" if result["valid"] else "failed",
+                            "verification_message": "" if result["valid"] else "; ".join([e["message"] for e in result["errors"]]),
+                            "verified_at": datetime.now(),
+                        }
+                    ),
+                )
+            return {"invoice_id": iid, **result}
+
+    return validate_invoice(invoice)
+
+
+def create_tax_diff_entry(payload: Dict[str, object]) -> Dict[str, object]:
+    book_id_raw = payload.get("book_id")
+    period = str(payload.get("period") or "").strip()
+    tax_subject = str(payload.get("tax_subject") or "").strip()
+    reason_code = str(payload.get("reason_code") or "").strip() or "MANUAL"
+    remark = str(payload.get("remark") or "").strip()
+
+    if book_id_raw in (None, ""):
+        raise TaxError("book_id required")
+    if not period:
+        raise TaxError("period required")
+    if not tax_subject:
+        raise TaxError("tax_subject required")
+    try:
+        book_id = int(book_id_raw)
+    except Exception:
+        raise TaxError("book_id must be integer")
+    try:
+        tax_amount = _parse_decimal(payload.get("tax_amount"))
+        accounting_amount = _parse_decimal(payload.get("accounting_amount"))
+    except Exception:
+        raise TaxError("tax_amount/accounting_amount invalid")
+    diff_amount = (tax_amount - accounting_amount).quantize(Decimal("0.01"))
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+                INSERT INTO tax_difference_ledger (
+                    book_id, period, tax_subject, tax_amount, accounting_amount, diff_amount,
+                    reason_code, remark, created_at
+                ) VALUES (
+                    :book_id, :period, :tax_subject, :tax_amount, :accounting_amount, :diff_amount,
+                    :reason_code, :remark, :created_at
+                )
+                """
+            ),
+            _db_params(
+                {
+                    "book_id": book_id,
+                    "period": period,
+                    "tax_subject": tax_subject,
+                    "tax_amount": tax_amount,
+                    "accounting_amount": accounting_amount,
+                    "diff_amount": diff_amount,
+                    "reason_code": reason_code,
+                    "remark": remark,
+                    "created_at": datetime.now(),
+                }
+            ),
+        )
+        entry_id = int(result.lastrowid)
+    return {"id": entry_id, "book_id": book_id, "period": period, "diff_amount": float(diff_amount)}
+
+
+def list_tax_diff_entries(params: Dict[str, str]) -> Dict[str, object]:
+    book_id_raw = (params.get("book_id") or "").strip()
+    period = (params.get("period") or "").strip()
+    if not book_id_raw:
+        raise TaxError("book_id required")
+    try:
+        book_id = int(book_id_raw)
+    except Exception:
+        raise TaxError("book_id must be integer")
+
+    sql = """
+        SELECT id, period, tax_subject, tax_amount, accounting_amount, diff_amount, reason_code, remark, created_at
+        FROM tax_difference_ledger
+        WHERE book_id=:book_id
+    """
+    args = {"book_id": book_id}
+    if period:
+        sql += " AND period=:period"
+        args["period"] = period
+    sql += " ORDER BY id DESC LIMIT 300"
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql), args).fetchall()
+    return {
+        "book_id": book_id,
+        "items": [
+            {
+                "id": int(r.id),
+                "period": str(r.period),
+                "tax_subject": str(r.tax_subject or ""),
+                "tax_amount": float(r.tax_amount or 0),
+                "accounting_amount": float(r.accounting_amount or 0),
+                "diff_amount": float(r.diff_amount or 0),
+                "reason_code": str(r.reason_code or ""),
+                "remark": str(r.remark or ""),
+                "created_at": str(r.created_at or ""),
+            }
+            for r in rows
+        ],
+    }
+
+
+def map_tax_declaration(payload: Dict[str, object]) -> Dict[str, object]:
+    book_id_raw = payload.get("book_id")
+    declaration_code = str(payload.get("declaration_code") or "").strip()
+    mappings = payload.get("mappings")
+    if book_id_raw in (None, ""):
+        raise TaxError("book_id required")
+    if not declaration_code:
+        raise TaxError("declaration_code required")
+    if not isinstance(mappings, list) or not mappings:
+        raise TaxError("mappings required")
+    try:
+        book_id = int(book_id_raw)
+    except Exception:
+        raise TaxError("book_id must be integer")
+
+    normalized: List[Dict[str, str]] = []
+    for idx, m in enumerate(mappings):
+        if not isinstance(m, dict):
+            raise TaxError(f"mapping[{idx}] invalid")
+        worksheet_cell = str(m.get("worksheet_cell") or "").strip()
+        source_type = str(m.get("source_type") or "").strip()
+        source_key = str(m.get("source_key") or "").strip()
+        expression = str(m.get("expression") or "").strip()
+        if not worksheet_cell or not source_type or not source_key:
+            raise TaxError(f"mapping[{idx}] missing required fields")
+        normalized.append(
+            {
+                "worksheet_cell": worksheet_cell,
+                "source_type": source_type,
+                "source_key": source_key,
+                "expression": expression,
+            }
+        )
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                UPDATE tax_declaration_mappings
+                SET is_enabled=0
+                WHERE book_id=:book_id AND declaration_code=:declaration_code
+                """
+            ),
+            {"book_id": book_id, "declaration_code": declaration_code},
+        )
+        for row in normalized:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO tax_declaration_mappings (
+                        book_id, declaration_code, worksheet_cell, source_type, source_key, expression, is_enabled, created_at
+                    ) VALUES (
+                        :book_id, :declaration_code, :worksheet_cell, :source_type, :source_key, :expression, 1, :created_at
+                    )
+                    """
+                ),
+                _db_params(
+                    {
+                        "book_id": book_id,
+                        "declaration_code": declaration_code,
+                        **row,
+                        "created_at": datetime.now(),
+                    }
+                ),
+            )
+    return {"book_id": book_id, "declaration_code": declaration_code, "count": len(normalized)}
+
+
+def list_tax_declaration_mappings(params: Dict[str, str]) -> Dict[str, object]:
+    book_id_raw = (params.get("book_id") or "").strip()
+    declaration_code = (params.get("declaration_code") or "").strip()
+    if not book_id_raw:
+        raise TaxError("book_id required")
+    try:
+        book_id = int(book_id_raw)
+    except Exception:
+        raise TaxError("book_id must be integer")
+    if not declaration_code:
+        raise TaxError("declaration_code required")
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, worksheet_cell, source_type, source_key, expression, is_enabled
+                FROM tax_declaration_mappings
+                WHERE book_id=:book_id
+                  AND declaration_code=:declaration_code
+                  AND is_enabled=1
+                ORDER BY worksheet_cell ASC
+                """
+            ),
+            {"book_id": book_id, "declaration_code": declaration_code},
+        ).fetchall()
+    return {
+        "book_id": book_id,
+        "declaration_code": declaration_code,
+        "items": [
+            {
+                "id": int(r.id),
+                "worksheet_cell": str(r.worksheet_cell),
+                "source_type": str(r.source_type),
+                "source_key": str(r.source_key),
+                "expression": str(r.expression or ""),
+                "is_enabled": int(r.is_enabled or 0),
+            }
+            for r in rows
+        ],
+    }
+
+
+def build_tax_declaration_mapping(payload: Dict[str, object]) -> Dict[str, object]:
+    # Resolve declaration mapping with provided source values.
+    book_id_raw = payload.get("book_id")
+    declaration_code = str(payload.get("declaration_code") or "").strip()
+    source_values = payload.get("source_values") if isinstance(payload.get("source_values"), dict) else {}
+    if book_id_raw in (None, ""):
+        raise TaxError("book_id required")
+    if not declaration_code:
+        raise TaxError("declaration_code required")
+    try:
+        book_id = int(book_id_raw)
+    except Exception:
+        raise TaxError("book_id must be integer")
+
+    mapping = list_tax_declaration_mappings({"book_id": str(book_id), "declaration_code": declaration_code})
+    cells: List[Dict[str, object]] = []
+    for m in mapping["items"]:
+        source_key = str(m["source_key"])
+        value = source_values.get(source_key)
+        if value is None:
+            value = 0
+        try:
+            numeric = _parse_decimal(value)
+        except Exception:
+            numeric = Decimal("0")
+        cells.append(
+            {
+                "worksheet_cell": str(m["worksheet_cell"]),
+                "source_key": source_key,
+                "value": float(numeric),
+                "expression": str(m.get("expression") or ""),
+            }
+        )
+    return {"book_id": book_id, "declaration_code": declaration_code, "cells": cells}
