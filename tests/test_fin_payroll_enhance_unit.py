@@ -1,5 +1,4 @@
 import os
-import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,23 +8,19 @@ from sqlalchemy import create_engine, text
 
 from app.services.payroll_service import (
     confirm_payroll_slip,
-    create_payroll_payment_request,
-    get_payroll_payment_status,
-    get_payroll_voucher_suggestion,
-    list_payroll_periods,
+    create_payroll_disbursement_batch,
+    export_payroll_bank_file,
     list_payroll_slips,
-    set_payroll_period_status,
-    sync_attendance_interface,
     upsert_payroll_period,
+    upsert_payroll_region_policy,
     upsert_payroll_slip,
 )
-from app.services.payment_service import execute_payment
 
 
-class PayrollMvpUnitTest(unittest.TestCase):
+class PayrollEnhanceUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fd, path = tempfile.mkstemp(prefix="payroll_mvp_", suffix=".db")
+        fd, path = tempfile.mkstemp(prefix="payroll_enh_", suffix=".db")
         os.close(fd)
         cls.db_path = Path(path)
         cls.engine = create_engine(f"sqlite:///{cls.db_path}", future=True)
@@ -104,19 +99,17 @@ class PayrollMvpUnitTest(unittest.TestCase):
             conn.execute(
                 text(
                     """
-                    CREATE TABLE IF NOT EXISTS payment_requests (
+                    CREATE TABLE IF NOT EXISTS payroll_region_policies (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         book_id INTEGER NOT NULL,
-                        title TEXT NULL,
-                        payee_name TEXT NULL,
-                        payee_account TEXT NULL,
-                        pay_method TEXT NULL,
-                        amount NUMERIC NOT NULL DEFAULT 0,
-                        status TEXT NOT NULL DEFAULT 'draft',
-                        related_type TEXT NULL,
-                        related_id INTEGER NULL,
-                        reimbursement_id INTEGER NULL,
-                        pay_at DATETIME NULL,
+                        city TEXT NOT NULL,
+                        social_rate NUMERIC NOT NULL DEFAULT 0,
+                        housing_rate NUMERIC NOT NULL DEFAULT 0,
+                        social_base_min NUMERIC NOT NULL DEFAULT 0,
+                        social_base_max NUMERIC NOT NULL DEFAULT 0,
+                        housing_base_min NUMERIC NOT NULL DEFAULT 0,
+                        housing_base_max NUMERIC NOT NULL DEFAULT 0,
+                        status TEXT NOT NULL DEFAULT 'active',
                         created_at DATETIME NULL,
                         updated_at DATETIME NULL
                     )
@@ -126,16 +119,34 @@ class PayrollMvpUnitTest(unittest.TestCase):
             conn.execute(
                 text(
                     """
-                    CREATE TABLE IF NOT EXISTS payment_request_logs (
+                    CREATE TABLE IF NOT EXISTS payroll_disbursement_batches (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        payment_request_id INTEGER NOT NULL,
-                        action TEXT NOT NULL,
-                        from_status TEXT NOT NULL,
-                        to_status TEXT NOT NULL,
-                        operator TEXT NULL,
-                        operator_role TEXT NULL,
-                        comment TEXT NULL,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        book_id INTEGER NOT NULL,
+                        period TEXT NOT NULL,
+                        batch_no TEXT NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'draft',
+                        total_count INTEGER NOT NULL DEFAULT 0,
+                        total_amount NUMERIC NOT NULL DEFAULT 0,
+                        file_name TEXT NULL,
+                        created_by TEXT NULL,
+                        created_at DATETIME NULL,
+                        updated_at DATETIME NULL
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS payroll_disbursement_batch_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        batch_id INTEGER NOT NULL,
+                        slip_id INTEGER NOT NULL,
+                        employee_id INTEGER NOT NULL,
+                        employee_name TEXT NULL,
+                        bank_account TEXT NOT NULL,
+                        pay_amount NUMERIC NOT NULL,
+                        created_at DATETIME NULL
                     )
                     """
                 )
@@ -151,92 +162,85 @@ class PayrollMvpUnitTest(unittest.TestCase):
 
     def setUp(self):
         with self.engine.begin() as conn:
-            conn.execute(text("DELETE FROM payment_request_logs"))
-            conn.execute(text("DELETE FROM payment_requests"))
+            conn.execute(text("DELETE FROM payroll_disbursement_batch_items"))
+            conn.execute(text("DELETE FROM payroll_disbursement_batches"))
+            conn.execute(text("DELETE FROM payroll_region_policies"))
             conn.execute(text("DELETE FROM payroll_tax_ledger"))
             conn.execute(text("DELETE FROM payroll_slips"))
             conn.execute(text("DELETE FROM payroll_periods"))
 
-    def test_payroll_period_slip_confirm_flow(self):
+    def test_cumulative_tax_region_policy_masking_and_batch_export(self):
         with patch("app.services.payroll_service.get_engine", return_value=self.engine):
-            p = upsert_payroll_period({"book_id": 1, "period": "2026-03", "status": "open"})
-            self.assertEqual(p["status"], "open")
-
-            periods = list_payroll_periods({"book_id": "1"})
-            self.assertEqual(len(periods["items"]), 1)
-
-            slip = upsert_payroll_slip(
+            upsert_payroll_region_policy(
                 {
                     "book_id": 1,
-                    "period": "2026-03",
+                    "city": "SH",
+                    "social_rate": "0.10",
+                    "housing_rate": "0.07",
+                    "social_base_min": "5000",
+                    "social_base_max": "30000",
+                    "housing_base_min": "5000",
+                    "housing_base_max": "30000",
+                    "status": "active",
+                }
+            )
+
+            upsert_payroll_period({"book_id": 1, "period": "2026-01", "status": "open"})
+            s1 = upsert_payroll_slip(
+                {
+                    "book_id": 1,
+                    "period": "2026-01",
                     "employee_id": 101,
                     "employee_name": "Alice",
                     "department": "FIN",
                     "city": "SH",
-                    "bank_account": "6222020012345678",
-                    "attendance_ref": "ATT-202603-101",
-                    "attendance_days": 21,
-                    "absent_days": 1,
-                    "gross_amount": "12000",
-                    "deduction_amount": "300",
-                    "social_insurance": "1000",
-                    "housing_fund": "500",
-                    "bonus_amount": "1000",
-                    "overtime_amount": "500",
+                    "bank_account": "6222020000001234",
+                    "gross_amount": "35000",
+                    "deduction_amount": "0",
+                    "bonus_amount": "0",
+                    "overtime_amount": "0",
                 }
             )
-            self.assertGreater(slip["tax_amount"], 0)
+            confirm_payroll_slip(int(s1["id"]), "admin_user", "admin")
+            self.assertAlmostEqual(float(s1["tax_amount"]), 747.00, places=2)
 
-            slips = list_payroll_slips({"book_id": "1", "period": "2026-03"})
-            self.assertEqual(len(slips["items"]), 1)
-            self.assertEqual(slips["items"][0]["status"], "draft")
+            upsert_payroll_period({"book_id": 1, "period": "2026-02", "status": "open"})
+            s2 = upsert_payroll_slip(
+                {
+                    "book_id": 1,
+                    "period": "2026-02",
+                    "employee_id": 101,
+                    "employee_name": "Alice",
+                    "department": "FIN",
+                    "city": "SH",
+                    "bank_account": "6222020000001234",
+                    "gross_amount": "35000",
+                    "deduction_amount": "0",
+                    "bonus_amount": "0",
+                    "overtime_amount": "0",
+                    "tax_method": "cumulative",
+                }
+            )
+            self.assertAlmostEqual(float(s2["tax_amount"]), 1713.00, places=2)
+            self.assertAlmostEqual(float(s2["ytd_taxable_base"]), 49800.00, places=2)
+            confirm_payroll_slip(int(s2["id"]), "admin_user", "admin")
 
-            confirmed = confirm_payroll_slip(int(slip["id"]), "admin_user", "admin")
-            self.assertEqual(confirmed["status"], "confirmed")
+            masked = list_payroll_slips(
+                {"book_id": "1", "period": "2026-02", "viewer_role": "employee", "viewer_employee_id": "101"}
+            )
+            self.assertEqual(len(masked["items"]), 1)
+            self.assertNotIn("tax_amount", masked["items"][0])
+            self.assertTrue("*" in masked["items"][0]["employee_name"])
+            self.assertTrue(masked["items"][0]["bank_account"].endswith("1234"))
 
-            suggestion = get_payroll_voucher_suggestion(int(slip["id"]))
-            self.assertEqual(suggestion["status"], "confirmed")
-            self.assertTrue(len(suggestion["voucher_draft"]["lines"]) >= 2)
+            batch = create_payroll_disbursement_batch({"book_id": 1, "period": "2026-02"}, "cashier_a", "cashier")
+            self.assertEqual(int(batch["total_count"]), 1)
 
-            pay_req = create_payroll_payment_request(int(slip["id"]), "cashier_a", "cashier")
-            self.assertEqual(pay_req["status"], "pending")
-            self.assertEqual(pay_req["related_type"], "payroll")
-
-            with self.engine.connect() as conn:
-                row = conn.execute(text("SELECT COUNT(*) AS c FROM payroll_tax_ledger")).fetchone()
-                self.assertEqual(int(row.c), 2)
-                pay_row = conn.execute(text("SELECT COUNT(*) AS c FROM payment_requests")).fetchone()
-                self.assertEqual(int(pay_row.c), 1)
-            with self.engine.begin() as conn:
-                conn.execute(text("UPDATE payment_requests SET status='approved' WHERE id=:id"), {"id": int(pay_req["payment_id"])})
-
-            with patch("app.services.payment_service.get_engine", return_value=self.engine):
-                paid = execute_payment(int(pay_req["payment_id"]), "cashier_a", "cashier")
-                self.assertEqual(paid["status"], "paid")
-
-            payment_status = get_payroll_payment_status(int(slip["id"]))
-            self.assertEqual(payment_status["payment_status"], "paid")
-            self.assertEqual(payment_status["payment_request_status"], "paid")
-            self.assertEqual(int(payment_status["payment_request_id"]), int(pay_req["payment_id"]))
-
-            closed = set_payroll_period_status(int(p["id"]), "close", operator_id=1)
-            self.assertEqual(closed["status"], "closed")
-
-            reopened = set_payroll_period_status(int(p["id"]), "reopen")
-            self.assertEqual(reopened["status"], "open")
-
-    def test_attendance_interface_preserved(self):
-        payload = {
-            "period": "2026-03",
-            "records": [
-                {"employee_id": 101, "attendance_days": 22, "absent_days": 0, "attendance_ref": "A-101"},
-                {"employee_id": 102, "attendance_days": 20, "absent_days": 2, "attendance_ref": "A-102"},
-            ],
-        }
-        out = sync_attendance_interface(payload)
-        self.assertEqual(out["status"], "ok")
-        self.assertEqual(out["count"], 2)
-        self.assertEqual(out["items"][0]["employee_id"], 101)
+            exported = export_payroll_bank_file(int(batch["batch_id"]), "cashier_a", "cashier")
+            self.assertTrue(str(exported["file_name"]).endswith(".csv"))
+            content = exported["content"].decode("utf-8-sig")
+            self.assertIn("employee_id,employee_name,bank_account,amount,remark", content)
+            self.assertIn("6222020000001234", content)
 
 
 if __name__ == "__main__":

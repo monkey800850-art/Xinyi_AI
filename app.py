@@ -219,13 +219,18 @@ from app.services.payment_service import (
 from app.services.payroll_service import (
     PayrollError,
     confirm_payroll_slip,
+    create_payroll_disbursement_batch,
     create_payroll_payment_request,
+    export_payroll_bank_file,
+    list_payroll_disbursement_batches,
+    list_payroll_region_policies,
     get_payroll_payment_status,
     get_payroll_voucher_suggestion,
     list_payroll_periods,
     list_payroll_slips,
     set_payroll_period_status,
     sync_attendance_interface,
+    upsert_payroll_region_policy,
     upsert_payroll_period,
     upsert_payroll_slip,
 )
@@ -3967,10 +3972,19 @@ def create_app() -> Flask:
     @app.get("/api/payroll/slips")
     def api_payroll_list_slips():
         _, role = _get_operator_from_headers()
-        if role not in ("payroll", "hr", "admin", "auditor"):
+        if role not in ("payroll", "hr", "admin", "auditor", "cashier", "employee", "staff", "self"):
             return jsonify({"error": "forbidden"}), 403
         try:
-            result = list_payroll_slips(request.args)
+            params = request.args.to_dict(flat=True)
+            params["viewer_role"] = role
+            viewer_employee_id = (
+                request.headers.get("X-Employee-Id")
+                or request.args.get("employee_id")
+                or request.headers.get("X-Operator-Id")
+            )
+            if viewer_employee_id:
+                params["viewer_employee_id"] = str(viewer_employee_id)
+            result = list_payroll_slips(params)
             return jsonify(result), 200
         except PayrollError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
@@ -4018,6 +4032,70 @@ def create_app() -> Flask:
         try:
             result = get_payroll_payment_status(slip_id)
             return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/policies/regions")
+    def api_payroll_upsert_region_policy():
+        operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin"):
+            return jsonify({"error": "forbidden"}), 403
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = upsert_payroll_region_policy(payload)
+            log_audit("payroll", "region_policy_upsert", "payroll_region_policy", result.get("id"), operator, role, payload)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/payroll/policies/regions")
+    def api_payroll_list_region_policies():
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = list_payroll_region_policies(request.args.to_dict(flat=True))
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/disbursement-batches")
+    def api_payroll_create_disbursement_batch():
+        operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "cashier", "admin"):
+            return jsonify({"error": "forbidden"}), 403
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = create_payroll_disbursement_batch(payload, operator, role)
+            log_audit("payroll", "disbursement_batch_create", "payroll_disbursement_batch", result.get("batch_id"), operator, role, result)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/payroll/disbursement-batches")
+    def api_payroll_list_disbursement_batches():
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "cashier", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = list_payroll_disbursement_batches(request.args.to_dict(flat=True))
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/payroll/disbursement-batches/<int:batch_id>/bank-file")
+    def api_payroll_export_bank_file(batch_id: int):
+        operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "cashier", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = export_payroll_bank_file(batch_id, operator, role)
+            return send_file(
+                io.BytesIO(result["content"]),
+                mimetype="text/csv; charset=utf-8",
+                as_attachment=True,
+                download_name=result["file_name"],
+            )
         except PayrollError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
 
