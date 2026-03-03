@@ -119,3 +119,8 @@ OK: baseline updated: snapshots/baseline/BASELINE_TASKS.md
 ?? templates/master_data.html
 ?? templates/subject_aux_config.html
 ?? templates/system_books.html
+[main 95a48e8] P1-UX-LAYOUT-03 修复：桌面缩放不触发布局塌陷（force-desktop兜底）
+ 3 files changed, 169 insertions(+), 1 deletion(-)
+ create mode 100644 snapshots/P1-UX-LAYOUT-03_20260303_183504.txt
+ create mode 100644 snapshots/baseline/BASELINE_TASKS.md
+== P1-UX-LAYOUT-03 DONE ==
