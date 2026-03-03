@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Dict, List
 
@@ -619,4 +619,378 @@ def get_asset_detail(asset_id: int) -> Dict[str, object]:
         "note": row.note or "",
         "is_enabled": int(row.is_enabled),
         "is_depreciable": int(row.is_depreciable) if row.is_depreciable is not None else 1,
+    }
+
+
+def _as_decimal(value) -> Decimal:
+    return _parse_decimal(value if value is not None else "0")
+
+
+def _as_iso_date(value) -> str:
+    if not value:
+        return ""
+    if isinstance(value, (date, datetime)):
+        return value.date().isoformat() if isinstance(value, datetime) else value.isoformat()
+    return str(value)
+
+
+def _db_value(value):
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat(sep=" ")
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
+
+
+def _db_params(values: Dict[str, object]) -> Dict[str, object]:
+    return {k: _db_value(v) for k, v in values.items()}
+
+
+def _load_asset_row(conn, asset_id: int):
+    return conn.execute(
+        text(
+            """
+            SELECT id, book_id, asset_code, asset_name, status, original_value, residual_value
+            FROM fixed_assets
+            WHERE id=:id
+            """
+        ),
+        {"id": asset_id},
+    ).fetchone()
+
+
+def check_asset_impairment(asset_id: int, payload: Dict[str, object]) -> Dict[str, object]:
+    current_value = payload.get("current_value")
+    reason = (payload.get("reason") or "").strip() or None
+    evidence_ref = (payload.get("evidence_ref") or "").strip() or None
+
+    if current_value in (None, ""):
+        raise AssetError("validation_error", [{"field": "current_value", "message": "必填"}])
+    try:
+        current_value = _as_decimal(current_value)
+    except Exception:
+        raise AssetError("validation_error", [{"field": "current_value", "message": "格式非法"}])
+    if current_value < 0:
+        raise AssetError("validation_error", [{"field": "current_value", "message": "必须>=0"}])
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        asset = _load_asset_row(conn, asset_id)
+        if not asset:
+            raise AssetError("not_found")
+
+        book_value = _as_decimal(asset.original_value) - _as_decimal(asset.residual_value)
+        impairment_amount = book_value - current_value
+        if impairment_amount < 0:
+            impairment_amount = Decimal("0")
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO asset_impairments (
+                    asset_id, book_id, impairment_date, book_value, current_value, impairment_amount, reason, evidence_ref
+                ) VALUES (
+                    :asset_id, :book_id, :impairment_date, :book_value, :current_value, :impairment_amount, :reason, :evidence_ref
+                )
+                """
+            ),
+            _db_params(
+                {
+                "asset_id": asset_id,
+                "book_id": int(asset.book_id),
+                "impairment_date": _parse_date(payload.get("impairment_date")) or date.today(),
+                "book_value": book_value,
+                "current_value": current_value,
+                "impairment_amount": impairment_amount,
+                "reason": reason,
+                "evidence_ref": evidence_ref,
+                }
+            ),
+        )
+
+    return {
+        "id": int(row.lastrowid),
+        "asset_id": int(asset_id),
+        "book_id": int(asset.book_id),
+        "book_value": float(book_value),
+        "current_value": float(current_value),
+        "impairment_amount": float(impairment_amount),
+        "reason": reason or "",
+        "evidence_ref": evidence_ref or "",
+    }
+
+
+def dispose_asset(asset_id: int, payload: Dict[str, object]) -> Dict[str, object]:
+    disposal_method = (payload.get("disposal_method") or "").strip().lower()
+    if disposal_method not in ("sell", "scrap", "transfer"):
+        raise AssetError("validation_error", [{"field": "disposal_method", "message": "仅支持 sell/scrap/transfer"}])
+
+    disposal_income = _as_decimal(payload.get("disposal_income"))
+    disposal_cost = _as_decimal(payload.get("disposal_cost"))
+    note = (payload.get("note") or "").strip() or None
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        asset = _load_asset_row(conn, asset_id)
+        if not asset:
+            raise AssetError("not_found")
+
+        book_value = _as_decimal(asset.original_value) - _as_decimal(asset.residual_value)
+        gain_loss = disposal_income - disposal_cost - book_value
+        post_status = "DISPOSED" if disposal_method in ("sell", "transfer") else "SCRAPPED"
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO asset_disposals (
+                    asset_id, book_id, disposal_date, disposal_method, disposal_income,
+                    disposal_cost, book_value, gain_loss, note
+                ) VALUES (
+                    :asset_id, :book_id, :disposal_date, :disposal_method, :disposal_income,
+                    :disposal_cost, :book_value, :gain_loss, :note
+                )
+                """
+            ),
+            _db_params(
+                {
+                "asset_id": int(asset_id),
+                "book_id": int(asset.book_id),
+                "disposal_date": _parse_date(payload.get("disposal_date")) or date.today(),
+                "disposal_method": disposal_method,
+                "disposal_income": disposal_income,
+                "disposal_cost": disposal_cost,
+                "book_value": book_value,
+                "gain_loss": gain_loss,
+                "note": note,
+                }
+            ),
+        )
+
+        conn.execute(
+            text("UPDATE fixed_assets SET status=:status, updated_at=CURRENT_TIMESTAMP WHERE id=:id"),
+            {"id": int(asset_id), "status": post_status},
+        )
+
+    return {
+        "id": int(row.lastrowid),
+        "asset_id": int(asset_id),
+        "book_id": int(asset.book_id),
+        "disposal_method": disposal_method,
+        "disposal_income": float(disposal_income),
+        "disposal_cost": float(disposal_cost),
+        "book_value": float(book_value),
+        "gain_loss": float(gain_loss),
+        "status": post_status,
+    }
+
+
+def perform_inventory_check(payload: Dict[str, object]) -> Dict[str, object]:
+    book_id = payload.get("book_id")
+    asset_checks = payload.get("asset_checks")
+    check_date = _parse_date(payload.get("check_date")) or date.today()
+    note = (payload.get("note") or "").strip() or None
+
+    if book_id in (None, ""):
+        raise AssetError("validation_error", [{"field": "book_id", "message": "必填"}])
+    if not isinstance(asset_checks, list) or not asset_checks:
+        raise AssetError("validation_error", [{"field": "asset_checks", "message": "至少包含1条"}])
+    try:
+        book_id = int(book_id)
+    except Exception:
+        raise AssetError("validation_error", [{"field": "book_id", "message": "格式非法"}])
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        header = conn.execute(
+            text(
+                """
+                INSERT INTO asset_inventory_checks (book_id, check_date, note)
+                VALUES (:book_id, :check_date, :note)
+                """
+            ),
+            _db_params({"book_id": book_id, "check_date": check_date, "note": note}),
+        )
+        check_id = int(header.lastrowid)
+        discrepancies: List[Dict[str, object]] = []
+        checked_count = 0
+
+        for item in asset_checks:
+            asset_id = item.get("asset_id")
+            if asset_id in (None, ""):
+                continue
+            try:
+                asset_id = int(asset_id)
+                found = 1 if int(item.get("is_found", 1)) == 1 else 0
+            except Exception:
+                continue
+
+            asset = _load_asset_row(conn, asset_id)
+            if not asset or int(asset.book_id) != book_id:
+                continue
+
+            checked_count += 1
+            discrepancy_reason = (item.get("discrepancy_reason") or "").strip() or None
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO asset_inventory_check_lines (
+                        check_id, asset_id, is_found, discrepancy_reason
+                    ) VALUES (
+                        :check_id, :asset_id, :is_found, :discrepancy_reason
+                    )
+                    """
+                ),
+                {
+                    "check_id": check_id,
+                    "asset_id": asset_id,
+                    "is_found": found,
+                    "discrepancy_reason": discrepancy_reason,
+                },
+            )
+            if found == 0:
+                discrepancies.append(
+                    {
+                        "asset_id": asset_id,
+                        "asset_code": asset.asset_code,
+                        "asset_name": asset.asset_name,
+                        "reason": discrepancy_reason or "missing",
+                    }
+                )
+
+    return {
+        "check_id": check_id,
+        "book_id": book_id,
+        "check_date": _as_iso_date(check_date),
+        "checked_count": checked_count,
+        "discrepancy_count": len(discrepancies),
+        "discrepancies": discrepancies,
+    }
+
+
+def revalue_asset(asset_id: int, payload: Dict[str, object]) -> Dict[str, object]:
+    if payload.get("new_value") in (None, ""):
+        raise AssetError("validation_error", [{"field": "new_value", "message": "必填"}])
+    try:
+        new_value = _as_decimal(payload.get("new_value"))
+    except Exception:
+        raise AssetError("validation_error", [{"field": "new_value", "message": "格式非法"}])
+    if new_value < 0:
+        raise AssetError("validation_error", [{"field": "new_value", "message": "必须>=0"}])
+    reason = (payload.get("reason") or "").strip() or None
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        asset = _load_asset_row(conn, asset_id)
+        if not asset:
+            raise AssetError("not_found")
+
+        old_value = _as_decimal(asset.original_value)
+        delta = new_value - old_value
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO asset_revaluations (
+                    asset_id, book_id, revaluation_date, old_value, new_value, delta_amount, reason
+                ) VALUES (
+                    :asset_id, :book_id, :revaluation_date, :old_value, :new_value, :delta_amount, :reason
+                )
+                """
+            ),
+            _db_params(
+                {
+                "asset_id": int(asset_id),
+                "book_id": int(asset.book_id),
+                "revaluation_date": _parse_date(payload.get("revaluation_date")) or date.today(),
+                "old_value": old_value,
+                "new_value": new_value,
+                "delta_amount": delta,
+                "reason": reason,
+                }
+            ),
+        )
+        conn.execute(
+            text("UPDATE fixed_assets SET original_value=:new_value, updated_at=CURRENT_TIMESTAMP WHERE id=:id"),
+            _db_params({"id": int(asset_id), "new_value": new_value}),
+        )
+
+    return {
+        "id": int(row.lastrowid),
+        "asset_id": int(asset_id),
+        "book_id": int(asset.book_id),
+        "old_value": float(old_value),
+        "new_value": float(new_value),
+        "delta_amount": float(delta),
+        "reason": reason or "",
+    }
+
+
+def generate_journal_entry(asset_id: int, action: str, payload: Dict[str, object]) -> Dict[str, object]:
+    action = str(action or "").strip().lower()
+    rule_code_map = {
+        "impairment": "ASSET_IMPAIRMENT",
+        "disposal": "ASSET_DISPOSAL",
+        "inventory_check": "ASSET_INVENTORY_CHECK",
+        "revaluation": "ASSET_REVALUATION",
+    }
+    if action not in rule_code_map:
+        raise AssetError("validation_error", [{"field": "action", "message": "仅支持 impairment/disposal/inventory_check/revaluation"}])
+
+    amount = _as_decimal(payload.get("amount"))
+    if amount <= 0:
+        amount = _as_decimal(payload.get("delta_amount"))
+    if amount <= 0:
+        amount = _as_decimal(payload.get("impairment_amount"))
+    if amount <= 0:
+        raise AssetError("validation_error", [{"field": "amount", "message": "必须>0"}])
+
+    debit_subject_code = (payload.get("debit_subject_code") or "").strip()
+    credit_subject_code = (payload.get("credit_subject_code") or "").strip()
+    if not debit_subject_code or not credit_subject_code:
+        raise AssetError("validation_error", [{"field": "subject_code", "message": "借贷科目必填"}])
+
+    engine = get_engine()
+    with engine.begin() as conn:
+        asset = _load_asset_row(conn, asset_id)
+        if not asset:
+            raise AssetError("not_found")
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO asset_journal_drafts (
+                    asset_id, book_id, action, rule_code, reference_id, debit_subject_code,
+                    credit_subject_code, amount, note
+                ) VALUES (
+                    :asset_id, :book_id, :action, :rule_code, :reference_id, :debit_subject_code,
+                    :credit_subject_code, :amount, :note
+                )
+                """
+            ),
+            _db_params(
+                {
+                "asset_id": int(asset_id),
+                "book_id": int(asset.book_id),
+                "action": action,
+                "rule_code": rule_code_map[action],
+                "reference_id": payload.get("reference_id"),
+                "debit_subject_code": debit_subject_code,
+                "credit_subject_code": credit_subject_code,
+                "amount": amount,
+                "note": (payload.get("note") or "").strip() or None,
+                }
+            ),
+        )
+
+    return {
+        "id": int(row.lastrowid),
+        "asset_id": int(asset_id),
+        "book_id": int(asset.book_id),
+        "action": action,
+        "rule_code": rule_code_map[action],
+        "lines": [
+            {"direction": "debit", "subject_code": debit_subject_code, "amount": float(amount)},
+            {"direction": "credit", "subject_code": credit_subject_code, "amount": float(amount)},
+        ],
     }

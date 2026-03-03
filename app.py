@@ -20,11 +20,16 @@ from app.routes import consolidation_bp, core_pages_bp
 from app.services.ar_ap_service import ArApError, get_aging_report, get_due_warnings, get_warning_summary
 from app.services.asset_service import (
     AssetError,
+    check_asset_impairment,
     create_asset,
     create_category,
+    dispose_asset,
+    generate_journal_entry,
     get_asset_detail,
     list_assets,
     list_categories,
+    perform_inventory_check,
+    revalue_asset,
     set_asset_enabled,
     set_category_enabled,
     update_asset,
@@ -3375,6 +3380,62 @@ def create_app() -> Flask:
                 {"is_enabled": payload.get("is_enabled", 1)},
             )
             return jsonify(result), 200
+        except AssetError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/assets/<int:asset_id>/impairment")
+    def api_assets_impairment(asset_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = check_asset_impairment(asset_id, payload)
+            log_audit("asset", "impairment", "fixed_asset", asset_id, operator, role, payload)
+            return jsonify(result), 201
+        except AssetError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/assets/<int:asset_id>/dispose")
+    def api_assets_dispose(asset_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = dispose_asset(asset_id, payload)
+            log_audit("asset", "dispose", "fixed_asset", asset_id, operator, role, payload)
+            return jsonify(result), 201
+        except AssetError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/assets/inventory-check")
+    def api_assets_inventory_check():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = perform_inventory_check(payload)
+            log_audit("asset", "inventory_check", "asset_inventory_check", result.get("check_id"), operator, role, payload)
+            return jsonify(result), 201
+        except AssetError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/assets/<int:asset_id>/revalue")
+    def api_assets_revalue(asset_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = revalue_asset(asset_id, payload)
+            log_audit("asset", "revalue", "fixed_asset", asset_id, operator, role, payload)
+            return jsonify(result), 201
+        except AssetError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/assets/<int:asset_id>/journal-entry")
+    def api_assets_generate_journal(asset_id: int):
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        action = payload.get("action")
+        try:
+            result = generate_journal_entry(asset_id, action, payload)
+            log_audit("asset", "journal_draft_generate", "asset_journal_draft", result.get("id"), operator, role, payload)
+            return jsonify(result), 201
         except AssetError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
 
