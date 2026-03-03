@@ -23,6 +23,8 @@ HEADER_MAP = {
     "balance": ["balance", "余额"],
     "serial_no": ["serial_no", "流水号", "交易流水号", "序号"],
 }
+REQUIRED_FIELDS = ("date", "amount")
+SUPPORTED_FIELDS = ("date", "amount", "summary", "counterparty", "balance", "serial_no")
 
 
 def _normalize(s: str) -> str:
@@ -68,9 +70,44 @@ def _detect_columns(headers: List[str]) -> Dict[str, int]:
     return index_map
 
 
+def map_template(headers: List[str], template_mapping: Dict[str, object]) -> Dict[str, int]:
+    index_map: Dict[str, int] = {}
+    norm_headers = [_normalize(h) for h in headers]
+    for field, source in (template_mapping or {}).items():
+        key = _normalize(str(field))
+        if key not in SUPPORTED_FIELDS:
+            continue
+        if isinstance(source, int):
+            if 0 <= source < len(headers):
+                index_map[key] = int(source)
+            continue
+        raw = str(source or "").strip()
+        if raw.isdigit():
+            idx = int(raw)
+            if 0 <= idx < len(headers):
+                index_map[key] = idx
+            continue
+        source_norm = _normalize(raw)
+        if source_norm in norm_headers:
+            index_map[key] = norm_headers.index(source_norm)
+    return index_map
+
+
 def _hash_row(book_id: int, bank_account_id: int, txn_date: date, amount: Decimal, summary: str, serial_no: str) -> str:
     raw = f"{book_id}|{bank_account_id}|{txn_date.isoformat()}|{amount}|{summary}|{serial_no}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _db_value(value):
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, date):
+        return value.isoformat()
+    return value
+
+
+def _db_params(params: Dict[str, object]) -> Dict[str, object]:
+    return {k: _db_value(v) for k, v in params.items()}
 
 
 def _insert_row(conn, row: Dict[str, object]) -> bool:
@@ -93,7 +130,7 @@ def _insert_row(conn, row: Dict[str, object]) -> bool:
             )
             """
         ),
-        row,
+        _db_params(row),
     )
     return True
 
@@ -120,8 +157,32 @@ def _rows_from_excel(file_bytes: bytes) -> Tuple[List[str], List[List[str]]]:
     return headers, data_rows
 
 
+def _classify_row_error(err: Exception) -> str:
+    msg = str(err or "").lower()
+    if "invalid_date" in msg:
+        return "invalid_date"
+    if "invalid_amount" in msg:
+        return "invalid_amount"
+    if "index" in msg or "list index out of range" in msg:
+        return "column_mapping_error"
+    return "row_parse_error"
+
+
+def handle_import_error(err: Exception, row_no: int, row_data: List[object]) -> Dict[str, object]:
+    return {
+        "row": int(row_no),
+        "error_code": _classify_row_error(err),
+        "message": str(err),
+        "row_data": ["" if c is None else str(c) for c in (row_data or [])],
+    }
+
+
 def import_bank_transactions(
-    book_id: int, bank_account_id: int, filename: str, file_bytes: bytes
+    book_id: int,
+    bank_account_id: int,
+    filename: str,
+    file_bytes: bytes,
+    template_mapping: Dict[str, object] | None = None,
 ) -> Dict[str, object]:
     if not book_id or not bank_account_id:
         raise BankImportError("book_id and bank_account_id required")
@@ -133,7 +194,12 @@ def import_bank_transactions(
     else:
         raise BankImportError("unsupported_file_type")
 
-    index_map = _detect_columns(headers)
+    # Template mapping takes precedence; unmapped fields fall back to auto-detection.
+    index_map = map_template(headers, template_mapping or {})
+    auto_map = _detect_columns(headers)
+    for field, idx in auto_map.items():
+        if field not in index_map:
+            index_map[field] = idx
     if "date" not in index_map or "amount" not in index_map:
         raise BankImportError("missing_required_columns: date, amount")
 
@@ -141,7 +207,9 @@ def import_bank_transactions(
     success = 0
     failed = 0
     duplicated = 0
+    seen_in_file = set()
     errors: List[Dict[str, object]] = []
+    receipts: List[Dict[str, object]] = []
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -177,6 +245,10 @@ def import_bank_transactions(
                     raise ValueError("invalid_date")
 
                 import_hash = _hash_row(book_id, bank_account_id, txn_date, amount, summary, serial_no)
+                if import_hash in seen_in_file:
+                    duplicated += 1
+                    continue
+                seen_in_file.add(import_hash)
                 inserted = _insert_row(
                     conn,
                     {
@@ -199,6 +271,8 @@ def import_bank_transactions(
                     duplicated += 1
             except Exception as err:
                 failed += 1
+                receipt = handle_import_error(err, i, row)
+                receipts.append(receipt)
                 errors.append({"row": i, "error": str(err)})
 
     return {
@@ -207,6 +281,12 @@ def import_bank_transactions(
         "failed": failed,
         "duplicated": duplicated,
         "errors": errors,
+        "template_mapping_used": {k: headers[v] for k, v in index_map.items() if 0 <= int(v) < len(headers)},
+        "exception_receipt": {
+            "status": "ok" if failed == 0 else "partial_failed",
+            "error_count": failed,
+            "errors": receipts,
+        },
     }
 
 

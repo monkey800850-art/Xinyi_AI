@@ -4051,11 +4051,20 @@ def create_app() -> Flask:
         try:
             book_id = int(request.form.get("book_id", ""))
             bank_account_id = int(request.form.get("bank_account_id", ""))
+            template_mapping_raw = (request.form.get("template_mapping") or "").strip()
+            template_mapping = {}
+            if template_mapping_raw:
+                try:
+                    template_mapping = json.loads(template_mapping_raw)
+                except Exception:
+                    return jsonify({"error": "template_mapping must be valid json"}), 400
+                if not isinstance(template_mapping, dict):
+                    return jsonify({"error": "template_mapping must be object"}), 400
             file = request.files.get("file")
             if not file:
                 return jsonify({"error": "file required"}), 400
             data = import_bank_transactions(
-                book_id, bank_account_id, file.filename, file.read()
+                book_id, bank_account_id, file.filename, file.read(), template_mapping=template_mapping
             )
             return jsonify(data), 200
         except (ValueError, BankImportError) as err:
