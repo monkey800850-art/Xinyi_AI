@@ -41,6 +41,11 @@ from app.services.bank_reconcile_service import (
     get_reconcile_report,
     list_reconciliation_items,
 )
+from app.services.reconciliation_service import (
+    bulk_confirm_reconciliation,
+    get_discrepancy_reasons,
+    get_reconciliation_rules,
+)
 from app.services.book_service import (
     BookCreateError,
     BookManageError,
@@ -4168,6 +4173,39 @@ def create_app() -> Flask:
     def api_reconcile_auto():
         try:
             result = auto_match(request.args)
+            return jsonify(result), 200
+        except ReconcileError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/reconcile/rules")
+    def api_reconcile_rules():
+        try:
+            return jsonify({"items": get_reconciliation_rules()}), 200
+        except ReconcileError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/reconcile/discrepancy-reasons")
+    def api_reconcile_discrepancy_reasons():
+        try:
+            return jsonify({"items": get_discrepancy_reasons()}), 200
+        except ReconcileError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/reconcile/bulk-confirm")
+    def api_reconcile_bulk_confirm():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = bulk_confirm_reconciliation(payload.get("records") or [], operator, role)
+            log_audit(
+                "bank_reconcile",
+                "bulk_confirm",
+                "bank_transaction",
+                None,
+                operator,
+                role,
+                {"total": result.get("total"), "success": result.get("success"), "failed": result.get("failed")},
+            )
             return jsonify(result), 200
         except ReconcileError as err:
             return jsonify({"error": str(err)}), 400
