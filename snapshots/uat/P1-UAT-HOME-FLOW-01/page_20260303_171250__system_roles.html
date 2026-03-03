@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>角色权限</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --shell-bg: #f3f6fa;
+      --shell-card: #ffffff;
+      --shell-text: #1f2d3d;
+      --shell-muted: #6b7f95;
+      --shell-line: #d8e2ee;
+      --shell-brand: #0c4f9e;
+      --shell-brand-dark: #073d7a;
+      --shell-brand-soft: #eaf2fc;
+    }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: var(--shell-bg);
+      color: var(--shell-text);
+    }
+    .shell-app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+    .shell-sidebar {
+      --sb-parent-size: 16px;
+      --sb-child-size: 15px;
+      border-right: 1px solid var(--shell-line);
+      background: #fff;
+      padding: 0 0 16px;
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow: auto;
+    }
+    .shell-sidebar-header {
+      background: linear-gradient(135deg, var(--shell-brand-dark), var(--shell-brand));
+      color: #fff;
+      padding: 16px 14px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .shell-brand {
+      display: block;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.3px;
+      padding: 0;
+    }
+    .shell-brand-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    .shell-group {
+      margin: 10px 10px 0;
+    }
+    .shell-group-title {
+      margin: 0;
+      padding: 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .shell-group-title::after {
+      content: "";
+      display: block;
+      height: 1px;
+      background: #e5e7eb;
+      margin-top: 8px;
+    }
+    .shell-group-toggle {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #111827;
+      font-size: var(--sb-parent-size);
+      font-weight: 700;
+      padding: 10px 10px 8px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      letter-spacing: 0.2px;
+    }
+    .shell-group-toggle:hover {
+      background: #f6f9fd;
+    }
+    .shell-group-arrow {
+      transition: transform 0.2s ease;
+      color: #56779b;
+      font-size: 12px;
+    }
+    .shell-group.collapsed .shell-group-arrow {
+      transform: rotate(-90deg);
+    }
+    .shell-links {
+      list-style: none;
+      margin: 7px 0 0;
+      padding: 0 0 0 8px;
+      display: grid;
+      gap: 6px;
+      overflow: hidden;
+      max-height: var(--links-max-height, 1200px);
+      opacity: 1;
+      transition: max-height 0.24s ease, opacity 0.2s ease, margin-top 0.2s ease;
+    }
+    .shell-group.collapsed .shell-links {
+      max-height: 0;
+      opacity: 0;
+      margin-top: 0;
+    }
+    .shell-links a {
+      display: block;
+      text-decoration: none;
+      color: #374151;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: var(--sb-child-size);
+      font-weight: 600;
+      border: 1px solid #e5edf6;
+      background: #fbfdff;
+      position: relative;
+    }
+    .shell-links a::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #8ca5bf;
+      position: absolute;
+      left: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .shell-links a:hover {
+      background: #f3f4f6;
+      border-color: #cbddf1;
+      color: #111827;
+    }
+    .shell-links a.active {
+      color: #111827;
+      background: #e5effe;
+      border-color: #b8d0ec;
+      font-weight: 700;
+      box-shadow: inset 3px 0 0 #2563eb;
+    }
+    .shell-main {
+      min-width: 0;
+      padding: 0;
+    }
+    .shell-topbar {
+      background: linear-gradient(90deg, var(--shell-brand-dark) 0%, var(--shell-brand) 75%);
+      color: #fff;
+      padding: 12px 18px;
+      border-bottom: 1px solid #2e66a6;
+    }
+    .shell-topbar-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .shell-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .shell-meta {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .shell-home-link {
+      text-decoration: none;
+      color: #eaf2fc;
+      border: 1px solid rgba(234, 242, 252, 0.5);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .shell-home-link:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+    .shell-content {
+      min-width: 0;
+      padding: 16px;
+    }
+    .shell-content [class$="-header"] {
+      border: 1px solid var(--shell-line);
+      background: var(--shell-card);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .shell-content [class$="-header"] h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #153f70;
+    }
+    .shell-content [class$="-header"] p {
+      margin: 6px 0 0;
+      color: var(--shell-muted);
+      font-size: 13px;
+    }
+    .shell-content [class$="-card"],
+    .shell-content .card {
+      border: 1px solid var(--shell-line);
+      background: var(--shell-card);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 0 rgba(12, 79, 158, 0.03);
+    }
+    .shell-content .field-input,
+    .shell-content input[type="text"],
+    .shell-content input[type="number"],
+    .shell-content input[type="date"],
+    .shell-content input[type="file"],
+    .shell-content select,
+    .shell-content textarea {
+      border: 1px solid #c8d7e9;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .shell-content .field-input:focus,
+    .shell-content input:focus,
+    .shell-content select:focus,
+    .shell-content textarea:focus {
+      outline: 0;
+      border-color: #7aa6d4;
+      box-shadow: 0 0 0 3px rgba(12, 79, 158, 0.12);
+    }
+    .shell-content .btn,
+    .shell-content button {
+      border: 1px solid #b7cee8;
+      background: #eaf2fc;
+      color: #144a81;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .shell-content .btn.secondary {
+      background: #f6f9fd;
+      color: #2f4f70;
+      border-color: #ccd9e8;
+    }
+    .shell-content table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    .shell-content th,
+    .shell-content td {
+      border-bottom: 1px solid #e4ecf5;
+      padding: 8px 6px;
+      font-size: 13px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .shell-content th {
+      background: #f3f8fe;
+      color: #355577;
+      font-weight: 700;
+    }
+    .shell-content .filter-grid,
+    .shell-content .tb-filter-grid,
+    .shell-content .voucher-meta-grid,
+    .shell-content .voucher-head-grid {
+      gap: 10px;
+    }
+    .shell-content .filter-actions {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .shell-content .hidden {
+      display: none !important;
+    }
+    @media (max-width: 1024px) {
+      .shell-app {
+        grid-template-columns: 1fr;
+      }
+      .shell-sidebar {
+        position: static;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--shell-line);
+      }
+      .shell-sidebar-header {
+        border-radius: 0;
+      }
+      .shell-meta {
+        white-space: normal;
+      }
+      .shell-topbar {
+        padding-top: 10px;
+      }
+    }
+  </style>
+  
+<link rel="stylesheet" href="/static/css/assets_cards.css" />
+
+
+<!-- P1-UX-STYLE-01D-SIDEBAR -->
+<style>
+  /* P1-UX-STYLE-01D-SIDEBAR: parent >= child */
+  #sidebar .nav-group-title,
+  #sidebar .group-title,
+  #sidebar .nav-section-title,
+  #sidebar .nav-group > .title,
+  #sidebar button,
+  #sidebar .accordion-button {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  #sidebar a,
+  #sidebar .nav-item a,
+  #sidebar .menu-item a,
+  #sidebar .nav-link {
+    font-size: 15px;
+    font-weight: 600;
+  }
+</style>
+<!-- /P1-UX-STYLE-01D-SIDEBAR -->
+
+</head>
+<body ><script src="/static/js/request_context.js"></script><script src="/static/js/navigation_rules.js"></script>
+  <div class="shell-app">
+    <aside id="sidebar" class="shell-sidebar sidebar">
+      <div class="shell-sidebar-header">
+        <a class="shell-brand" href="/">Xinyi AI 财务平台</a>
+        <div class="shell-brand-sub">统一业务服务大厅</div>
+      </div>
+      
+      <section class="shell-group " data-group-key="system">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>系统管理</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/dashboard" class="nav-link ">工作台</a></li>
+          
+          <li class="nav-item"><a href="/dashboard/boss" class="nav-link ">老板看板</a></li>
+          
+          <li class="nav-item"><a href="/system/users" class="nav-link ">系统用户</a></li>
+          
+          <li class="nav-item"><a href="/system/roles" class="nav-link active">系统角色</a></li>
+          
+          <li class="nav-item"><a href="/system/rules" class="nav-link ">系统规则</a></li>
+          
+          <li class="nav-item"><a href="/system/books" class="nav-link ">账套管理</a></li>
+          
+          <li class="nav-item"><a href="/system/consolidation" class="nav-link ">账套关系与合并管理</a></li>
+          
+          <li class="nav-item"><a href="/system/book-init" class="nav-link ">建账初始化</a></li>
+          
+          <li class="nav-item"><a href="/system/init" class="nav-link ">系统测试初始化（样本）</a></li>
+          
+          <li class="nav-item"><a href="/system/audit" class="nav-link ">系统审计日志</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="master">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>基础资料 / 辅助管理</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/masters/subjects/aux" class="nav-link ">科目辅助挂接</a></li>
+          
+          <li class="nav-item"><a href="/masters/departments" class="nav-link ">部门</a></li>
+          
+          <li class="nav-item"><a href="/masters/persons" class="nav-link ">个人</a></li>
+          
+          <li class="nav-item"><a href="/masters/entities" class="nav-link ">单位</a></li>
+          
+          <li class="nav-item"><a href="/masters/projects" class="nav-link ">项目</a></li>
+          
+          <li class="nav-item"><a href="/masters/bank_accounts" class="nav-link ">银行账户</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="voucher">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>凭证与账务</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/voucher/entry" class="nav-link ">凭证录入</a></li>
+          
+          <li class="nav-item"><a href="/voucher/import" class="nav-link ">批量导入序时账</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="reports">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>报表</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/reports/trial_balance" class="nav-link ">发生余额表</a></li>
+          
+          <li class="nav-item"><a href="/reports/subject_ledger" class="nav-link ">科目明细账</a></li>
+          
+          <li class="nav-item"><a href="/reports/aux_reports" class="nav-link ">辅助余额与明细</a></li>
+          
+          <li class="nav-item"><a href="/reports/ar_ap" class="nav-link ">应收应付账龄</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="tax">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>税务</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/tax/invoices" class="nav-link ">税务发票</a></li>
+          
+          <li class="nav-item"><a href="/tax/summary" class="nav-link ">税务汇总</a></li>
+          
+          <li class="nav-item"><a href="/tax/rules" class="nav-link ">税务规则</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="funds">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>资金</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/banks/import" class="nav-link ">银行导入</a></li>
+          
+          <li class="nav-item"><a href="/banks/reconcile" class="nav-link ">银行对账</a></li>
+          
+          <li class="nav-item"><a href="/payments" class="nav-link ">支付申请</a></li>
+          
+          <li class="nav-item"><a href="/payments/new" class="nav-link ">新建支付申请</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="reimbursement">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>费用报销</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/reimbursements" class="nav-link ">报销管理</a></li>
+          
+          <li class="nav-item"><a href="/reimbursements/new" class="nav-link ">新建报销单</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="assets">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>资产</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/assets" class="nav-link ">资产台账</a></li>
+          
+          <li class="nav-item"><a href="/assets/new" class="nav-link ">新建资产卡片</a></li>
+          
+          <li class="nav-item"><a href="/assets/categories" class="nav-link ">资产类别</a></li>
+          
+          <li class="nav-item"><a href="/assets/changes" class="nav-link ">资产变动</a></li>
+          
+          <li class="nav-item"><a href="/assets/depreciation" class="nav-link ">资产折旧</a></li>
+          
+          <li class="nav-item"><a href="/assets/reports/ledger" class="nav-link ">资产台账报表</a></li>
+          
+          <li class="nav-item"><a href="/assets/reports/depreciation" class="nav-link ">资产折旧汇总</a></li>
+          
+        </ul>
+      </section>
+      
+      <section class="shell-group collapsed" data-group-key="tools">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>工具与演示</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          
+          <li class="nav-item"><a href="/demo/autocomplete" class="nav-link ">联想输入演示</a></li>
+          
+          <li class="nav-item"><a href="/demo/filters" class="nav-link ">筛选器演示</a></li>
+          
+        </ul>
+      </section>
+      
+    </aside>
+    <main class="shell-main">
+      <header class="shell-topbar">
+        <div class="shell-topbar-main">
+          <h1 class="shell-title">系统角色</h1>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="shell-meta">
+              用户：未指定 | 角色：未指定 | 账套：未指定
+            </div>
+            <a class="shell-home-link" href="/">返回主页</a>
+          </div>
+        </div>
+      </header>
+      <section class="shell-content">
+        
+<div class="asset-page">
+      <header class="asset-header">
+        <div>
+          <h1>角色权限</h1>
+          <p>功能权限 + 数据范围</p>
+        </div>
+      </header>
+
+      <section class="asset-card">
+        <h2>新增 / 编辑</h2>
+        <div class="filter-grid">
+          <div class="field">
+            <label>角色编码</label>
+            <input type="text" class="field-input" id="role-code" />
+          </div>
+          <div class="field">
+            <label>角色名称</label>
+            <input type="text" class="field-input" id="role-name" />
+          </div>
+          <div class="field">
+            <label>数据范围</label>
+            <select class="field-input" id="role-scope">
+              <option value="ALL">ALL</option>
+              <option value="BOOK">BOOK</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>启用</label>
+            <select class="field-input" id="role-enabled">
+              <option value="1">启用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>权限Key(逗号)</label>
+            <input type="text" class="field-input" id="role-perms" placeholder="voucher.read,voucher.write" />
+          </div>
+          <div class="field">
+            <label>描述</label>
+            <input type="text" class="field-input" id="role-desc" />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn" id="role-save">保存</button>
+        </div>
+        <div id="role-error" class="asset-error hidden"></div>
+      </section>
+
+      <section class="asset-card">
+        <h2>角色列表</h2>
+        <table id="role-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>编码</th>
+              <th>名称</th>
+              <th>数据范围</th>
+              <th>权限</th>
+              <th>启用</th>
+            </tr>
+          </thead>
+          <tbody id="role-body"></tbody>
+        </table>
+      </section>
+    </div>
+
+      </section>
+    </main>
+  </div>
+  <script>
+    (function () {
+      var groups = document.querySelectorAll(".shell-group[data-group-key]");
+      if (!groups.length) return;
+      var KEY = "xinyi_nav_group_state_single_v1";
+      var savedKey = "";
+      try {
+        savedKey = String(localStorage.getItem(KEY) || "");
+      } catch (e) {
+        savedKey = "";
+      }
+
+      function applyHeights() {
+        groups.forEach(function (g) {
+          var links = g.querySelector(".shell-links");
+          if (links) {
+            links.style.setProperty("--links-max-height", links.scrollHeight + "px");
+          }
+        });
+      }
+
+      function expandOnly(targetKey) {
+        groups.forEach(function (g) {
+          var key = g.getAttribute("data-group-key") || "";
+          var toggle = g.querySelector("[data-group-toggle]");
+          var shouldExpand = key === targetKey;
+          g.classList.toggle("collapsed", !shouldExpand);
+          if (toggle) {
+            toggle.setAttribute("aria-expanded", shouldExpand ? "true" : "false");
+          }
+        });
+        try { localStorage.setItem(KEY, targetKey || ""); } catch (e) {}
+      }
+
+      applyHeights();
+
+      var initialKey = "";
+      if (savedKey) {
+        initialKey = savedKey;
+      } else {
+        groups.forEach(function (g) {
+          if (!initialKey && !g.classList.contains("collapsed")) {
+            initialKey = g.getAttribute("data-group-key") || "";
+          }
+        });
+      }
+      if (!initialKey) {
+        initialKey = groups[0].getAttribute("data-group-key") || "";
+      }
+      expandOnly(initialKey);
+
+      groups.forEach(function (group) {
+        var key = group.getAttribute("data-group-key") || "";
+        var toggle = group.querySelector("[data-group-toggle]");
+        if (!toggle || !key) return;
+        toggle.addEventListener("click", function () {
+          applyHeights();
+          expandOnly(key);
+        });
+      });
+    })();
+  </script>
+  
+<script src="/static/js/system_roles.js"></script>
+
+</body>
+</html>

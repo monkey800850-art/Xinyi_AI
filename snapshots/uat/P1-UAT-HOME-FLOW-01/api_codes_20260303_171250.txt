@@ -1,0 +1,11 @@
+book_create|201
+book_verify|200
+voucher_create|201
+reimbursement_create|201
+master_departments|200
+trial_balance|200
+tax_rules|200
+bank_list|200
+asset_categories|200
+conso_overview|200
+subjects_switchable|200

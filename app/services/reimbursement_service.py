@@ -67,6 +67,26 @@ def _sum_items(items: List[Dict[str, object]]) -> Decimal:
 
 
 def _table_columns(conn, table_name: str) -> set[str]:
+    def _read_column_name(row) -> str:
+        if row is None:
+            return ""
+        value = getattr(row, "column_name", None)
+        if value is None:
+            mapping = getattr(row, "_mapping", None)
+            if mapping is not None:
+                try:
+                    value = mapping.get("column_name")
+                except Exception:
+                    value = None
+                if value is None:
+                    try:
+                        value = mapping.get("COLUMN_NAME")
+                    except Exception:
+                        value = None
+            if value is None and isinstance(row, (tuple, list)) and len(row) > 0:
+                value = row[0]
+        return str(value or "").strip().lower()
+
     try:
         rows = conn.execute(
             text(
@@ -79,10 +99,15 @@ def _table_columns(conn, table_name: str) -> set[str]:
             ),
             {"table_name": table_name},
         ).fetchall()
-        return {str(r.column_name or "").strip().lower() for r in rows}
+        cols = {_read_column_name(r) for r in rows}
+        cols.discard("")
+        if cols:
+            return cols
     except Exception:
-        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
-        return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
+        pass
+
+    rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+    return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
 
 
 def _as_int(value, default: int = 0) -> int:

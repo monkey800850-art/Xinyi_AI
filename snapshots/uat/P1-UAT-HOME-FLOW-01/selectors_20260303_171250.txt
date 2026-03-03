@@ -1,0 +1,8 @@
+system_book_init|ok|book-init-form|accounting-standard|/system/book-init
+system_init|ok|run-btn|dry-run-btn|operator|role|result|/system/init
+voucher_import|ok|preview-btn|commit-btn|book-id|file|result|/voucher/import
+voucher_entry|ok|voucher-date|save-voucher-btn|voucher-lines-body|/voucher/entry
+trial_balance|ok|tb-book-id|tb-start-date|tb-end-date|tb-query-btn|/reports/trial_balance
+reimbursement_detail|ok|detail-book-id|detail-save|detail-submit|/reimbursements/new
+bank_import|ok|bank-book-id|bank-account-id|bank-refresh|/banks/import
+system_consolidation|ok|conso-param-group-id|create-virtual-btn|add-member-btn|/system/consolidation

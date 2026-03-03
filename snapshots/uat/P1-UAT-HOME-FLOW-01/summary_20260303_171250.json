@@ -1,0 +1,373 @@
+{
+  "pages": [
+    {
+      "path": "/",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__.html"
+    },
+    {
+      "path": "/dashboard",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__dashboard.html"
+    },
+    {
+      "path": "/dashboard/boss",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__dashboard_boss.html"
+    },
+    {
+      "path": "/system/users",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_users.html"
+    },
+    {
+      "path": "/system/roles",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_roles.html"
+    },
+    {
+      "path": "/system/rules",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_rules.html"
+    },
+    {
+      "path": "/system/books",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_books.html"
+    },
+    {
+      "path": "/system/consolidation",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_consolidation.html"
+    },
+    {
+      "path": "/system/book-init",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_book-init.html"
+    },
+    {
+      "path": "/system/init",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_init.html"
+    },
+    {
+      "path": "/system/audit",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__system_audit.html"
+    },
+    {
+      "path": "/masters/subjects/aux",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__masters_subjects_aux.html"
+    },
+    {
+      "path": "/masters/departments",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__masters_departments.html"
+    },
+    {
+      "path": "/masters/persons",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__masters_persons.html"
+    },
+    {
+      "path": "/masters/entities",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__masters_entities.html"
+    },
+    {
+      "path": "/masters/projects",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__masters_projects.html"
+    },
+    {
+      "path": "/masters/bank_accounts",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__masters_bank_accounts.html"
+    },
+    {
+      "path": "/voucher/entry",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__voucher_entry.html"
+    },
+    {
+      "path": "/voucher/import",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__voucher_import.html"
+    },
+    {
+      "path": "/reports/trial_balance",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reports_trial_balance.html"
+    },
+    {
+      "path": "/reports/subject_ledger",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reports_subject_ledger.html"
+    },
+    {
+      "path": "/reports/aux_reports",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reports_aux_reports.html"
+    },
+    {
+      "path": "/reports/ar_ap",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reports_ar_ap.html"
+    },
+    {
+      "path": "/tax/invoices",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__tax_invoices.html"
+    },
+    {
+      "path": "/tax/summary",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__tax_summary.html"
+    },
+    {
+      "path": "/tax/rules",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__tax_rules.html"
+    },
+    {
+      "path": "/banks/import",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__banks_import.html"
+    },
+    {
+      "path": "/banks/reconcile",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__banks_reconcile.html"
+    },
+    {
+      "path": "/payments",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__payments.html"
+    },
+    {
+      "path": "/payments/new",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__payments_new.html"
+    },
+    {
+      "path": "/reimbursements",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reimbursements.html"
+    },
+    {
+      "path": "/reimbursements/new",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reimbursements_new.html"
+    },
+    {
+      "path": "/assets",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets.html"
+    },
+    {
+      "path": "/assets/new",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets_new.html"
+    },
+    {
+      "path": "/assets/categories",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets_categories.html"
+    },
+    {
+      "path": "/assets/changes",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets_changes.html"
+    },
+    {
+      "path": "/assets/depreciation",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets_depreciation.html"
+    },
+    {
+      "path": "/assets/reports/ledger",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets_reports_ledger.html"
+    },
+    {
+      "path": "/assets/reports/depreciation",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__assets_reports_depreciation.html"
+    },
+    {
+      "path": "/demo/autocomplete",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__demo_autocomplete.html"
+    },
+    {
+      "path": "/demo/filters",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__demo_filters.html"
+    },
+    {
+      "path": "/reports/trial_balance?subject_type=virtual",
+      "code": 200,
+      "ok": true,
+      "file": "snapshots/uat/P1-UAT-HOME-FLOW-01/page_20260303_171250__reports_trial_balance_subject_type_virtual.html"
+    }
+  ],
+  "selectors": [
+    {
+      "name": "system_book_init",
+      "status": "ok",
+      "pattern": "book-init-form",
+      "path": "accounting-standard|/system/book-init",
+      "ok": true
+    },
+    {
+      "name": "system_init",
+      "status": "ok",
+      "pattern": "run-btn",
+      "path": "dry-run-btn|operator|role|result|/system/init",
+      "ok": true
+    },
+    {
+      "name": "voucher_import",
+      "status": "ok",
+      "pattern": "preview-btn",
+      "path": "commit-btn|book-id|file|result|/voucher/import",
+      "ok": true
+    },
+    {
+      "name": "voucher_entry",
+      "status": "ok",
+      "pattern": "voucher-date",
+      "path": "save-voucher-btn|voucher-lines-body|/voucher/entry",
+      "ok": true
+    },
+    {
+      "name": "trial_balance",
+      "status": "ok",
+      "pattern": "tb-book-id",
+      "path": "tb-start-date|tb-end-date|tb-query-btn|/reports/trial_balance",
+      "ok": true
+    },
+    {
+      "name": "reimbursement_detail",
+      "status": "ok",
+      "pattern": "detail-book-id",
+      "path": "detail-save|detail-submit|/reimbursements/new",
+      "ok": true
+    },
+    {
+      "name": "bank_import",
+      "status": "ok",
+      "pattern": "bank-book-id",
+      "path": "bank-account-id|bank-refresh|/banks/import",
+      "ok": true
+    },
+    {
+      "name": "system_consolidation",
+      "status": "ok",
+      "pattern": "conso-param-group-id",
+      "path": "create-virtual-btn|add-member-btn|/system/consolidation",
+      "ok": true
+    }
+  ],
+  "apis": [
+    {
+      "name": "book_create",
+      "code": 201,
+      "ok": true
+    },
+    {
+      "name": "book_verify",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "voucher_create",
+      "code": 201,
+      "ok": true
+    },
+    {
+      "name": "reimbursement_create",
+      "code": 201,
+      "ok": true
+    },
+    {
+      "name": "master_departments",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "trial_balance",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "tax_rules",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "bank_list",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "asset_categories",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "conso_overview",
+      "code": 200,
+      "ok": true
+    },
+    {
+      "name": "subjects_switchable",
+      "code": 200,
+      "ok": true
+    }
+  ],
+  "blockers": [],
+  "blocker_count": 0
+}

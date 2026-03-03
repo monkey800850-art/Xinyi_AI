@@ -1,0 +1,93 @@
+{% extends "main_layout.html" %}
+{% block page_title %}批量导入序时账{% endblock %}
+{% block extra_css %}
+<style>
+  .imp-page { display:grid; gap:12px; }
+  .card { background:#fff; border:1px solid #d7e0ea; border-radius:12px; padding:14px; }
+  .grid { display:grid; gap:10px; grid-template-columns: repeat(3,minmax(180px,1fr)); }
+  .field { display:grid; gap:6px; }
+  .field label { font-size:13px; color:#456; font-weight:600; }
+  .field input { border:1px solid #c8d7e9; border-radius:8px; padding:8px 10px; }
+  .actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .btn { border:1px solid #b8d1ea; background:#e7f1fb; color:#0b5cab; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; text-decoration:none; }
+  .btn.primary { background:#0b5cab; color:#fff; border-color:#0b5cab; }
+  .msg { font-size:13px; color:#345; }
+  .result { background:#081426; color:#d9e7ff; border:1px solid #1f3c62; border-radius:10px; padding:10px; font-size:12px; max-height:420px; overflow:auto; white-space:pre-wrap; }
+  @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="imp-page">
+  <section class="card">
+    <h2>批量导入序时账</h2>
+    <p>支持下载模板、预览校验、提交导入。失败会展示详细错误，不空转。</p>
+    <div class="grid">
+      <div class="field">
+        <label>账套ID</label>
+        <input id="book-id" type="number" value="1" />
+      </div>
+      <div class="field">
+        <label>制单人</label>
+        <input id="maker" value="uat_admin" />
+      </div>
+      <div class="field">
+        <label>CSV 文件</label>
+        <input id="file" type="file" accept=".csv" />
+      </div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="/api/vouchers/import/template">下载模板</a>
+      <button class="btn" id="preview-btn" type="button">预览校验</button>
+      <button class="btn primary" id="commit-btn" type="button">提交导入</button>
+    </div>
+    <div class="msg" id="msg">状态：待操作</div>
+  </section>
+  <section class="card">
+    <h3>结果</h3>
+    <pre class="result" id="result">{}</pre>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  var msg = document.getElementById("msg");
+  var resultBox = document.getElementById("result");
+  function show(data){ resultBox.textContent = JSON.stringify(data, null, 2); }
+  function readFormData(){
+    var f = document.getElementById("file").files[0];
+    var fd = new FormData();
+    fd.append("book_id", document.getElementById("book-id").value);
+    fd.append("maker", document.getElementById("maker").value);
+    if (f) fd.append("file", f);
+    return { fd: fd, hasFile: !!f };
+  }
+  function explainAuth(status){
+    if (status === 401) return "请登录后再操作（401 unauthorized）";
+    if (status === 403) return "当前账号无权限执行该操作（403 forbidden）";
+    return "";
+  }
+  function run(path, label){
+    var x = readFormData();
+    if (!x.hasFile){ msg.textContent = "状态：失败（请先选择CSV文件）"; show({ok:false,error:"file required"}); return; }
+    msg.textContent = "状态：" + label + "中...";
+    fetch(path, { method: "POST", body: x.fd })
+      .then(function(resp){
+        return resp.json().then(function(data){
+          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
+          return data;
+        });
+      })
+      .then(function(data){ msg.textContent = "状态：" + label + "成功"; show(data); })
+      .catch(function(err){
+        var code = Number(err && err.status_code || 0);
+        var auth = explainAuth(code);
+        msg.textContent = auth ? ("状态：失败（" + auth + "）") : ("状态：" + label + "失败");
+        show({ ok:false, status_code:code, error:err && err.error ? err.error : String(err || "unknown_error"), message:auth });
+      });
+  }
+  document.getElementById("preview-btn").addEventListener("click", function(){ run("/api/vouchers/import/preview", "预览"); });
+  document.getElementById("commit-btn").addEventListener("click", function(){ run("/api/vouchers/import/commit", "导入"); });
+})();
+</script>
+{% endblock %}

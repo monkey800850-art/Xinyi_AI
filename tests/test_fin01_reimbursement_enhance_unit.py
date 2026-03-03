@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from app.services.reimbursement_service import (
     ReimbursementError,
+    _table_columns,
     list_reimbursement_sla_reminders,
     submit_reimbursement,
 )
@@ -25,6 +26,11 @@ class _Result:
 
     def fetchall(self):
         return self._rows
+
+
+class _MappingRow:
+    def __init__(self, data):
+        self._mapping = dict(data)
 
 
 class _FakeConn:
@@ -89,6 +95,22 @@ class _FakeEngine:
 
 
 class Fin01ReimbursementEnhanceUnitTest(unittest.TestCase):
+    def test_table_columns_accepts_uppercase_information_schema_rows(self):
+        class _FakeConnUppercase:
+            def execute(self, stmt, params=None):
+                sql = str(stmt).lower()
+                if "information_schema.columns" in sql:
+                    return _Result(
+                        [
+                            _MappingRow({"COLUMN_NAME": "budget_check"}),
+                            _MappingRow({"COLUMN_NAME": "attachment_check"}),
+                        ]
+                    )
+                raise AssertionError("PRAGMA fallback should not be used")
+
+        cols = _table_columns(_FakeConnUppercase(), "reimbursements")
+        self.assertEqual(cols, {"budget_check", "attachment_check"})
+
     def test_submit_requires_attachment(self):
         row = _Row(
             id=1,

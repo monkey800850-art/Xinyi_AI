@@ -1,0 +1,101 @@
+{% extends "main_layout.html" %}
+{% block page_title %}系统测试初始化{% endblock %}
+{% block extra_css %}
+<style>
+  .init-page { display: grid; gap: 12px; }
+  .card { background:#fff; border:1px solid #d7e0ea; border-radius:12px; padding:14px; }
+  .grid { display:grid; gap:10px; grid-template-columns: repeat(2,minmax(220px,1fr)); }
+  .field { display:grid; gap:6px; }
+  .field label { font-size:13px; color:#456; font-weight:600; }
+  .field input, .field select { border:1px solid #c8d7e9; border-radius:8px; padding:8px 10px; }
+  .actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .btn { border:1px solid #b8d1ea; background:#e7f1fb; color:#0b5cab; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; }
+  .btn.primary { background:#0b5cab; color:#fff; border-color:#0b5cab; }
+  .result { background:#081426; color:#d9e7ff; border:1px solid #1f3c62; border-radius:10px; padding:10px; font-size:12px; max-height:420px; overflow:auto; white-space:pre-wrap; }
+  .msg { font-size:13px; color:#345; }
+  @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="init-page">
+  <section class="card">
+    <h2>系统测试初始化（样本）</h2>
+    <p>执行 `reset-and-seed`，用于本地/UAT样本数据重建。</p>
+    <div class="grid">
+      <div class="field">
+        <label>操作人</label>
+        <input id="operator" placeholder="uat_admin" value="uat_admin" />
+      </div>
+      <div class="field">
+        <label>角色（admin/tester）</label>
+        <select id="role">
+          <option value="admin">admin</option>
+          <option value="tester">tester</option>
+          <option value="accountant">accountant</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>准则</label>
+        <input id="standards" value="small,enterprise" />
+      </div>
+      <div class="field">
+        <label>批次码</label>
+        <input id="seed-batch-code" placeholder="UI-INIT-20260303" />
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="run-btn" type="button">执行初始化</button>
+      <button class="btn" id="dry-run-btn" type="button">仅预演（dry_run）</button>
+    </div>
+    <div class="msg" id="msg">状态：待执行</div>
+  </section>
+  <section class="card">
+    <h3>结果</h3>
+    <pre class="result" id="result">{}</pre>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  var msg = document.getElementById("msg");
+  var resultBox = document.getElementById("result");
+  function show(data){ resultBox.textContent = JSON.stringify(data, null, 2); }
+  function explainAuth(err){
+    var code = Number(err && err.status_code || 0);
+    if (code === 401) return "请登录后再操作（401 unauthorized）";
+    if (code === 403) return "当前账号无权限执行初始化（403 forbidden）";
+    return "";
+  }
+  function run(dryRun){
+    var payload = {
+      standards: document.getElementById("standards").value,
+      seed_batch_code: document.getElementById("seed-batch-code").value,
+      dry_run: !!dryRun,
+      force: !dryRun
+    };
+    var headers = {
+      "Content-Type": "application/json",
+      "X-User": document.getElementById("operator").value,
+      "X-Role": document.getElementById("role").value
+    };
+    msg.textContent = "状态：执行中...";
+    fetch("/api/system/init/reset-and-seed", { method:"POST", headers:headers, body:JSON.stringify(payload) })
+      .then(function(resp){
+        return resp.json().then(function(data){
+          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
+          return data;
+        });
+      })
+      .then(function(data){ msg.textContent = "状态：成功"; show(data); })
+      .catch(function(err){
+        var authMsg = explainAuth(err);
+        msg.textContent = authMsg ? ("状态：失败（" + authMsg + "）") : "状态：失败";
+        show({ ok:false, error: err && err.error ? err.error : String(err || "unknown_error"), status_code: err && err.status_code ? err.status_code : 0, message: authMsg });
+      });
+  }
+  document.getElementById("run-btn").addEventListener("click", function(){ run(false); });
+  document.getElementById("dry-run-btn").addEventListener("click", function(){ run(true); });
+})();
+</script>
+{% endblock %}
