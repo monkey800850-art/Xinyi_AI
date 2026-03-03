@@ -571,6 +571,15 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
 
+
+        # P0-OPS-INJECT-DEBUG-01: always-on inject proof header
+        @app.after_request
+        def _inject_proof_header(resp):
+            try:
+                resp.headers["X-Xinyi-Inject"] = "1"
+            except Exception:
+                pass
+            return resp
         # P1-UX-SIDEBAR-COLLAPSE-03: after_request html injector
         @app.after_request
         def _inject_sidebar_shadow_toggle(resp):
@@ -687,6 +696,18 @@ def create_app() -> Flask:
         return False
 
     app.register_blueprint(core_pages_bp)
+
+
+@app.get("/__debug/inject")
+def __debug_inject():
+    # plain HTML, no template, easy to verify
+    return """<!doctype html>
+<html><head><meta charset="utf-8"><title>inject-probe</title></head>
+<body>
+  <h1>inject-probe</h1>
+  <p>If you see a floating toggle button, JS ran.</p>
+</body></html>"""
+
     app.register_blueprint(consolidation_bp)
 
     def _is_api_or_task_path() -> bool:

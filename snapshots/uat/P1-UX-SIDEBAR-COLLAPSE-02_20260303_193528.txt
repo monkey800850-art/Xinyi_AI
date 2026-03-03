@@ -16,3 +16,61 @@ JS_URL=/static/js/sidebar_shadow_toggle.js
 
 ==[5/7] Baseline archive ==
 ==[6/7] Git commit ==
+ M app/services/system_auth_service.py
+M  docs/baseline/BASELINE_ARCHIVE.md
+ M snapshots/P1-UX-LAYOUT-03_20260303_183504.txt
+ M snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-01_20260303_192852.txt
+A  snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-02_20260303_193528.txt
+ M static/css/sidebar_toggle.css
+A  static/js/sidebar_shadow_toggle.js
+ M static/js/sidebar_toggle.js
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+M  templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+ M tests/test_sec02_system_auth_service.py
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/uat/P1-UAT-FLOW-01/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175101/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175224/
+?? templates/master_data.html
+?? templates/subject_aux_config.html
+[main 74d8c0e] P1-UX-SIDEBAR-COLLAPSE-02 Shadow DOM 注入：侧边栏折叠/展开按钮必现
+ 4 files changed, 263 insertions(+)
+ create mode 100644 snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-02_20260303_193528.txt
+ create mode 100644 static/js/sidebar_shadow_toggle.js
+==[7/7] MANUAL ==
+MANUAL CHECK:
+1) Open http://localhost:5000/system/books
+2) Ctrl+F5 强制刷新（避免缓存）
+3) 左上角必出现按钮（⟨⟨ / ⟩），点击后应折叠/展开侧边栏
+4) 折叠后左边缘中部出现把手（⟩）可展开
+== DONE. Evidence: snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-02_20260303_193528.txt ==
