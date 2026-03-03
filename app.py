@@ -104,6 +104,10 @@ from app.services.consolidation_report_generation_service import (
     ConsolidationReportGenerationError,
     generate_report_templates_and_merge_reports,
 )
+from app.services.consolidation_audit_permission_service import (
+    ConsolidationAuditPermissionError,
+    run_audit_logs_and_permission_control,
+)
 from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
@@ -2028,6 +2032,73 @@ def create_app() -> Flask:
             return jsonify({"status": "failed", "error": str(err)}), 400
         except Exception:
             app.logger.exception("task_cons_25_unexpected_error")
+            return jsonify({"status": "failed", "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/audit-permission/check")
+    def api_consolidation_audit_permission_check():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            result = run_audit_logs_and_permission_control(payload, operator_id=operator_id)
+            permission_granted = bool(result.get("permission_granted"))
+            status_code = 200 if permission_granted else 403
+            _safe_log_consolidation_audit(
+                action="cons26_audit_permission_check",
+                group_id=group_id,
+                status="success" if permission_granted else "forbidden",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"log_id={((result.get('audit_log') or {}).get('id') or 0)}",
+            )
+            return jsonify({"ok": permission_granted, **result}), status_code
+        except (TypeError, ValueError, ConsolidationAuditPermissionError) as err:
+            msg = str(err)
+            _safe_log_consolidation_audit(
+                action="cons26_audit_permission_check",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), 400
+        except Exception:
+            app.logger.exception("consolidation_audit_permission_check_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="cons26_audit_permission_check",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/task/cons-26")
+    def api_task_cons_26():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        try:
+            result = run_audit_logs_and_permission_control(payload, operator_id=operator_id)
+            permission_granted = bool(result.get("permission_granted"))
+            status_code = 200 if permission_granted else 403
+            body = {
+                "status": "success" if permission_granted else "failed",
+                "message": "审计日志与权限控制检查完成" if permission_granted else "权限校验未通过",
+                **result,
+            }
+            return jsonify(body), status_code
+        except (TypeError, ValueError, ConsolidationAuditPermissionError) as err:
+            return jsonify({"status": "failed", "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("task_cons_26_unexpected_error")
             return jsonify({"status": "failed", "error": "internal_error"}), 500
 
     @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
@@ -4001,6 +4072,20 @@ def _run_cli_task() -> int | None:
             result = generate_report_templates_and_merge_reports(payload, operator_id=args.operator_id)
             print(json.dumps({"ok": True, **result}, ensure_ascii=False))
             return 0
+        except Exception as err:
+            print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
+            return 1
+
+    if task == "CONS-26" and action == "audit_logs_and_permission_control":
+        payload = {
+            "consolidation_group_id": args.group_id,
+            "as_of": args.as_of,
+            "action_content": "audit_logs_and_permission_control",
+        }
+        try:
+            result = run_audit_logs_and_permission_control(payload, operator_id=args.operator_id)
+            print(json.dumps({"ok": bool(result.get("permission_granted")), **result}, ensure_ascii=False))
+            return 0 if bool(result.get("permission_granted")) else 1
         except Exception as err:
             print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
             return 1
