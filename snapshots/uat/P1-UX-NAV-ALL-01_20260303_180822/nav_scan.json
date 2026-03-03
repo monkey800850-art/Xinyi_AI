@@ -1,0 +1,351 @@
+{
+  "page_route_count": 45,
+  "menu_candidate_count": 41,
+  "module_counts": {
+    "合并": 1,
+    "基础资料/辅助": 6,
+    "工作台": 2,
+    "工具/演示": 2,
+    "总账与凭证": 2,
+    "报表": 4,
+    "报销": 2,
+    "税务": 3,
+    "系统": 7,
+    "薪资": 1,
+    "资产": 7,
+    "资金": 4
+  },
+  "nav_url_count": 41,
+  "missing_in_nav_count": 0,
+  "missing_in_nav": [],
+  "menu_candidates": [
+    {
+      "path": "/assets",
+      "endpoint": "assets_list_page",
+      "template": "assets_list.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/assets/categories",
+      "endpoint": "asset_categories_page",
+      "template": "asset_categories.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/assets/changes",
+      "endpoint": "asset_changes_page",
+      "template": "asset_changes.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/assets/depreciation",
+      "endpoint": "asset_depreciation_page",
+      "template": "asset_depreciation.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/assets/new",
+      "endpoint": "assets_new_page",
+      "template": "assets_detail.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/assets/reports/depreciation",
+      "endpoint": "asset_depreciation_report_page",
+      "template": "asset_depreciation_reports.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/assets/reports/ledger",
+      "endpoint": "asset_ledger_page",
+      "template": "asset_ledger.html",
+      "module": "资产",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/banks/import",
+      "endpoint": "bank_import_page",
+      "template": "bank_import.html",
+      "module": "资金",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/banks/reconcile",
+      "endpoint": "bank_reconcile_page",
+      "template": "bank_reconcile.html",
+      "module": "资金",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/dashboard",
+      "endpoint": "dashboard_page",
+      "template": "dashboard.html",
+      "module": "工作台",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/dashboard/boss",
+      "endpoint": "boss_dashboard_page",
+      "template": "boss_dashboard.html",
+      "module": "工作台",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/demo/autocomplete",
+      "endpoint": "demo_autocomplete",
+      "template": "demo_autocomplete.html",
+      "module": "工具/演示",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/demo/filters",
+      "endpoint": "demo_filters",
+      "template": "autocomplete_filters.html",
+      "module": "工具/演示",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/masters/bank_accounts",
+      "endpoint": "master_bank_accounts_page",
+      "template": "master_data.html",
+      "module": "基础资料/辅助",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/masters/departments",
+      "endpoint": "master_departments_page",
+      "template": "master_data.html",
+      "module": "基础资料/辅助",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/masters/entities",
+      "endpoint": "master_entities_page",
+      "template": "master_data.html",
+      "module": "基础资料/辅助",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/masters/persons",
+      "endpoint": "master_persons_page",
+      "template": "master_data.html",
+      "module": "基础资料/辅助",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/masters/projects",
+      "endpoint": "master_projects_page",
+      "template": "master_data.html",
+      "module": "基础资料/辅助",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/masters/subjects/aux",
+      "endpoint": "subject_aux_config_page",
+      "template": "subject_aux_config.html",
+      "module": "基础资料/辅助",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/payments",
+      "endpoint": "payments_list_page",
+      "template": "payments_list.html",
+      "module": "资金",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/payments/new",
+      "endpoint": "payments_new_page",
+      "template": "payments_detail.html",
+      "module": "资金",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/payroll",
+      "endpoint": "payroll_page",
+      "template": "payroll.html",
+      "module": "薪资",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/reimbursements",
+      "endpoint": "reimbursements_list_page",
+      "template": "reimbursements_list.html",
+      "module": "报销",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/reimbursements/new",
+      "endpoint": "reimbursements_new_page",
+      "template": "reimbursements_detail.html",
+      "module": "报销",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/reports/ar_ap",
+      "endpoint": "ar_ap_page",
+      "template": "ar_ap_aging.html",
+      "module": "报表",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/reports/aux_reports",
+      "endpoint": "aux_reports_page",
+      "template": "aux_reports.html",
+      "module": "报表",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/reports/subject_ledger",
+      "endpoint": "subject_ledger_page",
+      "template": "subject_ledger.html",
+      "module": "报表",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/reports/trial_balance",
+      "endpoint": "trial_balance_page",
+      "template": "trial_balance.html",
+      "module": "报表",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/audit",
+      "endpoint": "system_audit_page",
+      "template": "audit_logs.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/book-init",
+      "endpoint": "system_book_init_page",
+      "template": "system_book_init.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/books",
+      "endpoint": "system_books_page",
+      "template": "system_books.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/consolidation",
+      "endpoint": "system_consolidation_page",
+      "template": "system_consolidation.html",
+      "module": "合并",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/init",
+      "endpoint": "system_init_page",
+      "template": "system_init.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/roles",
+      "endpoint": "system_roles_page",
+      "template": "system_roles.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/rules",
+      "endpoint": "system_rules_page",
+      "template": "system_rules.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/system/users",
+      "endpoint": "system_users_page",
+      "template": "system_users.html",
+      "module": "系统",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/tax/invoices",
+      "endpoint": "tax_invoices_page",
+      "template": "tax_invoices.html",
+      "module": "税务",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/tax/rules",
+      "endpoint": "tax_rules_page",
+      "template": "tax_rules.html",
+      "module": "税务",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/tax/summary",
+      "endpoint": "tax_summary_page",
+      "template": "tax_summary.html",
+      "module": "税务",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/voucher/entry",
+      "endpoint": "voucher_entry",
+      "template": "voucher_entry.html",
+      "module": "总账与凭证",
+      "is_menu_candidate": true,
+      "in_nav": true
+    },
+    {
+      "path": "/voucher/import",
+      "endpoint": "voucher_import_page",
+      "template": "voucher_import.html",
+      "module": "总账与凭证",
+      "is_menu_candidate": true,
+      "in_nav": true
+    }
+  ]
+}

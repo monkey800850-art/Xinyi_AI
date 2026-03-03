@@ -1,0 +1,105 @@
+{% extends "main_layout.html" %}
+{% block page_title %}工资管理{% endblock %}
+{% block extra_css %}
+<style>
+  .payroll-page { display:grid; gap:12px; }
+  .card { background:#fff; border:1px solid #d7e0ea; border-radius:12px; padding:14px; }
+  .grid { display:grid; gap:10px; grid-template-columns: repeat(4,minmax(150px,1fr)); }
+  .field { display:grid; gap:6px; }
+  .field label { font-size:13px; color:#456; font-weight:600; }
+  .field input, .field select { border:1px solid #c8d7e9; border-radius:8px; padding:8px 10px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .btn { border:1px solid #b8d1ea; background:#e7f1fb; color:#0b5cab; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; }
+  .msg { font-size:13px; color:#345; }
+  .result { background:#081426; color:#d9e7ff; border:1px solid #1f3c62; border-radius:10px; padding:10px; font-size:12px; max-height:440px; overflow:auto; white-space:pre-wrap; }
+  @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="payroll-page">
+  <section class="card">
+    <h2>工资管理</h2>
+    <p>最小闭环：查询工资期间与工资单。无权限会明确提示，不空转。</p>
+    <div class="grid">
+      <div class="field">
+        <label>账套ID</label>
+        <input id="book-id" type="number" value="1" />
+      </div>
+      <div class="field">
+        <label>发薪期间（YYYY-MM）</label>
+        <input id="period" type="month" />
+      </div>
+      <div class="field">
+        <label>操作人</label>
+        <input id="operator" value="uat_admin" />
+      </div>
+      <div class="field">
+        <label>角色</label>
+        <select id="role">
+          <option value="payroll">payroll</option>
+          <option value="hr">hr</option>
+          <option value="admin">admin</option>
+          <option value="auditor">auditor</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="load-periods" class="btn" type="button">查询工资期间</button>
+      <button id="load-slips" class="btn" type="button">查询工资单</button>
+    </div>
+    <div id="msg" class="msg">状态：待操作</div>
+  </section>
+  <section class="card">
+    <h3>结果</h3>
+    <pre id="result" class="result">{}</pre>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  var msg = document.getElementById("msg");
+  var out = document.getElementById("result");
+  function show(data){ out.textContent = JSON.stringify(data, null, 2); }
+  function authMessage(code){
+    if (code === 401) return "请登录后再操作（401 unauthorized）";
+    if (code === 403) return "无权限访问工资模块（403 forbidden）";
+    return "";
+  }
+  function headers(){
+    return {
+      "X-User": document.getElementById("operator").value,
+      "X-Role": document.getElementById("role").value
+    };
+  }
+  function request(url, label){
+    msg.textContent = "状态：" + label + "中...";
+    fetch(url, { headers: headers() })
+      .then(function(resp){
+        return resp.json().then(function(data){
+          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
+          return data;
+        });
+      })
+      .then(function(data){ msg.textContent = "状态：" + label + "成功"; show(data); })
+      .catch(function(err){
+        var code = Number(err && err.status_code || 0);
+        var auth = authMessage(code);
+        msg.textContent = auth ? ("状态：失败（" + auth + "）") : ("状态：" + label + "失败");
+        show({ ok:false, status_code:code, error:err && err.error ? err.error : String(err || "unknown_error"), message:auth });
+      });
+  }
+  document.getElementById("load-periods").addEventListener("click", function(){
+    var bookId = document.getElementById("book-id").value;
+    request("/api/payroll/periods?book_id=" + encodeURIComponent(bookId), "查询工资期间");
+  });
+  document.getElementById("load-slips").addEventListener("click", function(){
+    var bookId = document.getElementById("book-id").value;
+    var period = document.getElementById("period").value;
+    var qs = "book_id=" + encodeURIComponent(bookId);
+    if (period) qs += "&period=" + encodeURIComponent(period);
+    request("/api/payroll/slips?" + qs, "查询工资单");
+  });
+})();
+</script>
+{% endblock %}

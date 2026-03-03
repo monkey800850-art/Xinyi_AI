@@ -1,0 +1,253 @@
+{
+  "checked": 41,
+  "server_error_count": 0,
+  "not_ok_count": 0,
+  "rows": [
+    {
+      "path": "/assets",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/assets/categories",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/assets/changes",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/assets/depreciation",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/assets/new",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/assets/reports/depreciation",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/assets/reports/ledger",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/banks/import",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/banks/reconcile",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/dashboard",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/dashboard/boss",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/demo/autocomplete",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/demo/filters",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/masters/bank_accounts",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/masters/departments",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/masters/entities",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/masters/persons",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/masters/projects",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/masters/subjects/aux",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/payments",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/payments/new",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/payroll",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/reimbursements",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/reimbursements/new",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/reports/ar_ap",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/reports/aux_reports",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/reports/subject_ledger",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/reports/trial_balance",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/audit",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/book-init",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/books",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/consolidation",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/init",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/roles",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/rules",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/system/users",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/tax/invoices",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/tax/rules",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/tax/summary",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/voucher/entry",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    },
+    {
+      "path": "/voucher/import",
+      "status": 200,
+      "ok": true,
+      "error": ""
+    }
+  ]
+}

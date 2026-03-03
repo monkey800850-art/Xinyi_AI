@@ -4,6 +4,11 @@ core_pages_bp = Blueprint("core_pages", __name__)
 
 
 @core_pages_bp.get("/")
+def index():
+    return render_template("user_home.html")
+
+
+@core_pages_bp.get("/healthz")
 def health():
     return {"status": "ok"}
 
@@ -81,6 +86,11 @@ def payments_list_page():
 @core_pages_bp.get("/payments/new")
 def payments_new_page():
     return render_template("payments_detail.html", payment_id="")
+
+
+@core_pages_bp.get("/payroll")
+def payroll_page():
+    return render_template("payroll.html")
 
 
 @core_pages_bp.get("/payments/<int:payment_id>")

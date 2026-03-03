@@ -3,6 +3,7 @@ import os
 import calendar
 import argparse
 import json
+from copy import deepcopy
 from fnmatch import fnmatch
 import re
 import sys
@@ -458,6 +459,7 @@ def _build_main_nav(path: str):
                 {"label": "银行对账", "url": "/banks/reconcile", "prefixes": ["/banks/reconcile"]},
                 {"label": "支付申请", "url": "/payments", "prefixes": ["/payments", "/payments/"]},
                 {"label": "新建支付申请", "url": "/payments/new", "prefixes": ["/payments/new"]},
+                {"label": "工资管理", "url": "/payroll", "prefixes": ["/payroll"]},
             ],
         },
         {
@@ -491,7 +493,7 @@ def _build_main_nav(path: str):
         },
     ]
 
-    current_title = "工作台"
+    current_title = "首页" if current == "/" else "工作台"
     for group in nav_groups:
         group["active"] = False
         for item in group["items"]:
@@ -501,6 +503,57 @@ def _build_main_nav(path: str):
                 group["active"] = True
                 current_title = item["label"]
     return nav_groups, current_title
+
+
+def _sort_home_nav_groups(nav_groups: list[dict], role_code: str) -> list[dict]:
+    role = str(role_code or "").strip().lower()
+    group_order_by_role = {
+        "admin": ["system", "master", "voucher", "reports", "funds", "assets", "reimbursement", "tax"],
+        "tester": ["system", "master", "voucher", "reports", "funds", "assets", "reimbursement", "tax"],
+        "accountant": ["voucher", "reports", "funds", "tax", "assets", "master", "reimbursement", "system"],
+        "reviewer": ["voucher", "reports", "funds", "reimbursement", "tax", "assets", "master", "system"],
+        "boss": ["reports", "funds", "tax", "assets", "system", "master", "reimbursement", "voucher"],
+    }
+    preferred = group_order_by_role.get(role, [])
+    score = {k: i for i, k in enumerate(preferred)}
+    copied = deepcopy(nav_groups or [])
+    copied.sort(key=lambda g: (score.get(str(g.get("key") or ""), 999), str(g.get("label") or "")))
+    return copied
+
+
+def _build_shell_nav(nav_groups: list[dict], current_path: str) -> tuple[list[dict], dict]:
+    groups = deepcopy(nav_groups or [])
+    current = str(current_path or "").strip() or "/"
+    selected = None
+    for g in groups:
+        if g.get("active"):
+            selected = g
+            break
+    if selected is None and groups:
+        selected = groups[0]
+
+    top_nav = [
+        {
+            "key": "home",
+            "label": "首页",
+            "url": "/",
+            "active": current == "/",
+        }
+    ]
+    for g in groups:
+        items = g.get("items") or []
+        home_url = "/"
+        if items:
+            home_url = str(items[0].get("url") or "/")
+        top_nav.append(
+            {
+                "key": str(g.get("key") or ""),
+                "label": str(g.get("label") or ""),
+                "url": home_url,
+                "active": bool(current != "/" and selected and str(selected.get("key") or "") == str(g.get("key") or "")),
+            }
+        )
+    return top_nav, (selected or {"key": "", "label": "导航", "items": []})
 
 
 def create_app() -> Flask:
@@ -684,6 +737,10 @@ def create_app() -> Flask:
     def _inject_main_nav():
         nav_groups, current_title = _build_main_nav(request.path)
         auth_ctx = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
+        current_user_role = (
+            request.headers.get("X-Role") or request.args.get("role") or str(auth_ctx.get("role") or "")
+        ).strip()
+        top_nav_groups, sidebar_group = _build_shell_nav(nav_groups, request.path)
         book_ctx = session.get("book_ctx") if isinstance(session.get("book_ctx"), dict) else {}
         subject_ctx = session.get("subject_ctx") if isinstance(session.get("subject_ctx"), dict) else {}
         current_subject_type = (
@@ -704,13 +761,14 @@ def create_app() -> Flask:
             current_subject_type = "book"
         return {
             "nav_groups": nav_groups,
+            "home_nav_groups": _sort_home_nav_groups(nav_groups, current_user_role),
+            "top_nav_groups": top_nav_groups,
+            "sidebar_group": sidebar_group,
             "current_nav_title": current_title,
             "current_user_name": (
                 request.headers.get("X-User") or request.args.get("user") or str(auth_ctx.get("username") or "")
             ).strip(),
-            "current_user_role": (
-                request.headers.get("X-Role") or request.args.get("role") or str(auth_ctx.get("role") or "")
-            ).strip(),
+            "current_user_role": current_user_role,
             "current_book_id": (
                 request.headers.get("X-Book-Id")
                 or request.args.get("book_id")

@@ -101,6 +101,8 @@ def _module_of(path: str) -> str:
         return "报表"
     if path.startswith("/tax/"):
         return "税务"
+    if path.startswith("/payroll"):
+        return "薪资"
     if path.startswith("/banks/") or path.startswith("/payments"):
         return "资金"
     if path.startswith("/reimbursements"):
