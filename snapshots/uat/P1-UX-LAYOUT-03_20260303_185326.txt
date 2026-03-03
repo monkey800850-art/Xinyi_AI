@@ -112,3 +112,183 @@ Expected:
 Updated docs/baseline/BASELINE_ARCHIVE.md
 
 ==[8/9] git status + commit ==
+ M app/services/system_auth_service.py
+A  docs/baseline/BASELINE_ARCHIVE.md
+ M snapshots/P1-UX-LAYOUT-03_20260303_183504.txt
+ M snapshots/uat/P1-UX-LAYOUT-02_20260303_182632.txt
+A  snapshots/uat/P1-UX-LAYOUT-03_20260303_185326.txt
+M  static/css/force_desktop.css
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+M  templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+ M tests/test_sec02_system_auth_service.py
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/uat/P1-UAT-FLOW-01/
+?? snapshots/uat/P1-UX-LAYOUT-03_20260303_185131.txt
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175101/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175224/
+?? templates/master_data.html
+?? templates/subject_aux_config.html
+?? templates/system_books.html
+[main ff00b2f] P1-UX-LAYOUT-03 强制桌面布局生效（cache-busting+命中验证）
+ 4 files changed, 173 insertions(+), 46 deletions(-)
+ create mode 100644 docs/baseline/BASELINE_ARCHIVE.md
+ create mode 100644 snapshots/uat/P1-UX-LAYOUT-03_20260303_185326.txt
+ rewrite static/css/force_desktop.css (74%)
+
+==[9/9] DONE. Evidence saved: snapshots/uat/P1-UX-LAYOUT-03_20260303_185326.txt ==
+
+==[10/9] Elevated curl verification for DoD 1+2 ==
+--- HTTP header preview ---
+HTTP/1.1 200 OK
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 10:55:52 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 20308
+Connection: close
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>账套管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --shell-bg: #f3f6fa;
+      --shell-card: #ffffff;
+      --shell-text: #1f2d3d;
+      --shell-muted: #6b7f95;
+      --shell-line: #d8e2ee;
+      --shell-brand: #0c4f9e;
+      --shell-brand-dark: #073d7a;
+      --shell-brand-soft: #eaf2fc;
+    }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: var(--shell-bg);
+      color: var(--shell-text);
+--- marker grep in rendered HTML ---
+
+==[11/9] Deep marker scan ==
+HTML bytes: 20308
+--- first 20 lines ---
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>账套管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --shell-bg: #f3f6fa;
+      --shell-card: #ffffff;
+      --shell-text: #1f2d3d;
+      --shell-muted: #6b7f95;
+      --shell-line: #d8e2ee;
+      --shell-brand: #0c4f9e;
+      --shell-brand-dark: #073d7a;
+      --shell-brand-soft: #eaf2fc;
+    }
+    body {
+      margin: 0;
+--- marker search ---
+368:<body ><script src="/static/js/request_context.js"></script><script src="/static/js/navigation_rules.js"></script>
+--- around stylesheet links ---
+
+==[12/9] Re-verify after hard restart ==
+
+==[13/9] Final elevated verification (restart+probe) ==
+--- startup log tail ---
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+INFO  [alembic.runtime.migration] Context impl MySQLImpl.
+INFO  [alembic.runtime.migration] Context impl MySQLImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+[5/6] Starting server...
+--- /system/books head ---
+HTTP/1.1 200 OK
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 10:59:08 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 25968
+Connection: close
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>账套管理</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --shell-bg: #f3f6fa;
+      --shell-card: #ffffff;
+      --shell-text: #1f2d3d;
+      --shell-muted: #6b7f95;
+      --shell-line: #d8e2ee;
+      --shell-brand: #0c4f9e;
+      --shell-brand-dark: #073d7a;
+      --shell-brand-soft: #eaf2fc;
+      --ui-scale: 1;
+--- css marker lines ---
+497:  <link rel="stylesheet" href="/static/css/force_desktop.css?v=95a48e8" />
+--- class marker lines ---
+348:  .force-desktop .shell {
+351:  .force-desktop #sidebar,
+352:  .force-desktop .shell-sidebar {
+362:  .force-desktop .shell-main {
+367:  .force-desktop .accordion-nav,
+368:  .force-desktop .offcanvas,
+369:  .force-desktop .drawer {
+439:     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+443:  .force-desktop .app-shell,
+444:  .force-desktop .layout,
+445:  .force-desktop .main-layout,
+446:  .force-desktop #app,
+447:  .force-desktop body {
+452:  .force-desktop #sidebar {
+463:  .force-desktop .layout-root,
+464:  .force-desktop .layout-container,
+465:  .force-desktop .main-container,
+466:  .force-desktop .app-container {
+472:  .force-desktop .content,
+473:  .force-desktop .main-content,
+--- body tag line ---
+499:<body  class="force-desktop"><script src="/static/js/request_context.js"></script><script src="/static/js/navigation_rules.js"></script>
