@@ -33,3 +33,4 @@ X-User:
 *.save
 *.bak
 *~
+venv/

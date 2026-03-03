@@ -6,23 +6,23 @@ cd "$ROOT_DIR"
 
 echo "== Xinyi AI Dev Startup =="
 
-# 1. Check python
+# 0) Preflight
 if ! command -v python3 >/dev/null 2>&1; then
   echo "ERROR: python3 not found"
   exit 1
 fi
 
-# 2. Create venv if missing
+# 1) Ensure venv
 if [ ! -f "venv/bin/activate" ]; then
   echo "[1/6] Creating venv..."
   python3 -m venv venv
 fi
 
-echo "[2/6] Activate venv..."
+echo "[2/6] Activating venv..."
 source venv/bin/activate
 
-# 3. Install dependencies if needed
-if ! python -m flask --version >/dev/null 2>&1; then
+# 2) Ensure deps (quick check)
+if ! python -c "import flask" >/dev/null 2>&1; then
   echo "[3/6] Installing dependencies..."
   python -m pip install --upgrade pip
   pip install -r requirements.txt
@@ -30,22 +30,24 @@ else
   echo "[3/6] Dependencies OK"
 fi
 
-# 4. Run migration
+# 3) Migrate
 echo "[4/6] Running migration..."
 PYTHONPATH=. alembic upgrade head
 
-# 5. Start server
+# 4) Start server if not running
 echo "[5/6] Starting server..."
-python3 run_dev.py &
-
-sleep 2
-
-# 6. Verify port
-if ss -lntp | grep -q ':5000'; then
-  echo "[6/6] Server running on http://localhost:5000"
+if ss -lntp 2>/dev/null | grep -q ':5000'; then
+  echo "Port 5000 already in use - assume server running."
 else
-  echo "ERROR: server did not start"
-  exit 1
+  nohup python3 run_dev.py > logs/dev.log 2>&1 &
+  sleep 1
 fi
 
-echo "== Startup Complete =="
+# 5) Verify
+echo "[6/6] Verify..."
+if ss -lntp 2>/dev/null | grep -q ':5000'; then
+  echo "Server OK: http://localhost:5000/dashboard"
+else
+  echo "ERROR: server did not start. See logs/dev.log"
+  exit 1
+fi
