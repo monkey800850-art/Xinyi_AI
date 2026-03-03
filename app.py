@@ -223,6 +223,7 @@ from app.services.reimbursement_service import (
     delete_reimbursement,
     get_reimbursement_detail,
     get_reimbursement_stats,
+    list_reimbursement_sla_reminders,
     list_reimbursements,
     reject_reimbursement,
     submit_reimbursement,
@@ -3651,6 +3652,14 @@ def create_app() -> Flask:
     def api_reimbursements_stats():
         try:
             result = get_reimbursement_stats(request.args)
+            return jsonify(result), 200
+        except ReimbursementError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/reimbursements/sla-reminders")
+    def api_reimbursements_sla_reminders():
+        try:
+            result = list_reimbursement_sla_reminders(request.args)
             return jsonify(result), 200
         except ReimbursementError as err:
             return jsonify({"error": str(err)}), 400
