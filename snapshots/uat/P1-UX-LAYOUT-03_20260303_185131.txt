@@ -1,0 +1,55 @@
+== P1-UX-LAYOUT-03 START ==
+TIME: 20260303_185131
+HEAD: 95a48e8
+PWD: /home/x1560/Xinyi_AI
+
+==[1/9] Ensure force_desktop.css exists and is strong enough ==
+static/css/force_desktop.css exists
+--- head force_desktop.css ---
+/* P1-UX-LAYOUT-02: Force desktop layout regardless of zoom-triggered breakpoints.
+   Loaded LAST to override Bootstrap / other responsive rules.
+*/
+html, body { min-width: 1200px; overflow-x: auto; }
+
+/* If Bootstrap display utility hides sidebar on md/lg, force it visible */
+#sidebar,
+.sidebar,
+aside.sidebar,
+nav.sidebar {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* If an offcanvas/mobile menu exists, hide it on desktop force mode */
+.offcanvas, .drawer, .mobile-nav, .accordion-nav {
+  display: none !important;
+}
+
+/* Force two-column layout (sidebar + content) */
+.layout-root, .layout-container, .main-container, .app-container, .app-shell, .shell, .page-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+}
+
+/* Sidebar sizing (adjust if your sidebar element uses a different selector) */
+#sidebar {
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  max-width: 280px !important;
+  height: 100vh !important;
+  overflow: auto !important;
+  position: sticky !important;
+  top: 0 !important;
+}
+
+/* Content should fill remaining space */
+#content, .content, .main-content, main.content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* If collapse/accordion is used for groups, keep them expanded (desktop) */
+.collapse { display: block !important; height: auto !important; visibility: visible !important; }
+
+==[2/9] Patch main_layout.html: (a) add force-desktop class (b) load css LAST with cache-busting ==

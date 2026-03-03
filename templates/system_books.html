@@ -1,0 +1,46 @@
+{% extends "main_layout.html" %}
+{% block page_title %}账套管理{% endblock %}
+{% block extra_css %}
+<style>
+  .page-card {
+    background: #fff;
+    border: 1px solid #d7e0ea;
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .page-card h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+  .page-card p {
+    margin: 0 0 12px;
+    color: #5f738d;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .actions a {
+    text-decoration: none;
+    border: 1px solid #b8d1ea;
+    background: #e7f1fb;
+    color: #0b5cab;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<section class="page-card">
+  <h2>账套管理</h2>
+  <p>该页面作为统一壳子下的账套管理入口。你可以从这里进入相关模块进行维护。</p>
+  <div class="actions">
+    <a href="/system/consolidation">账套关系与合并管理</a>
+    <a href="/system/book-init">建账初始化</a>
+    <a href="/dashboard">返回工作台</a>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}{% endblock %}

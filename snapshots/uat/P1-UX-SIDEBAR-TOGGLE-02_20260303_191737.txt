@@ -1,0 +1,81 @@
+== P1-UX-SIDEBAR-TOGGLE-02 ==
+TIME: 20260303_191737
+HEAD: c718fc2
+
+==[1/8] Confirm toggle files exist ==
+-rw-r--r-- 1 x1560 x1560  928 Mar  3 19:12 static/css/sidebar_toggle.css
+-rw-r--r-- 1 x1560 x1560 1312 Mar  3 19:12 static/js/sidebar_toggle.js
+
+==[2/8] Confirm main_layout.html actually contains button+links ==
+467:  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar_toggle.css') }}?v=P1-UX-SIDEBAR-TOGGLE-01">
+515:        <button id="sidebarToggleBtn" type="button" style="margin-left:12px">收起侧边栏</button>
+637:  <script src="{{ url_for('static', filename='js/sidebar_toggle.js') }}?v=P1-UX-SIDEBAR-TOGGLE-01"></script>
+
+==[3/8] Find which template /system/books uses (route function + render_template) ==
+app/routes/consolidation.py:11:    return render_template("system_consolidation.html")
+app/routes/core_pages.py:8:    return render_template("user_home.html")
+app/routes/core_pages.py:18:    return render_template("dashboard.html")
+app/routes/core_pages.py:23:    return render_template("boss_dashboard.html")
+app/routes/core_pages.py:28:    return render_template("demo_autocomplete.html")
+app/routes/core_pages.py:33:    return render_template("autocomplete_filters.html")
+app/routes/core_pages.py:38:    return render_template("voucher_entry.html")
+app/routes/core_pages.py:43:    return render_template("voucher_import.html")
+app/routes/core_pages.py:48:    return render_template("trial_balance.html")
+app/routes/core_pages.py:53:    return render_template("subject_ledger.html")
+app/routes/core_pages.py:58:    return render_template("aux_reports.html")
+app/routes/core_pages.py:63:    return render_template("ar_ap_aging.html")
+app/routes/core_pages.py:68:    return render_template("reimbursements_list.html")
+app/routes/core_pages.py:73:    return render_template("reimbursements_detail.html", reimbursement_id="")
+app/routes/core_pages.py:78:    return render_template("reimbursements_detail.html", reimbursement_id=reimbursement_id)
+app/routes/core_pages.py:83:    return render_template("payments_list.html")
+app/routes/core_pages.py:88:    return render_template("payments_detail.html", payment_id="")
+app/routes/core_pages.py:93:    return render_template("payroll.html")
+app/routes/core_pages.py:98:    return render_template("payments_detail.html", payment_id=payment_id)
+app/routes/core_pages.py:103:    return render_template("bank_import.html")
+app/routes/core_pages.py:108:    return render_template("bank_reconcile.html")
+app/routes/core_pages.py:113:    return render_template("master_data.html", master_kind="departments", master_label="部门")
+app/routes/core_pages.py:118:    return render_template("master_data.html", master_kind="persons", master_label="个人")
+app/routes/core_pages.py:123:    return render_template("master_data.html", master_kind="entities", master_label="单位")
+app/routes/core_pages.py:128:    return render_template("master_data.html", master_kind="projects", master_label="项目")
+app/routes/core_pages.py:133:    return render_template("master_data.html", master_kind="bank_accounts", master_label="银行账户")
+app/routes/core_pages.py:138:    return render_template("subject_aux_config.html")
+app/routes/core_pages.py:143:    return render_template("tax_rules.html")
+app/routes/core_pages.py:148:    return render_template("tax_invoices.html")
+app/routes/core_pages.py:153:    return render_template("tax_summary.html")
+app/routes/core_pages.py:158:    return render_template("asset_categories.html")
+app/routes/core_pages.py:163:    return render_template("asset_depreciation.html")
+app/routes/core_pages.py:168:    return render_template("asset_changes.html")
+app/routes/core_pages.py:173:    return render_template("asset_ledger.html")
+app/routes/core_pages.py:178:    return render_template("asset_depreciation_reports.html")
+app/routes/core_pages.py:183:    return render_template("system_users.html")
+app/routes/core_pages.py:188:    return render_template("system_roles.html")
+app/routes/core_pages.py:193:    return render_template("system_rules.html")
+app/routes/core_pages.py:197:def system_books_page():
+app/routes/core_pages.py:198:    return render_template("system_books.html")
+app/routes/core_pages.py:203:    return render_template("system_book_init.html")
+app/routes/core_pages.py:208:    return render_template("audit_logs.html")
+app/routes/core_pages.py:213:    return render_template("system_init.html")
+app/routes/core_pages.py:218:    return render_template("assets_list.html")
+app/routes/core_pages.py:223:    return render_template("assets_detail.html", asset_id="")
+app/routes/core_pages.py:228:    return render_template("assets_detail.html", asset_id=asset_id)
+
+==[4/8] Start server (best-effort) and fetch rendered HTML ==
+LISTEN 0      0             0.0.0.0:5000      0.0.0.0:*          
+--- HTML markers (button + css/js) ---
+
+==[5/8] If HTML DOES NOT include markers, force all pages to include toggle via main_layout injection ==
+HAS_MARKERS_IN_RENDERED_HTML=0
+[FIX] /system/books rendered HTML missing markers -> enforce extends main_layout.html
+
+==[6/8] Verify static assets are served (HTTP 200) ==
+CSS_URL=/static/css/sidebar_toggle.css
+JS_URL=/static/js/sidebar_toggle.js
+--- curl CSS ---
+--- curl JS ---
+
+==[7/8] Make sure cache-busting is enabled (add ?v=<sha>) ==
+
+==[8/8] Restart and re-check rendered HTML markers ==
+--- rendered markers after fix ---
+
+MANUAL: Open http://localhost:5000/system/books, Ctrl+F5, click button, verify sidebar hides/shows.
