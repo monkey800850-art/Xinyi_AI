@@ -294,6 +294,12 @@ from app.services.voucher_template_service import (
     list_template_candidates,
 )
 from app.services.voucher_status_service import VoucherStatusError, change_voucher_status
+from app.services.user_experience_service import (
+    UserExperienceError,
+    guide_user_step,
+    show_error_message,
+    show_operation_guide,
+)
 from app.utils.errors import APIError, build_api_error_response
 
 
@@ -3642,6 +3648,30 @@ def create_app() -> Flask:
         except Exception:
             app.logger.exception("export_unexpected_error")
             return jsonify({"error": "internal_error"}), 500
+
+    @app.get("/api/ux/wizard")
+    def api_ux_wizard():
+        process_name = request.args.get("process_name")
+        try:
+            result = guide_user_step(process_name)
+            return jsonify(result), 200
+        except UserExperienceError as err:
+            return jsonify({"error": str(err)}), 400
+
+    @app.get("/api/ux/error-message")
+    def api_ux_error_message():
+        error_type = request.args.get("error_type")
+        result = show_error_message(error_type)
+        return jsonify(result), 200
+
+    @app.get("/api/ux/operation-guide")
+    def api_ux_operation_guide():
+        process_name = request.args.get("process_name")
+        try:
+            result = show_operation_guide(process_name)
+            return jsonify(result), 200
+        except UserExperienceError as err:
+            return jsonify({"error": str(err)}), 400
 
     @app.post("/api/auth/login")
     def api_auth_login():
