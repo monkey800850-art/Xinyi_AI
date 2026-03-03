@@ -572,6 +572,50 @@ def create_app() -> Flask:
     app = Flask(__name__)
 
 
+
+        # P0-OPS-INJECT-PROOF-02
+        @app.after_request
+        def _inject_proof(resp):
+            """
+            Proof we hit THIS Flask instance:
+            - Always set X-Xinyi-Inject: 1
+            - If response is HTML: inline inject a marker + tiny JS (no /static dependency)
+            """
+            try:
+                resp.headers["X-Xinyi-Inject"] = "1"
+                ct = (resp.headers.get("Content-Type","") or "").lower()
+                if "text/html" not in ct:
+                    return resp
+
+                body = resp.get_data(as_text=True)
+                if "XINYI_INJECT_PROOF_02" in body:
+                    return resp
+
+                inline = (
+                  "<!-- XINYI_INJECT_PROOF_02 -->"
+                  "<script>(function(){"
+                  "try{"
+                  "var d=document.createElement('div');"
+                  "d.id='xinyi_inject_probe_02';"
+                  "d.style='position:fixed;bottom:10px;right:10px;z-index:2147483647;"
+                  "background:rgba(255,255,0,.85);padding:6px 8px;border:1px solid #333;"
+                  "border-radius:8px;font:12px/1.2 system-ui';"
+                  "d.textContent='INJECT_OK_02';"
+                  "document.documentElement.appendChild(d);"
+                  "}catch(e){}"
+                  "})();</script>"
+                )
+
+                if "</body>" in body:
+                    body = body.replace("</body>", inline + "\n</body>", 1)
+                else:
+                    body = body + "\n" + inline
+
+                resp.set_data(body)
+                resp.headers.pop("Content-Length", None)
+            except Exception:
+                return resp
+            return resp
         # P0-OPS-INJECT-DEBUG-01: always-on inject proof header
         @app.after_request
         def _inject_proof_header(resp):
