@@ -88,6 +88,10 @@ from app.services.consolidation_control_service import (
     get_consolidation_control_decision,
 )
 from app.services.consolidation_nci_service import ConsolidationNciError, get_consolidation_nci
+from app.services.consolidation_nci_dynamic_service import (
+    ConsolidationNciDynamicError,
+    generate_nci_dynamic,
+)
 from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
@@ -1781,6 +1785,19 @@ def create_app() -> Flask:
             app.logger.exception("task_cons_21_unexpected_error")
             return jsonify({"status": "failed", "error": "internal_error"}), 500
 
+    @app.post("/task/cons-22")
+    def api_task_cons_22():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        try:
+            result = generate_nci_dynamic(payload, operator_id=operator_id)
+            return jsonify({"status": "success", "message": "NCI动态计算完成", **result}), 200
+        except (TypeError, ValueError, ConsolidationNciDynamicError, ConsolidationAdjustmentError) as err:
+            return jsonify({"status": "failed", "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("task_cons_22_unexpected_error")
+            return jsonify({"status": "failed", "error": "internal_error"}), 500
+
     @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
     def api_consolidation_inventory_up_reversal_generate():
         payload = request.get_json(silent=True) or {}
@@ -2057,6 +2074,77 @@ def create_app() -> Flask:
             return jsonify({"ok": False, "error": str(err)}), 400
         except Exception:
             app.logger.exception("consolidation_nci_unexpected_error")
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/nci/generate")
+    def api_consolidation_nci_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            as_of = date.fromisoformat(str(payload.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+            result = generate_nci_dynamic(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="nci_dynamic_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"set={result.get('adjustment_set_id','')}",
+            )
+            return (
+                jsonify(
+                    {
+                        "ok": True,
+                        "adjustment_set_id": result.get("adjustment_set_id"),
+                        "counts": {"lines": int(result.get("line_count") or 0)},
+                        "preview_lines": result.get("preview_lines") or [],
+                        **result,
+                    }
+                ),
+                200,
+            )
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="nci_dynamic_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationNciDynamicError, ConsolidationAdjustmentError) as err:
+            msg = str(err)
+            status_code = 409 if msg in {"adjustment_set_reviewed_blocked", "adjustment_set_locked_blocked"} else 400
+            _safe_log_consolidation_audit(
+                action="nci_dynamic_generate",
+                group_id=group_id,
+                status="failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=msg,
+            )
+            return jsonify({"ok": False, "error": msg}), status_code
+        except Exception:
+            app.logger.exception("consolidation_nci_dynamic_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="nci_dynamic_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
             return jsonify({"ok": False, "error": "internal_error"}), 500
 
     @app.get("/api/consolidation/groups/<int:group_id>/members/effective")
@@ -3592,6 +3680,9 @@ def _run_cli_task() -> int | None:
     parser.add_argument("--other-comprehensive-income", default="0")
     parser.add_argument("--dividends", default="0")
     parser.add_argument("--impairment", default="0")
+    parser.add_argument("--entity-net-assets", default="{}")
+    parser.add_argument("--entity-net-profit", default="{}")
+    parser.add_argument("--opening-nci-balance", default="{}")
     parser.add_argument("--operator-id", type=int, default=1)
     args, _unknown = parser.parse_known_args()
 
@@ -3614,6 +3705,22 @@ def _run_cli_task() -> int | None:
         }
         try:
             result = generate_equity_method(payload, operator_id=args.operator_id)
+            print(json.dumps({"ok": True, **result}, ensure_ascii=False))
+            return 0
+        except Exception as err:
+            print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
+            return 1
+
+    if task == "CONS-22" and action == "nci_dynamic_calculation":
+        payload = {
+            "consolidation_group_id": args.group_id,
+            "as_of": args.as_of,
+            "entity_net_assets": args.entity_net_assets,
+            "entity_net_profit": args.entity_net_profit,
+            "opening_nci_balance": args.opening_nci_balance,
+        }
+        try:
+            result = generate_nci_dynamic(payload, operator_id=args.operator_id)
             print(json.dumps({"ok": True, **result}, ensure_ascii=False))
             return 0
         except Exception as err:
