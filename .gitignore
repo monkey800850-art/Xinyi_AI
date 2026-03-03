@@ -42,3 +42,7 @@ snapshots/uat/
 # Ignore snapshots (evidence)
 snapshots/
 snapshots/uat/
+
+# Ignore snapshots (evidence)
+snapshots/
+snapshots/uat/
