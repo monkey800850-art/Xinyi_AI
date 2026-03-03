@@ -116,6 +116,10 @@ from app.services.consolidation_report_automation_service import (
     ConsolidationReportAutomationError,
     automate_report_generation_and_adjustment,
 )
+from app.services.consolidation_final_check_approval_service import (
+    ConsolidationFinalCheckApprovalError,
+    run_final_check_and_approval_flow,
+)
 from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
@@ -2223,6 +2227,74 @@ def create_app() -> Flask:
             app.logger.exception("task_cons_28_unexpected_error")
             return jsonify({"status": "failed", "error": "internal_error"}), 500
 
+    @app.post("/api/consolidation/final_check_approval/run")
+    def api_consolidation_final_check_approval_run():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            result = run_final_check_and_approval_flow(payload, operator_id=operator_id)
+            status_code = 200 if bool(result.get("final_check_passed")) else 409
+            _safe_log_consolidation_audit(
+                action="cons29_final_check_approval",
+                group_id=group_id,
+                status="success" if status_code == 200 else "failed",
+                code=status_code,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"approval_status={((result.get('approval_flow') or {}).get('approval_status') or '')}",
+            )
+            return jsonify({"ok": status_code == 200, **result}), status_code
+        except (TypeError, ValueError, ConsolidationFinalCheckApprovalError) as err:
+            _safe_log_consolidation_audit(
+                action="cons29_final_check_approval",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_final_check_approval_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="cons29_final_check_approval",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/task/cons-29")
+    def api_task_cons_29():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        try:
+            result = run_final_check_and_approval_flow(payload, operator_id=operator_id)
+            check_ok = bool(result.get("final_check_passed"))
+            return (
+                jsonify(
+                    {
+                        "status": "success" if check_ok else "failed",
+                        "message": "合并作业单与合并报表最终校验与审批流完成" if check_ok else "最终校验未通过",
+                        **result,
+                    }
+                ),
+                200 if check_ok else 409,
+            )
+        except (TypeError, ValueError, ConsolidationFinalCheckApprovalError) as err:
+            return jsonify({"status": "failed", "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("task_cons_29_unexpected_error")
+            return jsonify({"status": "failed", "error": "internal_error"}), 500
+
     @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
     def api_consolidation_inventory_up_reversal_generate():
         payload = request.get_json(silent=True) or {}
@@ -4252,6 +4324,24 @@ def _run_cli_task() -> int | None:
             result = automate_report_generation_and_adjustment(payload, operator_id=args.operator_id)
             print(json.dumps({"ok": True, **result}, ensure_ascii=False))
             return 0
+        except Exception as err:
+            print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
+            return 1
+
+    if task == "CONS-29" and action == "final_check_and_approval_flow":
+        payload = {
+            "consolidation_group_id": args.group_id,
+            "period": args.period,
+            "as_of": args.as_of,
+            "operator_id": args.operator_id,
+            "approver_id": args.operator_id,
+            "auto_approve": True,
+        }
+        try:
+            result = run_final_check_and_approval_flow(payload, operator_id=args.operator_id)
+            ok = bool(result.get("final_check_passed"))
+            print(json.dumps({"ok": ok, **result}, ensure_ascii=False))
+            return 0 if ok else 1
         except Exception as err:
             print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
             return 1
