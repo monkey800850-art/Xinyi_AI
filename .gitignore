@@ -38,3 +38,7 @@ venv/
 # evidence / snapshots
 snapshots/
 snapshots/uat/
+
+# Ignore snapshots (evidence)
+snapshots/
+snapshots/uat/
