@@ -79,3 +79,50 @@ JS_URL=/static/js/sidebar_toggle.js
 --- rendered markers after fix ---
 
 MANUAL: Open http://localhost:5000/system/books, Ctrl+F5, click button, verify sidebar hides/shows.
+ M app/services/system_auth_service.py
+ M snapshots/P1-UX-LAYOUT-03_20260303_183504.txt
+M  snapshots/uat/P1-UX-LAYOUT-02_20260303_182632.txt
+A  snapshots/uat/P1-UX-LAYOUT-03_20260303_185131.txt
+M  snapshots/uat/P1-UX-SIDEBAR-TOGGLE-01_20260303_191251.txt
+A  snapshots/uat/P1-UX-SIDEBAR-TOGGLE-02_20260303_191737.txt
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+M  templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+A  templates/system_books.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+ M tests/test_sec02_system_auth_service.py
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/uat/P1-UAT-FLOW-01/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175101/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175224/
+?? templates/master_data.html
+?? templates/subject_aux_config.html
+== DONE. Evidence: snapshots/uat/P1-UX-SIDEBAR-TOGGLE-02_20260303_191737.txt ==

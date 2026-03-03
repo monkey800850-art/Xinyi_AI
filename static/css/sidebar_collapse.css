@@ -1,0 +1,78 @@
+/* P1-UX-SIDEBAR-COLLAPSE-01 */
+:root {
+  --xinyi-sidebar-width: 280px;
+  --xinyi-sidebar-collapsed-width: 56px;
+  --xinyi-top-safe: 10px;
+  --xinyi-left-safe: 10px;
+}
+
+/* Floating toggle button: always visible */
+#xinyiSidebarToggle {
+  position: fixed;
+  top: var(--xinyi-top-safe);
+  left: var(--xinyi-left-safe);
+  z-index: 9999;
+  border: 1px solid rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.9);
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* Edge handle: only when collapsed */
+#xinyiSidebarHandle {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 9999;
+  border: 1px solid rgba(0,0,0,0.25);
+  background: rgba(255,255,255,0.9);
+  padding: 10px 8px;
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+  font-weight: 800;
+  display: none;
+}
+
+/* Expanded baseline: ensure sidebar has width (won't break existing) */
+[data-sidebar] {
+  width: var(--xinyi-sidebar-width);
+  min-width: var(--xinyi-sidebar-width);
+  max-width: var(--xinyi-sidebar-width);
+}
+
+/* Collapsed mode: shrink sidebar to a thin strip, keep it on the left */
+.xinyi-sidebar-collapsed [data-sidebar] {
+  width: var(--xinyi-sidebar-collapsed-width) !important;
+  min-width: var(--xinyi-sidebar-collapsed-width) !important;
+  max-width: var(--xinyi-sidebar-collapsed-width) !important;
+  overflow: hidden !important;
+}
+
+/* Make main/content fill remaining space */
+.xinyi-sidebar-collapsed .shell,
+.xinyi-sidebar-collapsed .layout-root,
+.xinyi-sidebar-collapsed .layout-container,
+.xinyi-sidebar-collapsed .app-container,
+.xinyi-sidebar-collapsed .main-container {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.xinyi-sidebar-collapsed .shell-main,
+.xinyi-sidebar-collapsed #content,
+.xinyi-sidebar-collapsed .main-content,
+.xinyi-sidebar-collapsed .content,
+.xinyi-sidebar-collapsed main {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+/* Optional: hide text labels inside sidebar when collapsed (keep icons if any) */
+.xinyi-sidebar-collapsed [data-sidebar] .nav-text,
+.xinyi-sidebar-collapsed [data-sidebar] .label,
+.xinyi-sidebar-collapsed [data-sidebar] span {
+  white-space: nowrap;
+}

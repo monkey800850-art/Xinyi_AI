@@ -464,7 +464,8 @@
 
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/force_desktop.css') }}?v=95a48e8" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar_toggle.css?v=c718fc2') }}?v=P1-UX-SIDEBAR-TOGGLE-01">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar_toggle.css') }}?v=828aa94">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar_collapse.css') }}?v=828aa94">
 </head>
 <body {% block body_attrs %}{% endblock %} class="force-desktop">
   <div class="shell-scale" id="shell-scale-root">
@@ -511,9 +512,8 @@
                 <option value="1.2">120%</option>
               </select>
             </div>
-            <a class="shell-home-link" href="/">返回主页
-        <button id="sidebarToggleBtn" type="button" style="margin-left:12px">收起侧边栏</button>
-</a>
+            <button id="sidebarToggleBtn" type="button">收起侧边栏</button>
+            <a class="shell-home-link" href="/">返回主页</a>
           </div>
         </div>
       </header>
@@ -634,6 +634,7 @@
   </script>
   <!-- /P1-UX-LAYOUT-03 -->
 
-  <script src="{{ url_for('static', filename='js/sidebar_toggle.js?v=c718fc2') }}?v=P1-UX-SIDEBAR-TOGGLE-01"></script>
+  <script src="{{ url_for('static', filename='js/sidebar_toggle.js') }}?v=828aa94"></script>
+  <script src="{{ url_for('static', filename='js/sidebar_collapse.js') }}?v=828aa94"></script>
 </body>
 </html>
