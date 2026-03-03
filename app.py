@@ -1,4 +1,5 @@
 import io
+import os
 import calendar
 import argparse
 import json
@@ -452,7 +453,7 @@ def create_app() -> Flask:
         sys.exit(1)
 
     app = Flask(__name__)
-    app.secret_key = "xinyi_ai_dev_secret_key"
+    app.secret_key = os.getenv("SECRET_KEY")
 
     @app.context_processor
     def _inject_main_nav():
