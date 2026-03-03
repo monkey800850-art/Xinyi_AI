@@ -1,0 +1,114 @@
+== P1-UX-LAYOUT-03 START ==
+TIME: 20260303_185326
+HEAD: 95a48e8
+PWD: /home/x1560/Xinyi_AI
+
+==[1/9] force_desktop.css head ==
+/* P1-UX-LAYOUT-03: force desktop shell regardless of browser zoom.
+   This file is loaded LAST and scoped by .force-desktop to avoid global side effects.
+*/
+.force-desktop,
+html.force-desktop,
+body.force-desktop {
+  min-width: 1200px !important;
+}
+
+.force-desktop body,
+.force-desktop .shell-scale {
+  min-width: 1200px !important;
+  overflow-x: auto !important;
+}
+
+.force-desktop .shell-app {
+  display: grid !important;
+  grid-template-columns: 280px minmax(0, 1fr) !important;
+}
+
+.force-desktop #sidebar,
+.force-desktop .shell-sidebar,
+body.force-desktop #sidebar,
+body.force-desktop .shell-sidebar {
+  display: block !important;
+  visibility: visible !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  flex: 0 0 280px !important;
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: auto !important;
+}
+
+.force-desktop .shell-main,
+.force-desktop #content,
+.force-desktop .content,
+.force-desktop .main-content {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* Disable alternative mobile nav containers */
+.force-desktop .offcanvas,
+.force-desktop .drawer,
+.force-desktop .mobile-nav,
+.force-desktop .accordion-nav {
+  display: none !important;
+}
+
+==[2/9] template markers ==
+2:<html lang="zh-CN">
+348:  .force-desktop .shell {
+351:  .force-desktop #sidebar,
+352:  .force-desktop .shell-sidebar {
+362:  .force-desktop .shell-main {
+367:  .force-desktop .accordion-nav,
+368:  .force-desktop .offcanvas,
+369:  .force-desktop .drawer {
+408:     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+412:  .force-desktop .app-shell,
+413:  .force-desktop .layout,
+414:  .force-desktop .main-layout,
+415:  .force-desktop #app,
+416:  .force-desktop body {
+421:  .force-desktop #sidebar {
+432:  .force-desktop .layout-root,
+433:  .force-desktop .layout-container,
+434:  .force-desktop .main-container,
+435:  .force-desktop .app-container {
+441:  .force-desktop .content,
+442:  .force-desktop .main-content,
+443:  .force-desktop #content {
+449:  .force-desktop .offcanvas,
+450:  .force-desktop .drawer,
+451:  .force-desktop .mobile-nav,
+452:  .force-desktop .accordion-nav {
+457:  .force-desktop .collapse {
+466:  <link rel="stylesheet" href="{{ url_for('static', filename='css/force_desktop.css') }}?v=95a48e8" />
+468:<body {% block body_attrs %}{% endblock %} class="force-desktop">
+616:  <!-- P1-UX-LAYOUT-03: force-desktop guard -->
+623:        // 真移动端：移除强制桌面布局；桌面缩放：保持 force-desktop
+625:          document.body.classList.remove("force-desktop");
+
+==[3/9] restart dev server ==
+Using scripts/ops/start_dev.sh
+
+==[4/9] probe 5000 ==
+LISTEN 0      0             0.0.0.0:5000      0.0.0.0:*          
+
+==[5/9] curl /system/books header preview ==
+--- extract markers from rendered HTML ---
+
+==[6/9] manual check guide ==
+MANUAL CHECK:
+1) Open: http://localhost:5000/system/books
+2) Chrome zoom: 90% / 100% / 110% / 125%
+Expected:
+- Left sidebar stays LEFT, content stays RIGHT
+- No top big menu / accordion replacing sidebar
+
+==[7/9] baseline append ==
+Updated docs/baseline/BASELINE_ARCHIVE.md
+
+==[8/9] git status + commit ==

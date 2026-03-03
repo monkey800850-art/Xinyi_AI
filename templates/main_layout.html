@@ -463,7 +463,7 @@
 <!-- /P1-UX-LAYOUT-01-FORCE-DESKTOP -->
 
 
-  <link rel="stylesheet" href="/static/css/force_desktop.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/force_desktop.css') }}?v=95a48e8" />
 </head>
 <body {% block body_attrs %}{% endblock %} class="force-desktop">
   <div class="shell-scale" id="shell-scale-root">

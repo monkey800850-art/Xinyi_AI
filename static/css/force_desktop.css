@@ -1,45 +1,52 @@
-/* P1-UX-LAYOUT-02: Force desktop layout regardless of zoom-triggered breakpoints.
-   Loaded LAST to override Bootstrap / other responsive rules.
+/* P1-UX-LAYOUT-03: force desktop shell regardless of browser zoom.
+   This file is loaded LAST and scoped by .force-desktop to avoid global side effects.
 */
-html, body { min-width: 1200px; overflow-x: auto; }
+.force-desktop,
+html.force-desktop,
+body.force-desktop {
+  min-width: 1200px !important;
+}
 
-/* If Bootstrap display utility hides sidebar on md/lg, force it visible */
-#sidebar,
-.sidebar,
-aside.sidebar,
-nav.sidebar {
+.force-desktop body,
+.force-desktop .shell-scale {
+  min-width: 1200px !important;
+  overflow-x: auto !important;
+}
+
+.force-desktop .shell-app {
+  display: grid !important;
+  grid-template-columns: 280px minmax(0, 1fr) !important;
+}
+
+.force-desktop #sidebar,
+.force-desktop .shell-sidebar,
+body.force-desktop #sidebar,
+body.force-desktop .shell-sidebar {
   display: block !important;
   visibility: visible !important;
-}
-
-/* If an offcanvas/mobile menu exists, hide it on desktop force mode */
-.offcanvas, .drawer, .mobile-nav, .accordion-nav {
-  display: none !important;
-}
-
-/* Force two-column layout (sidebar + content) */
-.layout-root, .layout-container, .main-container, .app-container, .app-shell, .shell, .page-layout {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: stretch !important;
-}
-
-/* Sidebar sizing (adjust if your sidebar element uses a different selector) */
-#sidebar {
-  flex: 0 0 280px !important;
   width: 280px !important;
+  min-width: 280px !important;
   max-width: 280px !important;
-  height: 100vh !important;
-  overflow: auto !important;
+  flex: 0 0 280px !important;
   position: sticky !important;
   top: 0 !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: auto !important;
 }
 
-/* Content should fill remaining space */
-#content, .content, .main-content, main.content {
-  flex: 1 1 auto !important;
+.force-desktop .shell-main,
+.force-desktop #content,
+.force-desktop .content,
+.force-desktop .main-content {
   min-width: 0 !important;
+  flex: 1 1 auto !important;
 }
 
-/* If collapse/accordion is used for groups, keep them expanded (desktop) */
-.collapse { display: block !important; height: auto !important; visibility: visible !important; }
+/* Disable alternative mobile nav containers */
+.force-desktop .offcanvas,
+.force-desktop .drawer,
+.force-desktop .mobile-nav,
+.force-desktop .accordion-nav {
+  display: none !important;
+}
