@@ -342,7 +342,36 @@
         padding-top: 10px;
       }
     }
-  </style>
+  
+  /* P1-UX-LAYOUT-03-OVERRIDE */
+  /* Desktop should NEVER switch to mobile/accordion because of browser zoom */
+  .force-desktop .shell {
+    flex-direction: row !important;
+  }
+  .force-desktop #sidebar,
+  .force-desktop .shell-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    overflow: auto !important;
+    width: 280px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+    flex: 0 0 280px !important;
+  }
+  .force-desktop .shell-main {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  /* Kill any mobile nav presentation */
+  .force-desktop .accordion-nav,
+  .force-desktop .offcanvas,
+  .force-desktop .drawer {
+    display: none !important;
+  }
+  /* /P1-UX-LAYOUT-03-OVERRIDE */
+
+</style>
   {% block extra_css %}{% endblock %}
 
 <!-- P1-UX-STYLE-01D-SIDEBAR -->
@@ -583,5 +612,22 @@
     })();
   </script>
   {% block extra_js %}{% endblock %}
+
+  <!-- P1-UX-LAYOUT-03: force-desktop guard -->
+  <script>
+    (function () {
+      try {
+        var ua = navigator.userAgent || "";
+        var isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+        var hasTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+        // 真移动端：移除强制桌面布局；桌面缩放：保持 force-desktop
+        if (isMobileUA || hasTouch) {
+          document.body.classList.remove("force-desktop");
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <!-- /P1-UX-LAYOUT-03 -->
+
 </body>
 </html>

@@ -1,0 +1,121 @@
+== P1-UX-LAYOUT-03 START ==
+TIME: 20260303_183504
+HEAD: 5fc04ee
+
+==[1/7] Inspect main_layout.html: force-desktop presence ==
+379:     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+383:  .force-desktop .app-shell,
+384:  .force-desktop .layout,
+385:  .force-desktop .main-layout,
+386:  .force-desktop #app,
+387:  .force-desktop body {
+392:  .force-desktop #sidebar {
+403:  .force-desktop .layout-root,
+404:  .force-desktop .layout-container,
+405:  .force-desktop .main-container,
+406:  .force-desktop .app-container {
+412:  .force-desktop .content,
+413:  .force-desktop .main-content,
+414:  .force-desktop #content {
+420:  .force-desktop .offcanvas,
+421:  .force-desktop .drawer,
+422:  .force-desktop .mobile-nav,
+423:  .force-desktop .accordion-nav {
+428:  .force-desktop .collapse {
+439:<body {% block body_attrs %}{% endblock %} class="force-desktop">
+2:<html lang="zh-CN">
+439:<body {% block body_attrs %}{% endblock %} class="force-desktop">
+
+==[2/7] Patch templates/main_layout.html: enforce force-desktop on desktop ==
+Patch done.
+
+==[3/7] Ensure force-desktop CSS override is after media queries and strong enough ==
+325:    @media (max-width: 1024px) {
+348:<!-- P1-UX-STYLE-01D-SIDEBAR -->
+350:  /* P1-UX-STYLE-01D-SIDEBAR: parent >= child */
+369:<!-- /P1-UX-STYLE-01D-SIDEBAR -->
+379:     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+383:  .force-desktop .app-shell,
+384:  .force-desktop .layout,
+385:  .force-desktop .main-layout,
+386:  .force-desktop #app,
+387:  .force-desktop body {
+392:  .force-desktop #sidebar {
+403:  .force-desktop .layout-root,
+404:  .force-desktop .layout-container,
+405:  .force-desktop .main-container,
+406:  .force-desktop .app-container {
+412:  .force-desktop .content,
+413:  .force-desktop .main-content,
+414:  .force-desktop #content {
+420:  .force-desktop .offcanvas,
+421:  .force-desktop .drawer,
+422:  .force-desktop .mobile-nav,
+423:  .force-desktop .accordion-nav {
+428:  .force-desktop .collapse {
+439:<body {% block body_attrs %}{% endblock %} class="force-desktop">
+587:  <!-- P1-UX-LAYOUT-03: force-desktop guard -->
+594:        // 真移动端：移除强制桌面布局；桌面缩放：保持 force-desktop
+596:          document.body.classList.remove("force-desktop");
+
+==[4/7] Cache busting check (template + static headers) ==
+==[4/7] Cache busting check (template + static headers) ==
+main_layout.html contains force-desktop body: True
+contains P1-UX-LAYOUT-03 marker: True
+contains OVERRIDE marker: True
+
+==[5/7] Lightweight regression probe (HTML contains sidebar) ==
+START_CMD=./scripts/ops/start_dev.sh
+--- curl / ---
+HTTP 000000
+--- curl /system/books ---
+HTTP 000000
+
+==[6/7] Update baseline archive ==
+OK: baseline updated: snapshots/baseline/BASELINE_TASKS.md
+
+==[7/7] Git commit ==
+ M app/services/system_auth_service.py
+ M snapshots/uat/P1-UX-LAYOUT-02_20260303_182632.txt
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+ M templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+ M tests/test_sec02_system_auth_service.py
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/P1-UX-LAYOUT-03_20260303_183504.txt
+?? snapshots/baseline/
+?? snapshots/uat/P1-UAT-FLOW-01/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175101/
+?? snapshots/uat/P1-UX-NAV-ALL-01_20260303_175224/
+?? templates/master_data.html
+?? templates/subject_aux_config.html
+?? templates/system_books.html

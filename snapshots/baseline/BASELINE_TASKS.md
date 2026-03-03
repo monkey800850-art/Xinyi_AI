@@ -1,0 +1,1 @@
+- 20260303_183504 P1-UX-LAYOUT-03: 桌面端缩放不塌陷（body.force-desktop + override CSS + mobile guard），evidence=snapshots/P1-UX-LAYOUT-03_20260303_183504.txt
