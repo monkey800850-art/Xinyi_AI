@@ -1,0 +1,1489 @@
+== P1-UX-LAYOUT-02 ==
+TIME: 20260303_182632
+HEAD: 559bf51
+
+==[1/8] Locate which CSS is loaded by main_layout.html ==
+==[1/8-FIX] Locate which CSS is loaded by main_layout.html (no bs4) ==
+STYLESHEETS:
+SCRIPTS:
+
+==[2/8] Find responsive rules that may switch sidebar/layout (media queries + sidebar/collapse) ==
+templates/subject_aux_config.html:46:    border-collapse: collapse;
+templates/subject_aux_config.html:62:  @media (max-width: 1024px) {
+templates/subject_aux_config.html:125:    <tbody id="rows">
+templates/subject_aux_config.html:134:    const rowsEl = document.getElementById("rows");
+templates/subject_aux_config.html:150:      if (!res.ok) throw new Error(data.error || "query_failed");
+templates/subject_aux_config.html:157:        rowsEl.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
+templates/subject_aux_config.html:160:      rowsEl.innerHTML = items.map((x) => {
+templates/subject_aux_config.html:185:      if (!subjectCode) throw new Error("请先在列表中选择科目");
+templates/subject_aux_config.html:199:      if (!res.ok) throw new Error(data.error || "save_failed");
+templates/subject_aux_config.html:210:    rowsEl.addEventListener("click", (ev) => {
+templates/system_init.html:11:  .actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+templates/system_init.html:16:  @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+templates/system_init.html:86:          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
+templates/system_book_init.html:47:    flex-wrap: wrap;
+templates/system_book_init.html:84:  @media (max-width: 900px) {
+templates/system_book_init.html:158:          if (!resp.ok) throw data || { error: "book_create_failed" };
+templates/system_book_init.html:164:        if (!bookId) throw { error: "book_id_missing" };
+templates/system_book_init.html:168:              if (!resp.ok) throw data || { error: "init_integrity_failed" };
+templates/system_book_init.html:177:              if (!resp.ok) throw snapshot || { error: "backup_snapshot_failed" };
+templates/system_book_init.html:190:            if (!resp.ok) throw verifyResult || { error: "backup_restore_verify_failed" };
+templates/main_layout.html:43:    .shell-sidebar {
+templates/main_layout.html:54:    .shell-sidebar-header {
+templates/main_layout.html:107:    .shell-group-arrow {
+templates/main_layout.html:112:    .shell-group.collapsed .shell-group-arrow {
+templates/main_layout.html:126:    .shell-group.collapsed .shell-links {
+templates/main_layout.html:167:      min-width: 0;
+templates/main_layout.html:227:      min-width: 0;
+templates/main_layout.html:294:      border-collapse: collapse;
+templates/main_layout.html:319:      flex-wrap: wrap;
+templates/main_layout.html:325:    @media (max-width: 1024px) {
+templates/main_layout.html:329:      .shell-sidebar {
+templates/main_layout.html:335:      .shell-sidebar-header {
+templates/main_layout.html:348:<!-- P1-UX-STYLE-01D-SIDEBAR -->
+templates/main_layout.html:350:  /* P1-UX-STYLE-01D-SIDEBAR: parent >= child */
+templates/main_layout.html:351:  #sidebar .nav-group-title,
+templates/main_layout.html:352:  #sidebar .group-title,
+templates/main_layout.html:353:  #sidebar .nav-section-title,
+templates/main_layout.html:354:  #sidebar .nav-group > .title,
+templates/main_layout.html:355:  #sidebar button,
+templates/main_layout.html:356:  #sidebar .accordion-button {
+templates/main_layout.html:361:  #sidebar a,
+templates/main_layout.html:362:  #sidebar .nav-item a,
+templates/main_layout.html:363:  #sidebar .menu-item a,
+templates/main_layout.html:364:  #sidebar .nav-link {
+templates/main_layout.html:369:<!-- /P1-UX-STYLE-01D-SIDEBAR -->
+templates/main_layout.html:378:     2) set a desktop min-width so browser zoom won't collapse into mobile layout
+templates/main_layout.html:379:     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+templates/main_layout.html:388:    min-width: 1200px;
+templates/main_layout.html:391:  /* Keep sidebar as sidebar (never become top accordion/list) */
+templates/main_layout.html:392:  .force-desktop #sidebar {
+templates/main_layout.html:399:    max-width: 280px;
+templates/main_layout.html:402:  /* Keep main content next to sidebar */
+templates/main_layout.html:408:    flex-direction: row;
+templates/main_layout.html:416:    min-width: 0;
+templates/main_layout.html:420:  .force-desktop .offcanvas,
+templates/main_layout.html:421:  .force-desktop .drawer,
+templates/main_layout.html:423:  .force-desktop .accordion-nav {
+templates/main_layout.html:428:  .force-desktop .collapse {
+templates/main_layout.html:440:    <aside id="sidebar" class="shell-sidebar sidebar">
+templates/main_layout.html:441:      <div class="shell-sidebar-header">
+templates/main_layout.html:446:      <section class="shell-group {% if not group['active'] %}collapsed{% endif %}" data-group-key="{{ group['key'] }}">
+templates/main_layout.html:450:            <span class="shell-group-arrow">▾</span>
+templates/main_layout.html:547:          g.classList.toggle("collapsed", !shouldExpand);
+templates/main_layout.html:562:          if (!initialKey && !g.classList.contains("collapsed")) {
+static/js/reimbursements.js:29:    var rows = document.querySelectorAll("#items-body tr");
+static/js/reimbursements.js:31:    for (var i = 0; i < rows.length; i++) {
+static/js/reimbursements.js:32:      var row = rows[i];
+static/js/reimbursements.js:34:        expense_date: row.querySelector(".item-date")?.value || "",
+static/js/reimbursements.js:35:        category: row.querySelector(".item-category")?.value || "",
+static/js/reimbursements.js:36:        description: row.querySelector(".item-desc")?.value || "",
+static/js/reimbursements.js:37:        amount: row.querySelector(".item-amount")?.value || "",
+static/js/reimbursements.js:343:  function addItemRow() {
+static/js/reimbursements.js:378:      qs("item-add").addEventListener("click", addItemRow);
+app/repositories/consolidation_query_repo.py:15:            rows = conn.execute(
+app/repositories/consolidation_query_repo.py:29:            for r in rows
+app/db_router.py:135:    def _build_db_url_from_mapping_row(self, row) -> str:
+app/db_router.py:138:        driver = (row.driver or "mysql+pymysql").strip()
+app/db_router.py:139:        username = quote_plus(str(row.username or ""))
+app/db_router.py:140:        password = quote_plus(str(row.password or ""))
+app/db_router.py:141:        host = str(row.host or "").strip()
+app/db_router.py:142:        port = str(row.port or "").strip()
+app/db_router.py:143:        db_name = str(row.db_name or "").strip()
+app/db_router.py:144:        charset = str(row.charset or "utf8mb4").strip() or "utf8mb4"
+app/db_router.py:154:                row = self._query_mapping(hint.tenant_id)
+app/db_router.py:164:                if row:
+app/db_router.py:165:                    db_url = self._build_db_url_from_mapping_row(row)
+app/db_router.py:171:                        datasource=f"{row.host}:{row.port}/{row.db_name}",
+app/db_router.py:172:                        schema_name=(row.schema_name or row.db_name),
+templates/voucher_import.html:11:  .actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+templates/voucher_import.html:16:  @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
+templates/voucher_import.html:77:          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
+templates/master_data.html:46:    border-collapse: collapse;
+templates/master_data.html:68:  @media (max-width: 1024px) {
+templates/master_data.html:164:    <tbody id="rows">
+templates/master_data.html:174:    const rowsEl = document.getElementById("rows");
+templates/master_data.html:192:      if (!res.ok) throw new Error(data.error || "query_failed");
+templates/master_data.html:194:      renderRows(cache);
+templates/master_data.html:197:    function renderRows(items) {
+templates/master_data.html:199:        rowsEl.innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
+templates/master_data.html:202:      rowsEl.innerHTML = items.map((x) => `
+templates/master_data.html:260:      if (!res.ok) throw new Error(data.error || "save_failed");
+templates/master_data.html:282:    rowsEl.addEventListener("click", (ev) => {
+templates/system_books.html:22:    flex-wrap: wrap;
+static/js/payments.js:33:            throw new Error(data.error || "导出失败");
+templates/payroll.html:11:  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+templates/payroll.html:15:  @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+templates/payroll.html:80:          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
+static/js/tax_summary.js:27:            throw new Error(data.error || "导出失败");
+templates/user_home.html:125:    flex-wrap: wrap;
+templates/user_home.html:142:  @media (max-width: 980px) {
+templates/voucher_entry.html:86:              <th class="col-index">行号</th>
+templates/voucher_entry.html:87:              <th class="col-summary">摘要</th>
+templates/voucher_entry.html:88:              <th class="col-subject">科目编码/名称</th>
+templates/voucher_entry.html:89:              <th class="col-aux">辅助核算</th>
+templates/voucher_entry.html:90:              <th class="col-amount">借方金额</th>
+templates/voucher_entry.html:91:              <th class="col-amount">贷方金额</th>
+templates/voucher_entry.html:92:              <th class="col-due">到期日</th>
+templates/voucher_entry.html:93:              <th class="col-note">备注</th>
+templates/voucher_entry.html:97:            <tr class="voucher-line-row" data-row-index="0">
+templates/voucher_entry.html:98:              <td class="col-index">1</td>
+templates/voucher_entry.html:126:            <tr class="voucher-line-row" data-row-index="1">
+templates/voucher_entry.html:127:              <td class="col-index">2</td>
+static/js/subject_ledger.js:29:            throw new Error(data.error || "导出失败");
+static/js/subject_ledger.js:45:  function renderRows(items) {
+static/js/subject_ledger.js:188:        renderRows(payload.data.items || []);
+static/js/trial_balance.js:24:  function buildRow(item, hasChildren) {
+static/js/trial_balance.js:32:    subjectCell.className = "col-subject";
+static/js/trial_balance.js:70:    td.className = "col-amount";
+static/js/trial_balance.js:76:    var rows = document.querySelectorAll("#tb-body tr");
+static/js/trial_balance.js:77:    for (var i = 0; i < rows.length; i++) {
+static/js/trial_balance.js:78:      var row = rows[i];
+static/js/trial_balance.js:79:      if (row.dataset.parent === parentCode) {
+static/js/trial_balance.js:80:        row.style.display = show ? "" : "none";
+static/js/trial_balance.js:82:          row.dataset.expanded = "false";
+static/js/trial_balance.js:83:          var toggle = row.querySelector(".toggle");
+static/js/trial_balance.js:87:          toggleChildren(row.dataset.code, false);
+static/js/trial_balance.js:109:      var row = buildRow(item, hasChildren);
+static/js/trial_balance.js:110:      body.appendChild(row);
+static/js/trial_balance.js:119:            throw new Error(data.error || "导出失败");
+static/js/aux_reports.js:29:            throw new Error(data.error || "导出失败");
+templates/trial_balance.html:42:              <th class="col-subject">科目</th>
+templates/trial_balance.html:43:              <th class="col-amount">期初余额</th>
+templates/trial_balance.html:44:              <th class="col-amount">本期借方发生额</th>
+templates/trial_balance.html:45:              <th class="col-amount">本期贷方发生额</th>
+templates/trial_balance.html:46:              <th class="col-amount">期末余额</th>
+static/js/ar_ap.js:29:            throw new Error(data.error || "导出失败");
+static/js/ar_ap.js:208:      tr.className = item.status === "overdue" ? "row-overdue" : "row-warning";
+static/js/system_consolidation.js:169:  function updateNaturalRowDebug(row, source) {
+static/js/system_consolidation.js:170:    if (!row) return;
+static/js/system_consolidation.js:171:    var nonLegalBookId = String(row.getAttribute("data-non-legal-book-id") || "").trim();
+static/js/system_consolidation.js:172:    var selectEl = row.querySelector(".natural-legal-select");
+static/js/system_consolidation.js:173:    var debugEl = row.querySelector(".natural-debug");
+static/js/system_consolidation.js:230:      updateNaturalRowDebug(tr, "render");
+static/js/system_consolidation.js:305:      var row = target.closest("tr");
+static/js/system_consolidation.js:306:      if (row) {
+static/js/system_consolidation.js:307:        var rid = String(row.getAttribute("data-non-legal-book-id") || "").trim();
+static/js/system_consolidation.js:310:      updateNaturalRowDebug(row, "change");
+static/js/system_consolidation.js:315:      var row = target.closest("tr");
+static/js/system_consolidation.js:316:      updateNaturalRowDebug(row, "input");
+static/js/system_consolidation.js:321:      var row = target.closest("tr");
+static/js/system_consolidation.js:323:        updateNaturalRowDebug(row, "click");
+static/js/system_consolidation.js:330:      var row = btn.closest("tr");
+static/js/system_consolidation.js:331:      var sel = row ? row.querySelector(".natural-legal-select") : null;
+static/js/system_consolidation.js:334:      updateNaturalRowDebug(row, "save_click");
+static/js/asset_ledger.js:28:            throw new Error(data.error || "导出失败");
+static/js/asset_depreciation_reports.js:28:            throw new Error(data.error || "导出失败");
+static/js/voucher_entry.js:56:      var row = input.closest(".voucher-line-row") || document;
+static/js/voucher_entry.js:62:      (function (rowEl, inputEl, rootEl) {
+static/js/voucher_entry.js:76:              var nameInput = rowEl.querySelector(targetNameSel);
+static/js/voucher_entry.js:82:              var idInput = rowEl.querySelector(targetIdSel);
+static/js/voucher_entry.js:91:                var nameInput = rowEl.querySelector(targetNameSel);
+static/js/voucher_entry.js:97:                var idInput = rowEl.querySelector(targetIdSel);
+static/js/voucher_entry.js:105:      })(row, input, root);
+static/js/voucher_entry.js:109:  function buildNewRow(index) {
+static/js/voucher_entry.js:110:    var row = document.createElement("tr");
+static/js/voucher_entry.js:111:    row.className = "voucher-line-row";
+static/js/voucher_entry.js:112:    row.setAttribute("data-row-index", String(index));
+static/js/voucher_entry.js:114:    row.innerHTML =
+static/js/voucher_entry.js:115:      '<td class="col-index">' +
+static/js/voucher_entry.js:151:    return row;
+static/js/voucher_entry.js:156:    var index = body.querySelectorAll(".voucher-line-row").length;
+static/js/voucher_entry.js:157:    var row = buildNewRow(index);
+static/js/voucher_entry.js:158:    body.appendChild(row);
+static/js/voucher_entry.js:159:    initAutocompleteInputs(row);
+static/js/voucher_entry.js:160:    bindAmountEvents(row);
+static/js/voucher_entry.js:164:    var rows = document.querySelectorAll(".voucher-line-row");
+static/js/voucher_entry.js:166:    for (var i = 0; i < rows.length; i++) {
+static/js/voucher_entry.js:167:      var row = rows[i];
+static/js/voucher_entry.js:169:        summary: row.querySelector(".summary-input")?.value || "",
+static/js/voucher_entry.js:170:        subject_code: row.querySelector(".subject-code-input")?.value || "",
+static/js/voucher_entry.js:171:        subject_name: row.querySelector(".subject-name-input")?.value || "",
+static/js/voucher_entry.js:172:        subject_id: row.querySelector(".subject-id-input")?.value || "",
+static/js/voucher_entry.js:173:        aux_display: row.querySelector(".aux-input")?.value || "",
+static/js/voucher_entry.js:174:        debit: row.querySelector(".debit-input")?.value || "",
+static/js/voucher_entry.js:175:        credit: row.querySelector(".credit-input")?.value || "",
+static/js/voucher_entry.js:176:        due_date: row.querySelector(".due-input")?.value || "",
+static/js/voucher_entry.js:177:        note: row.querySelector(".note-input")?.value || "",
+static/js/voucher_entry.js:198:      var rowText = err.row ? "第" + err.row + "行" : "";
+static/js/voucher_entry.js:202:      li.textContent = rowText + fieldText + "：" + message;
+static/js/autocomplete.js:17:      throw new Error("root element is required");
+static/js/autocomplete.js:20:      throw new Error("type is required");
+static/js/autocomplete.js:23:      throw new Error("bookId is required");
+static/js/autocomplete.js:63:      if (e.key === "ArrowDown") {
+static/js/autocomplete.js:66:      } else if (e.key === "ArrowUp") {
+static/css/assets.css:18:  max-width: 1100px;
+static/css/assets.css:86:  border-collapse: collapse;
+static/css/assets.css:111:@media (max-width: 960px) {
+static/css/asset_depreciation.css:21:  max-width: 1100px;
+static/css/asset_depreciation.css:77:  flex-wrap: wrap;
+static/css/asset_depreciation.css:126:  border-collapse: collapse;
+static/css/asset_depreciation.css:141:@media (max-width: 960px) {
+static/css/asset_depreciation.css:147:    flex-direction: column;
+static/css/asset_depreciation.css:148:    align-items: flex-start;
+static/js/bank_reconcile.js:27:            throw new Error(data.error || "导出失败");
+static/css/autocomplete.css:19:  max-width: 720px;
+static/css/tax.css:18:  max-width: 1100px;
+static/css/tax.css:87:  border-collapse: collapse;
+static/css/tax.css:132:@media (max-width: 960px) {
+static/js/assets.js:182:      var row = e.target.closest("tr");
+static/js/assets.js:184:      if (row && row.dataset.item) {
+static/js/assets.js:186:          item = JSON.parse(row.dataset.item);
+static/css/system_consolidation.css:8:  align-items: flex-start;
+static/css/system_consolidation.css:73:  flex-wrap: wrap;
+static/css/system_consolidation.css:108:  border-collapse: collapse;
+static/css/trial_balance.css:18:  max-width: 1000px;
+static/css/trial_balance.css:84:  border-collapse: collapse;
+static/css/trial_balance.css:95:.col-subject {
+static/css/trial_balance.css:99:.col-amount {
+static/css/trial_balance.css:137:@media (max-width: 820px) {
+static/css/aux_reports.css:18:  max-width: 1200px;
+static/css/aux_reports.css:117:  border-collapse: collapse;
+static/css/aux_reports.css:156:@media (max-width: 960px) {
+static/css/bank_reconcile.css:18:  max-width: 1200px;
+static/css/bank_reconcile.css:91:  border-collapse: collapse;
+static/css/bank_reconcile.css:134:@media (max-width: 960px) {
+static/css/reimbursements.css:18:  max-width: 1100px;
+static/css/reimbursements.css:99:  border-collapse: collapse;
+static/css/reimbursements.css:134:@media (max-width: 960px) {
+static/css/subject_ledger.css:18:  max-width: 1100px;
+static/css/subject_ledger.css:97:  border-collapse: collapse;
+static/css/subject_ledger.css:143:@media (max-width: 900px) {
+app/services/consolidation_authorization_service.py:47:def _row_to_dict(row) -> Dict[str, object]:
+app/services/consolidation_authorization_service.py:49:        "id": int(row.id),
+app/services/consolidation_authorization_service.py:50:        "virtual_subject_id": int(row.virtual_subject_id),
+app/services/consolidation_authorization_service.py:51:        "approval_document_number": str(row.approval_document_number or ""),
+app/services/consolidation_authorization_service.py:52:        "approval_document_name": str(row.approval_document_name or ""),
+app/services/consolidation_authorization_service.py:53:        "effective_start": row.effective_start.isoformat() if row.effective_start else "",
+app/services/consolidation_authorization_service.py:54:        "effective_end": row.effective_end.isoformat() if row.effective_end else "",
+app/services/consolidation_authorization_service.py:55:        "status": str(row.status or ""),
+app/services/consolidation_authorization_service.py:56:        "operator_id": int(row.operator_id) if row.operator_id is not None else None,
+app/services/consolidation_authorization_service.py:57:        "created_at": str(row.created_at or ""),
+app/services/consolidation_authorization_service.py:58:        "updated_at": str(row.updated_at or ""),
+app/services/consolidation_authorization_service.py:102:        auth_id = int(result.lastrowid or 0)
+app/services/consolidation_authorization_service.py:103:        row = conn.execute(
+app/services/consolidation_authorization_service.py:131:        "item": _row_to_dict(row),
+app/services/consolidation_authorization_service.py:170:        rows = conn.execute(text(sql), bind).fetchall()
+app/services/consolidation_authorization_service.py:173:        "items": [_row_to_dict(row) for row in rows],
+app/services/consolidation_authorization_service.py:220:        row = conn.execute(
+app/services/consolidation_authorization_service.py:248:        "item": _row_to_dict(row),
+static/css/voucher_entry.css:19:  max-width: 1200px;
+static/css/voucher_entry.css:105:  flex-wrap: wrap;
+static/css/voucher_entry.css:111:  border-collapse: collapse;
+static/css/voucher_entry.css:123:.col-index {
+static/css/voucher_entry.css:128:.col-summary {
+static/css/voucher_entry.css:132:.col-subject {
+static/css/voucher_entry.css:136:.col-aux {
+static/css/voucher_entry.css:140:.col-amount {
+static/css/voucher_entry.css:144:.col-due {
+static/css/voucher_entry.css:148:.col-note {
+static/css/voucher_entry.css:179:  max-width: 220px;
+static/css/voucher_entry.css:211:@media (max-width: 960px) {
+static/css/voucher_entry.css:217:    flex-direction: column;
+static/css/payments.css:18:  max-width: 1100px;
+static/css/payments.css:97:  border-collapse: collapse;
+static/css/payments.css:128:@media (max-width: 960px) {
+static/css/dashboard.css:18:  max-width: 1100px;
+static/css/dashboard.css:132:@media (max-width: 960px) {
+static/css/assets_cards.css:20:  max-width: 1100px;
+static/css/assets_cards.css:107:  border-collapse: collapse;
+static/css/assets_cards.css:112:  border-collapse: collapse;
+static/css/assets_cards.css:136:  border-collapse: collapse;
+static/css/assets_cards.css:182:@media (max-width: 960px) {
+static/css/assets_cards.css:188:    flex-direction: column;
+static/css/assets_cards.css:189:    align-items: flex-start;
+static/css/ar_ap.css:20:  max-width: 1100px;
+static/css/ar_ap.css:127:  border-collapse: collapse;
+static/css/ar_ap.css:144:.row-warning {
+static/css/ar_ap.css:148:.row-overdue {
+static/css/ar_ap.css:166:@media (max-width: 960px) {
+app/services/voucher_status_service.py:46:        row = conn.execute(
+app/services/voucher_status_service.py:50:        if not row:
+app/services/voucher_status_service.py:53:        ok, from_status, to_status = _transition_allowed(action, row.status)
+static/css/bank_import.css:18:  max-width: 1100px;
+static/css/bank_import.css:83:  border-collapse: collapse;
+static/css/bank_import.css:120:@media (max-width: 960px) {
+app/services/voucher_import_service.py:69:    row_no: int,
+app/services/voucher_import_service.py:77:            "row_no": int(row_no or 0),
+app/services/voucher_import_service.py:121:def _make_aux_items_from_row(row: Dict[str, str]) -> List[Dict[str, object]]:
+app/services/voucher_import_service.py:125:        code = str(row.get(column) or "").strip()
+app/services/voucher_import_service.py:179:        writer.writerow(line)
+app/services/voucher_import_service.py:188:def _parse_csv_rows(filename: str, content: bytes) -> Tuple[List[Dict[str, object]], Dict[str, object]]:
+app/services/voucher_import_service.py:198:    rows: List[Dict[str, object]] = []
+app/services/voucher_import_service.py:199:    file_total_rows = 0
+app/services/voucher_import_service.py:201:        file_total_rows += 1
+app/services/voucher_import_service.py:202:        row = {str(k or "").strip(): str(v or "").strip() for k, v in (raw or {}).items()}
+app/services/voucher_import_service.py:203:        if not any(row.values()):
+app/services/voucher_import_service.py:205:        rows.append(
+app/services/voucher_import_service.py:207:                "file_row_no": idx,
+app/services/voucher_import_service.py:208:                "voucher_date": row.get("voucher_date", ""),
+app/services/voucher_import_service.py:209:                "voucher_no": row.get("voucher_no", ""),
+app/services/voucher_import_service.py:210:                "summary": row.get("summary", ""),
+app/services/voucher_import_service.py:211:                "line_no": row.get("line_no", ""),
+app/services/voucher_import_service.py:212:                "subject_code": row.get("subject_code", ""),
+app/services/voucher_import_service.py:213:                "subject_name": row.get("subject_name", ""),
+app/services/voucher_import_service.py:214:                "debit_amount": row.get("debit_amount", ""),
+app/services/voucher_import_service.py:215:                "credit_amount": row.get("credit_amount", ""),
+app/services/voucher_import_service.py:216:                "aux_department_code": row.get("aux_department_code", ""),
+app/services/voucher_import_service.py:217:                "aux_person_code": row.get("aux_person_code", ""),
+app/services/voucher_import_service.py:218:                "aux_entity_code": row.get("aux_entity_code", ""),
+app/services/voucher_import_service.py:219:                "aux_project_code": row.get("aux_project_code", ""),
+app/services/voucher_import_service.py:220:                "aux_bank_account_code": row.get("aux_bank_account_code", ""),
+app/services/voucher_import_service.py:223:    return rows, {"file_total_rows": file_total_rows, "headers": headers}
+app/services/voucher_import_service.py:227:    row = conn.execute(
+app/services/voucher_import_service.py:240:    if not row:
+app/services/voucher_import_service.py:242:    if int(row.is_enabled or 0) != 1:
+app/services/voucher_import_service.py:245:        "book_id": int(row.id),
+app/services/voucher_import_service.py:246:        "book_name": str(row.name or ""),
+app/services/voucher_import_service.py:247:        "book_code": str(row.book_code or f"BOOK-{int(row.id):04d}"),
+app/services/voucher_import_service.py:261:    min_row = conn.execute(
+app/services/voucher_import_service.py:265:    if not min_row or min_row.ym is None:
+app/services/voucher_import_service.py:268:        ym = int(min_row.ym)
+app/services/voucher_import_service.py:276:def _subject_row(conn, book_id: int, subject_code: str):
+app/services/voucher_import_service.py:303:def _validate_rows_and_build_vouchers(
+app/services/voucher_import_service.py:306:    parsed_rows: List[Dict[str, object]],
+app/services/voucher_import_service.py:310:    valid_line_rows = 0
+app/services/voucher_import_service.py:313:    for raw in parsed_rows:
+app/services/voucher_import_service.py:314:        file_row_no = int(raw.get("file_row_no") or 0)
+app/services/voucher_import_service.py:321:            _error(errors, file_row_no, voucher_no, "voucher_date", "凭证日期格式错误，需 YYYY-MM-DD", voucher_key)
+app/services/voucher_import_service.py:323:            _error(errors, file_row_no, voucher_no, "voucher_no", "凭证号必填", voucher_key)
+app/services/voucher_import_service.py:325:            _error(errors, file_row_no, voucher_no, "subject_code", "科目编码必填", voucher_key)
+app/services/voucher_import_service.py:329:                file_row_no,
+app/services/voucher_import_service.py:340:            _error(errors, file_row_no, voucher_no, "amount", "借贷金额格式错误", voucher_key)
+app/services/voucher_import_service.py:345:            _error(errors, file_row_no, voucher_no, "amount", "借贷金额不能同时为0", voucher_key)
+app/services/voucher_import_service.py:347:            _error(errors, file_row_no, voucher_no, "amount", "借贷金额不能同时大于0", voucher_key)
+app/services/voucher_import_service.py:349:            _error(errors, file_row_no, voucher_no, "amount", "借贷金额不能为负数", voucher_key)
+app/services/voucher_import_service.py:357:                    "file_row_no": file_row_no,
+app/services/voucher_import_service.py:366:                    "aux_items": _make_aux_items_from_row(raw),
+app/services/voucher_import_service.py:369:            valid_line_rows += 1
+app/services/voucher_import_service.py:377:        file_lines.sort(key=lambda x: (int(x.get("line_no") or "0") if str(x.get("line_no") or "").isdigit() else 999999, int(x.get("file_row_no") or 0)))
+app/services/voucher_import_service.py:380:            _error(errors, int(file_lines[0].get("file_row_no") or 0), voucher_no, "voucher_no", "同一凭证至少需要两条分录", key)
+app/services/voucher_import_service.py:382:        row = conn.execute(
+app/services/voucher_import_service.py:392:        if row:
+app/services/voucher_import_service.py:394:            _error(errors, int(file_lines[0].get("file_row_no") or 0), voucher_no, "voucher_no", "凭证已存在（重复导入禁止）", key)
+app/services/voucher_import_service.py:398:            _error(errors, int(file_lines[0].get("file_row_no") or 0), voucher_no, "voucher_date", msg or "会计期间已结账", key)
+app/services/voucher_import_service.py:404:            file_row_no = int(line.get("file_row_no") or 0)
+app/services/voucher_import_service.py:412:                _error(errors, file_row_no, voucher_no, "amount", "借贷金额格式错误", key)
+app/services/voucher_import_service.py:417:            subject = _subject_row(conn, book_id, subject_code)
+app/services/voucher_import_service.py:419:                _error(errors, file_row_no, voucher_no, "subject_code", "科目不存在", key)
+app/services/voucher_import_service.py:422:                _error(errors, file_row_no, voucher_no, "subject_code", "科目已停用", key)
+app/services/voucher_import_service.py:425:                _error(errors, file_row_no, voucher_no, "subject_code", "该科目非末级，禁止录入金额", key)
+app/services/voucher_import_service.py:431:                _error(errors, file_row_no, voucher_no, "aux_items", "该科目要求辅助核算，但未配置辅助维度", key)
+app/services/voucher_import_service.py:439:                    _error(errors, file_row_no, voucher_no, "aux_items", "辅助维度类型非法", key)
+app/services/voucher_import_service.py:442:                    _error(errors, file_row_no, voucher_no, "aux_items", f"辅助维度重复：{aux_type}", key)
+app/services/voucher_import_service.py:447:                    _error(errors, file_row_no, voucher_no, "aux_items", f"该科目未挂接辅助维度：{aux_type}", key)
+app/services/voucher_import_service.py:450:                    _error(errors, file_row_no, voucher_no, "aux_items", "该科目未启用辅助核算，禁止录入辅助项", key)
+app/services/voucher_import_service.py:453:                    _error(errors, file_row_no, voucher_no, "aux_items", "辅助项目编码必填", key)
+app/services/voucher_import_service.py:456:                aux_row = _fetch_aux_master(conn, book_id, aux_type, aux_code)
+app/services/voucher_import_service.py:457:                if not aux_row:
+app/services/voucher_import_service.py:459:                    _error(errors, file_row_no, voucher_no, _aux_column_by_type(aux_type), f"{axis}编码不存在：{aux_code}", key)
+app/services/voucher_import_service.py:461:                if int(aux_row.is_enabled or 0) != 1:
+app/services/voucher_import_service.py:463:                    _error(errors, file_row_no, voucher_no, "aux_code", f"{axis}已停用：{aux_code}", key)
+app/services/voucher_import_service.py:469:                        "aux_id": aux_row.id,
+app/services/voucher_import_service.py:470:                        "aux_code": aux_row.code,
+app/services/voucher_import_service.py:471:                        "aux_name": aux_row.name or "",
+app/services/voucher_import_service.py:472:                        "aux_display": f"{aux_row.code} {aux_row.name}",
+app/services/voucher_import_service.py:479:                    _error(errors, file_row_no, voucher_no, "aux_items", f"缺少必填辅助维度：{required_type}", key)
+app/services/voucher_import_service.py:482:                _error(errors, file_row_no, voucher_no, "due_date", "往来类科目需填写到期日（导入模板暂未支持）", key)
+app/services/voucher_import_service.py:487:                    "file_row_no": file_row_no,
+app/services/voucher_import_service.py:498:            _error(errors, int(file_lines[0].get("file_row_no") or 0), voucher_no, "balance", f"凭证借贷不平衡，差额：{(total_debit-total_credit):.2f}", key)
+app/services/voucher_import_service.py:525:            "file_total_rows": len(parsed_rows),
+app/services/voucher_import_service.py:526:            "valid_line_rows": valid_line_rows,
+app/services/voucher_import_service.py:555:        voucher_id = int(result.lastrowid)
+app/services/voucher_import_service.py:597:            voucher_line_id = int(line_res.lastrowid)
+app/services/voucher_import_service.py:638:    parsed_rows, file_meta = _parse_csv_rows(filename, content)
+app/services/voucher_import_service.py:639:    if not parsed_rows:
+app/services/voucher_import_service.py:646:        validated = _validate_rows_and_build_vouchers(conn, book_id, parsed_rows)
+app/services/voucher_import_service.py:656:                "file_total_rows": int(file_meta.get("file_total_rows") or 0),
+app/services/voucher_import_service.py:657:                "effective_rows": int(summary.get("valid_line_rows") or 0),
+app/services/reimbursement_service.py:70:    def _read_column_name(row) -> str:
+app/services/reimbursement_service.py:71:        if row is None:
+app/services/reimbursement_service.py:73:        value = getattr(row, "column_name", None)
+app/services/reimbursement_service.py:75:            mapping = getattr(row, "_mapping", None)
+app/services/reimbursement_service.py:86:            if value is None and isinstance(row, (tuple, list)) and len(row) > 0:
+app/services/reimbursement_service.py:87:                value = row[0]
+app/services/reimbursement_service.py:91:        rows = conn.execute(
+app/services/reimbursement_service.py:102:        cols = {_read_column_name(r) for r in rows}
+app/services/reimbursement_service.py:109:    rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+app/services/reimbursement_service.py:110:    return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
+app/services/reimbursement_service.py:141:        row = conn.execute(
+app/services/reimbursement_service.py:145:        if not row:
+app/services/reimbursement_service.py:148:            return Decimal(str(row.rule_value))
+app/services/reimbursement_service.py:155:    row = conn.execute(
+app/services/reimbursement_service.py:168:    return _parse_decimal(getattr(row, "occupied", 0) if row else 0)
+app/services/reimbursement_service.py:330:            reimbursement_id = result.lastrowid
+app/services/reimbursement_service.py:365:        row = conn.execute(
+app/services/reimbursement_service.py:369:        if not row:
+app/services/reimbursement_service.py:371:        if row.status not in ("draft", "pending"):
+app/services/reimbursement_service.py:374:        attachment_count = _as_int(getattr(row, "attachment_count", 0), 0)
+app/services/reimbursement_service.py:375:        attachments = getattr(row, "attachments", None)
+app/services/reimbursement_service.py:382:        book_id = int(getattr(row, "book_id", 0) or 0)
+app/services/reimbursement_service.py:383:        department = str(getattr(row, "department", "") or "").strip()
+app/services/reimbursement_service.py:384:        total_amount = _parse_decimal(getattr(row, "total_amount", 0))
+app/services/reimbursement_service.py:386:        occupied_amount = _department_occupied_amount(conn, book_id, department, exclude_id=int(row.id))
+app/services/reimbursement_service.py:404:        submit_sla = getattr(row, "approval_sla", None)
+app/services/reimbursement_service.py:425:        _log_action(conn, reimbursement_id, "submit", row.status, "in_review", operator, role or "")
+app/services/reimbursement_service.py:437:        row = conn.execute(
+app/services/reimbursement_service.py:441:        if not row:
+app/services/reimbursement_service.py:443:        if row.status != "in_review":
+app/services/reimbursement_service.py:450:        _log_action(conn, reimbursement_id, "approve", row.status, "approved", operator, role, comment)
+app/services/reimbursement_service.py:465:        row = conn.execute(
+app/services/reimbursement_service.py:469:        if not row:
+app/services/reimbursement_service.py:471:        if row.status != "in_review":
+app/services/reimbursement_service.py:478:        _log_action(conn, reimbursement_id, "reject", row.status, "rejected", operator, role, reason)
+app/services/reimbursement_service.py:506:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/reimbursement_service.py:509:    for r in rows:
+app/services/reimbursement_service.py:612:        rows = conn.execute(
+app/services/reimbursement_service.py:625:    for r in rows:
+app/services/reimbursement_service.py:646:        rows = conn.execute(
+app/services/reimbursement_service.py:662:    for r in rows:
+app/services/reimbursement_service.py:681:        row = conn.execute(
+app/services/reimbursement_service.py:685:        if not row:
+app/services/reimbursement_service.py:687:        if row.status not in ("draft", "pending", "rejected"):
+app/services/reimbursement_service.py:690:        _log_action(conn, reimbursement_id, "delete", row.status, "deleted", operator or "", role or "")
+app/services/reimbursement_service.py:697:        row = conn.execute(
+app/services/reimbursement_service.py:701:        if not row:
+app/services/reimbursement_service.py:703:        if row.status in ("approved", "paid", "void"):
+app/services/reimbursement_service.py:709:        _log_action(conn, reimbursement_id, "void", row.status, "void", operator or "", role or "", reason or "")
+app/services/reconciliation_service.py:33:            rows = conn.execute(
+app/services/reconciliation_service.py:44:            rows = []
+app/services/reconciliation_service.py:45:    for r in rows:
+app/services/reconciliation_service.py:58:            rows = conn.execute(
+app/services/reconciliation_service.py:69:            rows = []
+app/services/reconciliation_service.py:70:    for r in rows:
+app/services/reconciliation_service.py:77:def _upsert_reconcile_row(conn, txn_id: int, voucher_id: int | None, reason: str):
+app/services/reconciliation_service.py:152:            row = conn.execute(
+app/services/reconciliation_service.py:156:            if not row:
+app/services/reconciliation_service.py:162:            from_status = str(getattr(row, "match_status", "") or "unmatched")
+app/services/reconciliation_service.py:163:            _upsert_reconcile_row(conn, txn_id, voucher_id, reason)
+app/services/system_service.py:26:        rows = conn.execute(
+app/services/system_service.py:37:        return {str(r.column_name).lower() for r in rows}
+app/services/system_service.py:39:        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+app/services/system_service.py:40:        return {str(r.name).lower() for r in rows}
+app/services/system_service.py:51:        rows = conn.execute(
+app/services/system_service.py:63:        role_rows = conn.execute(
+app/services/system_service.py:73:    for r in role_rows:
+app/services/system_service.py:79:    for r in rows:
+app/services/system_service.py:183:            user_id = result.lastrowid
+app/services/system_service.py:218:        rows = conn.execute(
+app/services/system_service.py:221:        perm_rows = conn.execute(
+app/services/system_service.py:226:    for r in perm_rows:
+app/services/system_service.py:230:    for r in rows:
+app/services/system_service.py:304:            role_id = result.lastrowid
+app/services/system_service.py:330:        rows = conn.execute(
+app/services/system_service.py:335:    for r in rows:
+app/services/system_service.py:359:        row = conn.execute(
+app/services/system_service.py:363:        if row:
+app/services/system_service.py:378:            rule_id = row.id
+app/services/system_service.py:394:            rule_id = result.lastrowid
+app/services/system_service.py:431:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/system_service.py:434:    for r in rows:
+app/services/asset_reports_service.py:123:    # dep_end_date is applied inside SUM expression to avoid filtering NULL rows
+app/services/asset_reports_service.py:129:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/asset_reports_service.py:132:    for r in rows:
+app/services/asset_reports_service.py:212:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/asset_reports_service.py:216:    for r in rows:
+app/services/ledger_service.py:95:        subject_rows = conn.execute(
+app/services/ledger_service.py:108:        existing_codes = {_normalize_code(r.code) for r in subject_rows if _normalize_code(r.code)}
+app/services/ledger_service.py:109:        for row in subject_rows:
+app/services/ledger_service.py:110:            code = _normalize_code(row.code)
+app/services/ledger_service.py:114:                subject = row
+app/services/ledger_service.py:115:            parent_code = _normalize_code(row.parent_code)
+app/services/ledger_service.py:171:        rows = conn.execute(
+app/services/ledger_service.py:180:    for r in rows:
+app/services/ledger_service.py:268:                aux_rows = conn.execute(
+app/services/ledger_service.py:281:                aux_rows = []
+app/services/ledger_service.py:282:            for aux in aux_rows:
+app/services/standard_importer.py:119:        for row in reader:
+app/services/standard_importer.py:121:            code = (row.get("科目编码") or "").strip()
+app/services/standard_importer.py:122:            name = (row.get("科目名称") or "").strip()
+app/services/standard_importer.py:123:            category = (row.get("类别") or "").strip()
+app/services/standard_importer.py:124:            balance_direction = _map_balance_direction((row.get("余额方向") or "").strip())
+app/services/standard_importer.py:127:            note = (row.get("说明") or "").strip()
+app/services/dashboard_service.py:86:    rows = conn.execute(
+app/services/dashboard_service.py:105:    for r in rows:
+app/services/dashboard_service.py:144:            row = conn.execute(
+app/services/dashboard_service.py:154:            if row and row.balance is not None:
+app/services/dashboard_service.py:155:                cash += Decimal(str(row.balance))
+app/services/dashboard_service.py:165:        trend_rows = conn.execute(
+app/services/dashboard_service.py:181:        {"date": r.d.isoformat(), "value": float(r.debit_sum or 0)} for r in trend_rows
+app/services/consolidation_final_check_approval_service.py:90:    row = conn.execute(
+app/services/consolidation_final_check_approval_service.py:104:    if not row:
+app/services/consolidation_final_check_approval_service.py:107:        report = json.loads(str(row.report_json or "{}"))
+app/services/consolidation_final_check_approval_service.py:139:        merge_row = conn.execute(
+app/services/consolidation_final_check_approval_service.py:153:        if not merge_row:
+app/services/consolidation_final_check_approval_service.py:156:        report_rows = conn.execute(
+app/services/consolidation_final_check_approval_service.py:167:        available_reports = {str(r.report_code or "") for r in report_rows}
+app/services/consolidation_final_check_approval_service.py:180:            "merge_batch_id": str(merge_row.batch_id or ""),
+app/services/consolidation_final_check_approval_service.py:181:            "merge_status": str(merge_row.status or ""),
+app/services/consolidation_final_check_approval_service.py:253:            flow_id = int(result.lastrowid or 0)
+app/services/payroll_service.py:57:        rows = conn.execute(
+app/services/payroll_service.py:68:        return {str(r.column_name or "").strip().lower() for r in rows}
+app/services/payroll_service.py:70:        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+app/services/payroll_service.py:71:        return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
+app/services/payroll_service.py:169:        row = conn.execute(
+app/services/payroll_service.py:182:    if not row:
+app/services/payroll_service.py:185:    social_rate = _as_decimal(getattr(row, "social_rate", 0), "social_rate")
+app/services/payroll_service.py:186:    housing_rate = _as_decimal(getattr(row, "housing_rate", 0), "housing_rate")
+app/services/payroll_service.py:187:    social_base_min = _as_decimal(getattr(row, "social_base_min", 0), "social_base_min")
+app/services/payroll_service.py:188:    social_base_max = _as_decimal(getattr(row, "social_base_max", 0), "social_base_max")
+app/services/payroll_service.py:189:    housing_base_min = _as_decimal(getattr(row, "housing_base_min", 0), "housing_base_min")
+app/services/payroll_service.py:190:    housing_base_max = _as_decimal(getattr(row, "housing_base_max", 0), "housing_base_max")
+app/services/payroll_service.py:231:        row = conn.execute(
+app/services/payroll_service.py:235:        if row:
+app/services/payroll_service.py:244:                _db_params({"id": int(row.id), "status": status, "updated_at": now}),
+app/services/payroll_service.py:246:            period_id = int(row.id)
+app/services/payroll_service.py:257:            period_id = int(result.lastrowid)
+app/services/payroll_service.py:265:        rows = conn.execute(
+app/services/payroll_service.py:286:            for r in rows
+app/services/payroll_service.py:368:            row = conn.execute(
+app/services/payroll_service.py:372:            if not row:
+app/services/payroll_service.py:374:            if str(row.status or "").lower() == "confirmed":
+app/services/payroll_service.py:409:            status = str(row.status or "draft")
+app/services/payroll_service.py:432:            final_id = int(result.lastrowid)
+app/services/payroll_service.py:491:        rows = conn.execute(text(sql), args).fetchall()
+app/services/payroll_service.py:493:    for r in rows:
+app/services/payroll_service.py:561:        row = conn.execute(
+app/services/payroll_service.py:565:        if not row:
+app/services/payroll_service.py:567:        cur = str(row.status or "").lower()
+app/services/payroll_service.py:616:        row = conn.execute(text("SELECT * FROM payroll_slips WHERE id=:id"), {"id": sid}).fetchone()
+app/services/payroll_service.py:617:        if not row:
+app/services/payroll_service.py:619:        if str(row.status or "").lower() != "confirmed":
+app/services/payroll_service.py:622:    gross = _as_decimal(getattr(row, "gross_amount", 0), "gross_amount")
+app/services/payroll_service.py:623:    social = _as_decimal(getattr(row, "social_insurance", 0), "social_insurance")
+app/services/payroll_service.py:624:    fund = _as_decimal(getattr(row, "housing_fund", 0), "housing_fund")
+app/services/payroll_service.py:625:    tax = _as_decimal(getattr(row, "tax_amount", 0), "tax_amount")
+app/services/payroll_service.py:626:    net = _as_decimal(getattr(row, "net_amount", 0), "net_amount")
+app/services/payroll_service.py:643:        "book_id": int(row.book_id),
+app/services/payroll_service.py:644:        "period": str(row.period),
+app/services/payroll_service.py:645:        "employee_id": int(row.employee_id),
+app/services/payroll_service.py:649:            "summary": f"工资计提 {row.period}",
+app/services/payroll_service.py:727:        payment_id = int(result.lastrowid)
+app/services/payroll_service.py:834:        row = conn.execute(
+app/services/payroll_service.py:838:        if row:
+app/services/payroll_service.py:852:                        "id": int(row.id),
+app/services/payroll_service.py:864:            policy_id = int(row.id)
+app/services/payroll_service.py:896:            policy_id = int(result.lastrowid)
+app/services/payroll_service.py:905:        rows = conn.execute(
+app/services/payroll_service.py:931:            for r in rows
+app/services/payroll_service.py:970:        rows = conn.execute(text(sql), args).fetchall()
+app/services/payroll_service.py:971:        if not rows:
+app/services/payroll_service.py:975:        for r in rows:
+app/services/payroll_service.py:996:                    "total_count": len(rows),
+app/services/payroll_service.py:1004:        batch_id = int(result.lastrowid)
+app/services/payroll_service.py:1006:        for r in rows:
+app/services/payroll_service.py:1040:        "total_count": len(rows),
+app/services/payroll_service.py:1060:        rows = conn.execute(text(sql), args).fetchall()
+app/services/payroll_service.py:1075:            for r in rows
+app/services/payroll_service.py:1093:        rows = conn.execute(
+app/services/payroll_service.py:1104:        if not rows:
+app/services/payroll_service.py:1109:        writer.writerow(["employee_id", "employee_name", "bank_account", "amount", "remark"])
+app/services/payroll_service.py:1110:        for r in rows:
+app/services/payroll_service.py:1111:            writer.writerow([int(r.employee_id), str(r.employee_name or ""), str(r.bank_account or ""), f"{Decimal(str(r.pay_amount or 0)).quantize(Decimal('0.01'))}", f"工资发放 {head.period}"])
+app/services/consolidation_parameters_service.py:82:        new_id = result.lastrowid
+app/services/consolidation_parameters_service.py:108:        rows = conn.execute(text(sql), bind).mappings().all()
+app/services/consolidation_parameters_service.py:111:        "items": [dict(r) for r in rows]
+app/services/consolidation_parameters_service.py:129:    rows = conn.execute(
+app/services/consolidation_parameters_service.py:140:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_parameters_service.py:213:    row = conn.execute(
+app/services/consolidation_parameters_service.py:225:    if not row:
+app/services/consolidation_parameters_service.py:227:    return int(row.id)
+app/services/consolidation_parameters_service.py:230:def _row_to_contract_item(row) -> dict:
+app/services/consolidation_parameters_service.py:231:    method = str(getattr(row, "consolidation_method", "") or "").strip().lower() or "full"
+app/services/consolidation_parameters_service.py:234:    default_scope = str(getattr(row, "default_scope", "") or "").strip().lower() or "raw"
+app/services/consolidation_parameters_service.py:237:    effective_from = str(getattr(row, "effective_from", "") or "").strip()
+app/services/consolidation_parameters_service.py:239:        effective_from = str(getattr(row, "effective_start", "") or "").strip()
+app/services/consolidation_parameters_service.py:241:        "id": int(row.id),
+app/services/consolidation_parameters_service.py:242:        "consolidation_group_id": int(row.virtual_subject_id),
+app/services/consolidation_parameters_service.py:243:        "group_code": _decode_group_code(row.parent_subject_type),
+app/services/consolidation_parameters_service.py:244:        "start_period": str(row.control_type or ""),
+app/services/consolidation_parameters_service.py:245:        "note": str(row.child_subject_type or ""),
+app/services/consolidation_parameters_service.py:249:        "updated_at": str(row.updated_at or ""),
+app/services/consolidation_parameters_service.py:260:        row = conn.execute(
+app/services/consolidation_parameters_service.py:273:    if not row:
+app/services/consolidation_parameters_service.py:275:    return {"items": [_row_to_contract_item(row)]}
+app/services/consolidation_parameters_service.py:407:            param_id = int(result.lastrowid or 0)
+app/services/consolidation_parameters_service.py:412:        row = conn.execute(
+app/services/consolidation_parameters_service.py:425:    return {"item": _row_to_contract_item(row)}
+app/services/consolidation_parameters_service.py:438:    row = conn.execute(
+app/services/consolidation_parameters_service.py:451:    method = str((getattr(row, "consolidation_method", "") if row else "") or "").strip().lower() or "full"
+app/services/consolidation_parameters_service.py:454:    default_scope = str((getattr(row, "default_scope", "") if row else "") or "").strip().lower() or "raw"
+app/services/consolidation_merge_journal_service.py:67:    rows = conn.execute(
+app/services/consolidation_merge_journal_service.py:78:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_merge_journal_service.py:125:        rows = conn.execute(
+app/services/consolidation_merge_journal_service.py:142:    if not rows:
+app/services/consolidation_merge_journal_service.py:148:    for row in rows:
+app/services/consolidation_merge_journal_service.py:150:        lines = _parse_lines_json(row.lines_json)
+app/services/autocomplete_service.py:97:        rows = conn.execute(
+app/services/autocomplete_service.py:108:    for row in rows:
+app/services/autocomplete_service.py:111:                "id": row.id,
+app/services/autocomplete_service.py:112:                "code": row.code,
+app/services/autocomplete_service.py:113:                "name": row.name,
+app/services/autocomplete_service.py:114:                "display_text": f"{row.code} {row.name}",
+app/services/consolidation_disclosure_audit_package_service.py:157:        report_rows = conn.execute(
+app/services/consolidation_disclosure_audit_package_service.py:168:        if len(report_rows) < 4:
+app/services/consolidation_disclosure_audit_package_service.py:171:        for row in report_rows:
+app/services/consolidation_disclosure_audit_package_service.py:173:                reports[str(row.report_code or "")] = json.loads(str(row.report_json or "{}"))
+app/services/consolidation_disclosure_audit_package_service.py:175:                reports[str(row.report_code or "")] = {}
+app/services/consolidation_disclosure_audit_package_service.py:181:        flow_row = conn.execute(
+app/services/consolidation_disclosure_audit_package_service.py:193:        if not flow_row:
+app/services/consolidation_disclosure_audit_package_service.py:195:        if str(flow_row.check_result or "") != "passed":
+app/services/consolidation_disclosure_audit_package_service.py:199:            "id": int(flow_row.id or 0),
+app/services/consolidation_disclosure_audit_package_service.py:200:            "approval_status": str(flow_row.approval_status or ""),
+app/services/consolidation_disclosure_audit_package_service.py:201:            "check_result": str(flow_row.check_result or ""),
+app/services/consolidation_disclosure_audit_package_service.py:202:            "check_note": str(flow_row.check_note or ""),
+app/services/consolidation_disclosure_audit_package_service.py:249:        package_id = int(upsert.lastrowid or 0)
+app/services/voucher_template_service.py:139:    rows = conn.execute(
+app/services/voucher_template_service.py:147:    for r in rows:
+app/services/voucher_template_service.py:153:    row = conn.execute(
+app/services/voucher_template_service.py:157:    return str((row.accounting_standard if row else "") or "").strip()
+app/services/voucher_template_service.py:277:    for row in raw_lines:
+app/services/voucher_template_service.py:278:        subject = subject_map.get(row["subject_code"])
+app/services/voucher_template_service.py:283:                    "line_no": row["line_no"],
+app/services/voucher_template_service.py:284:                    "message": f"subject_not_found:{row['subject_code']}",
+app/services/voucher_template_service.py:293:                    "line_no": row["line_no"],
+app/services/voucher_template_service.py:294:                    "message": f"subject_disabled:{row['subject_code']}",
+app/services/voucher_template_service.py:304:                "line_no": row["line_no"],
+app/services/voucher_template_service.py:305:                "summary": row["summary"],
+app/services/voucher_template_service.py:306:                "subject_code": row["subject_code"],
+app/services/voucher_template_service.py:308:                "debit": float(row["debit"]),
+app/services/voucher_template_service.py:309:                "credit": float(row["credit"]),
+app/services/consolidation_service.py:43:    rows = conn.execute(
+app/services/consolidation_service.py:54:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_service.py:58:    row = conn.execute(
+app/services/consolidation_service.py:71:    if not row:
+app/services/consolidation_service.py:73:    is_nullable = row[0] if len(row) > 0 else None
+app/services/consolidation_service.py:74:    column_default = row[1] if len(row) > 1 else None
+app/services/consolidation_service.py:82:    rows = conn.execute(
+app/services/consolidation_service.py:92:    names = {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_service.py:146:        gid = int(result.lastrowid)
+app/services/consolidation_service.py:184:    rows = conn.execute(
+app/services/consolidation_service.py:209:    for row in rows:
+app/services/consolidation_service.py:210:        old_start = row.effective_from
+app/services/consolidation_service.py:211:        old_end = row.effective_to
+app/services/consolidation_service.py:237:        rows = conn.execute(
+app/services/consolidation_service.py:247:        if not rows:
+app/services/consolidation_service.py:249:        kind = str(rows.entity_kind or "").strip().lower()
+app/services/consolidation_service.py:253:        if str(rows.status or "").strip().lower() != "active" or int(rows.is_enabled or 0) != 1:
+app/services/consolidation_service.py:258:        rows = conn.execute(
+app/services/consolidation_service.py:268:        if not rows:
+app/services/consolidation_service.py:270:        if str(rows.status or "").strip().lower() != "active" or int(rows.is_enabled or 0) != 1:
+app/services/consolidation_service.py:286:        row = conn.execute(
+app/services/consolidation_service.py:297:        if row and row.book_id is not None:
+app/services/consolidation_service.py:298:            return int(row.book_id)
+app/services/consolidation_service.py:300:        row = conn.execute(
+app/services/consolidation_service.py:311:        if row and row.book_id is not None:
+app/services/consolidation_service.py:312:            return int(row.book_id)
+app/services/consolidation_service.py:356:        group_row = conn.execute(
+app/services/consolidation_service.py:366:        if not group_row:
+app/services/consolidation_service.py:369:            row = conn.execute(
+app/services/consolidation_service.py:373:            if row and str(row.status or "") != "active":
+app/services/consolidation_service.py:375:            if row and "is_enabled" in gcols and int(row.is_enabled or 0) != 1:
+app/services/consolidation_service.py:443:        member_id = int(result.lastrowid)
+app/services/consolidation_service.py:474:    group_row = conn.execute(
+app/services/consolidation_service.py:485:    if not group_row:
+app/services/consolidation_service.py:503:    rows = conn.execute(
+app/services/consolidation_service.py:521:    for r in rows:
+app/services/consolidation_service.py:540:        "group_id": int(group_row.id),
+app/services/consolidation_service.py:541:        "group_code": str(group_row.group_code or ""),
+app/services/consolidation_service.py:542:        "group_name": str(group_row.group_name or ""),
+app/services/consolidation_service.py:543:        "group_type": str(group_row.group_type or ""),
+app/services/consolidation_service.py:635:    rows = conn.execute(
+app/services/consolidation_service.py:647:    for row in rows:
+app/services/consolidation_service.py:648:        report_code = str(row.report_code or "").strip()
+app/services/consolidation_service.py:652:            payload = json.loads(str(row.report_json or "{}"))
+app/services/consolidation_service.py:655:        payload["_batch_id"] = str(row.batch_id or "")
+app/services/consolidation_service.py:760:        adj_rows = conn.execute(
+app/services/consolidation_service.py:772:        for row in adj_rows:
+app/services/consolidation_service.py:774:                lines = json.loads(str(row.lines_json or "[]"))
+app/services/consolidation_service.py:788:        flow_row = conn.execute(
+app/services/consolidation_service.py:800:        approved = 1 if flow_row and str(flow_row.check_result or "") == "passed" else 0
+app/services/consolidation_service.py:915:                item_code = str(item.get("item_code") or "").strip() or f"ROW{indexed+1}"
+app/services/consolidation_service.py:979:        rows = conn.execute(
+app/services/consolidation_service.py:990:        for row in rows:
+app/services/consolidation_service.py:991:            _push("adjustment", str(row.batch_id or ""), f"adj:{int(row.id)}", str(row.status or ""), row.created_at)
+app/services/consolidation_service.py:993:        rows = conn.execute(
+app/services/consolidation_service.py:1004:        for row in rows:
+app/services/consolidation_service.py:1005:            _push("report_snapshot", str(row.batch_id or ""), str(row.report_code or ""), str(row.status or ""), row.created_at)
+app/services/consolidation_service.py:1007:        rows = conn.execute(
+app/services/consolidation_service.py:1018:        for row in rows:
+app/services/consolidation_service.py:1019:            _push("approval_flow", str(row.batch_id or ""), f"approval:{int(row.id)}", str(row.approval_status or ""), row.created_at)
+app/services/consolidation_service.py:1021:        rows = conn.execute(
+app/services/consolidation_service.py:1032:        for row in rows:
+app/services/consolidation_service.py:1033:            _push("audit_package", str(row.batch_id or ""), f"package:{int(row.id)}", str(row.status or ""), row.created_at)
+app/services/consolidation_service.py:1035:        rows = conn.execute(
+app/services/consolidation_service.py:1046:        for row in rows:
+app/services/consolidation_service.py:1047:            _push("disclosure_check", str(row.batch_id or ""), str(row.check_code or ""), str(row.check_result or ""), row.created_at)
+app/services/consolidation_service.py:1049:        rows = conn.execute(
+app/services/consolidation_service.py:1060:        for row in rows:
+app/services/consolidation_service.py:1061:            _push("audit_index", str(row.batch_id or ""), str(row.report_code or ""), "indexed", row.created_at)
+app/services/consolidation_onboarding_ic_match_service.py:39:    rows = conn.execute(
+app/services/consolidation_onboarding_ic_match_service.py:50:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_onboarding_ic_match_service.py:69:    rows = conn.execute(
+app/services/consolidation_onboarding_ic_match_service.py:79:    return sorted({int(r.book_id) for r in rows if r.book_id is not None and int(r.book_id) > 0})
+app/services/consolidation_onboarding_ic_match_service.py:85:    rows = conn.execute(
+app/services/consolidation_onboarding_ic_match_service.py:104:    for r in rows:
+app/services/consolidation_onboarding_ic_match_service.py:116:def _match_by_key(balance_rows: List[Dict[str, object]]) -> Tuple[List[Dict[str, object]], List[Dict[str, object]]]:
+app/services/consolidation_onboarding_ic_match_service.py:118:    for row in balance_rows:
+app/services/consolidation_onboarding_ic_match_service.py:119:        key = (str(row["aux_code"]), str(row["subject_code"]))
+app/services/consolidation_onboarding_ic_match_service.py:120:        grouped.setdefault(key, []).append(row)
+app/services/consolidation_onboarding_ic_match_service.py:124:    for (aux_code, subject_code), rows in grouped.items():
+app/services/consolidation_onboarding_ic_match_service.py:125:        pos = [{"book_id": int(r["book_id"]), "amount": Decimal(str(r["net_amount"]))} for r in rows if Decimal(str(r["net_amount"])) > 0]
+app/services/consolidation_onboarding_ic_match_service.py:126:        neg = [{"book_id": int(r["book_id"]), "amount": abs(Decimal(str(r["net_amount"])))} for r in rows if Decimal(str(r["net_amount"])) < 0]
+app/services/consolidation_onboarding_ic_match_service.py:204:        rows = _load_ic_balances(conn, member_book_ids, as_of)
+app/services/consolidation_onboarding_ic_match_service.py:206:    matched_pairs, unmatched = _match_by_key(rows)
+app/services/trial_balance_service.py:69:    rows = conn.execute(
+app/services/trial_balance_service.py:81:    for r in rows:
+app/services/trial_balance_service.py:95:    rows = conn.execute(
+app/services/trial_balance_service.py:108:    for r in rows:
+app/services/trial_balance_service.py:120:    rows = conn.execute(
+app/services/trial_balance_service.py:131:    for r in rows:
+app/services/trial_balance_service.py:147:def _active_natural_rows(conn) -> List[object]:
+app/services/trial_balance_service.py:172:    row = conn.execute(
+app/services/trial_balance_service.py:187:    if not row:
+app/services/trial_balance_service.py:189:    gid = int(row.group_id) if str(row.group_id or "").strip().isdigit() else None
+app/services/trial_balance_service.py:191:        "virtual_id": int(row.id),
+app/services/trial_balance_service.py:192:        "virtual_code": str(row.virtual_code or ""),
+app/services/trial_balance_service.py:193:        "virtual_name": str(row.virtual_name or f"虚拟主体{int(row.id)}"),
+app/services/trial_balance_service.py:194:        "book_id": int(row.book_id) if row.book_id is not None else None,
+app/services/trial_balance_service.py:202:    rows = conn.execute(
+app/services/trial_balance_service.py:215:    if not rows:
+app/services/trial_balance_service.py:217:    return _active_virtual_entity(conn, int(rows[0].id))
+app/services/trial_balance_service.py:251:    natural_rows: List[object],
+app/services/trial_balance_service.py:259:            for r in natural_rows
+app/services/trial_balance_service.py:275:    for r in natural_rows:
+app/services/trial_balance_service.py:349:        natural_rows = _active_natural_rows(conn)
+app/services/trial_balance_service.py:368:        group_row = conn.execute(
+app/services/trial_balance_service.py:379:        if not group_row:
+app/services/trial_balance_service.py:391:        member_rows = conn.execute(
+app/services/trial_balance_service.py:405:                for r in member_rows
+app/services/trial_balance_service.py:419:                f"合并组 {str(group_row.group_name or consolidation_group_id)}",
+app/services/trial_balance_service.py:430:            "current_subject_name": str(group_row.group_name or f"合并组{consolidation_group_id}"),
+app/services/trial_balance_service.py:436:            "consolidation_group_id": int(group_row.id),
+app/services/trial_balance_service.py:437:            "consolidation_group_name": str(group_row.group_name or ""),
+app/services/trial_balance_service.py:438:            "consolidation_group_code": str(group_row.group_code or ""),
+app/services/trial_balance_service.py:509:        legal_rows = conn.execute(
+app/services/trial_balance_service.py:523:        if not legal_rows:
+app/services/trial_balance_service.py:572:        for row in legal_rows:
+app/services/trial_balance_service.py:573:            legal_entity_id = int(row.member_entity_id) if row.member_entity_id is not None else 0
+app/services/trial_balance_service.py:575:            legal_book_id = int(row.member_book_id) if row.member_book_id is not None else int((legal_entity or {}).get("book_id") or 0)
+app/services/trial_balance_service.py:582:                legal_entity_id, natural_rows, legal_entities_by_book, books
+app/services/trial_balance_service.py:709:            int(legal_entity["entity_id"]), natural_rows, legal_entities_by_book, books
+app/services/trial_balance_service.py:992:        (row.code or "").strip(): {
+app/services/trial_balance_service.py:993:            "debit": Decimal(str(row.debit_sum or 0)),
+app/services/trial_balance_service.py:994:            "credit": Decimal(str(row.credit_sum or 0)),
+app/services/trial_balance_service.py:996:        for row in sums
+app/services/consolidation_multi_period_rollover_service.py:69:    rows = conn.execute(
+app/services/consolidation_multi_period_rollover_service.py:80:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_multi_period_rollover_service.py:150:    source_row,
+app/services/consolidation_multi_period_rollover_service.py:164:        origin_start = str(getattr(source_row, "origin_period_start", "") or "").strip() or _period_start(from_period)
+app/services/consolidation_multi_period_rollover_service.py:168:        origin_end = str(getattr(source_row, "origin_period_end", "") or "").strip() or _period_end(from_period)
+app/services/consolidation_multi_period_rollover_service.py:174:        rem_up = _to_decimal(getattr(source_row, "remaining_unrealized_profit", None))
+app/services/consolidation_multi_period_rollover_service.py:180:        rem_amt = _to_decimal(getattr(source_row, "remaining_amount", None))
+app/services/consolidation_multi_period_rollover_service.py:186:        rem_tax = _to_decimal(getattr(source_row, "remaining_tax_amount", None))
+app/services/consolidation_multi_period_rollover_service.py:192:        tax_rate = getattr(source_row, "tax_rate_snapshot", None)
+app/services/consolidation_multi_period_rollover_service.py:248:        source_rows = conn.execute(
+app/services/consolidation_multi_period_rollover_service.py:252:        if not source_rows:
+app/services/consolidation_multi_period_rollover_service.py:260:        for row in source_rows:
+app/services/consolidation_multi_period_rollover_service.py:261:            source_batch_id = str(row.batch_id or "").strip()
+app/services/consolidation_multi_period_rollover_service.py:264:            source_lines = _parse_lines_json(row.lines_json)
+app/services/consolidation_multi_period_rollover_service.py:309:                    source_rule_code=str(row.rule_code or ""),
+app/services/consolidation_multi_period_rollover_service.py:310:                    source_row=row,
+app/services/consolidation_multi_period_rollover_service.py:322:                    "source_rule_code": str(row.rule_code or ""),
+app/services/ar_ap_service.py:81:        rows = conn.execute(text(sql), {"book_id": book_id}).fetchall()
+app/services/ar_ap_service.py:84:    for r in rows:
+app/services/ar_ap_service.py:210:        rows = conn.execute(
+app/services/ar_ap_service.py:221:    for r in rows:
+app/services/master_data_service.py:121:    rows = conn.execute(
+app/services/master_data_service.py:136:    for row in rows:
+app/services/master_data_service.py:137:        code = _normalize_code(row.code)
+app/services/master_data_service.py:140:        own_aux_types = _parse_aux_type_values(row.aux_types)
+app/services/master_data_service.py:142:            own_aux_types = _parse_aux_type_values(row.aux_type)
+app/services/master_data_service.py:145:            "parent_code": _normalize_code(row.parent_code),
+app/services/master_data_service.py:146:            "is_enabled": int(row.is_enabled or 0),
+app/services/master_data_service.py:147:            "requires_auxiliary": int(row.requires_auxiliary or 0),
+app/services/master_data_service.py:148:            "requires_bank_account_aux": int(row.requires_bank_account_aux or 0),
+app/services/master_data_service.py:279:    rows = conn.execute(
+app/services/master_data_service.py:290:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/master_data_service.py:297:    rows = conn.execute(
+app/services/master_data_service.py:308:    for row in rows:
+app/services/master_data_service.py:309:        rule_key = str(row.rule_key or "")
+app/services/master_data_service.py:315:            meta = json.loads(row.rule_value or "{}")
+app/services/master_data_service.py:382:        rows = conn.execute(text(sql), sql_params).fetchall()
+app/services/master_data_service.py:383:        item_ids = [int(row.id) for row in rows]
+app/services/master_data_service.py:387:    for row in rows:
+app/services/master_data_service.py:388:        meta = meta_map.get(int(row.id), {})
+app/services/master_data_service.py:391:                "id": row.id,
+app/services/master_data_service.py:392:                "code": row.code or "",
+app/services/master_data_service.py:393:                "name": row.name or "",
+app/services/master_data_service.py:394:                "is_enabled": int(row.is_enabled or 0),
+app/services/master_data_service.py:397:                    getattr(row, "parent_code", None) if hasattr(row, "parent_code") else (meta.get("parent_code") or "")
+app/services/master_data_service.py:400:                    getattr(row, "is_independent_accounting", None)
+app/services/master_data_service.py:401:                    if hasattr(row, "is_independent_accounting")
+app/services/master_data_service.py:405:                    getattr(row, "department_code", None) if hasattr(row, "department_code") else (meta.get("department_code") or "")
+app/services/master_data_service.py:407:                "id_no": str(getattr(row, "id_no", None) if hasattr(row, "id_no") else (meta.get("id_no") or "")),
+app/services/master_data_service.py:409:                    getattr(row, "entity_type", None) if hasattr(row, "entity_type") else (meta.get("entity_type") or "")
+app/services/master_data_service.py:412:                    getattr(row, "unified_social_credit_code", None)
+app/services/master_data_service.py:413:                    if hasattr(row, "unified_social_credit_code")
+app/services/master_data_service.py:417:                    getattr(row, "contact_name", None) if hasattr(row, "contact_name") else (meta.get("contact_name") or "")
+app/services/master_data_service.py:420:                    getattr(row, "contact_phone", None) if hasattr(row, "contact_phone") else (meta.get("contact_phone") or "")
+app/services/master_data_service.py:422:                "address": str(getattr(row, "address", None) if hasattr(row, "address") else (meta.get("address") or "")),
+app/services/master_data_service.py:424:                    getattr(row, "start_date", None).isoformat()
+app/services/master_data_service.py:425:                    if hasattr(row, "start_date") and getattr(row, "start_date", None)
+app/services/master_data_service.py:429:                    getattr(row, "end_date", None).isoformat()
+app/services/master_data_service.py:430:                    if hasattr(row, "end_date") and getattr(row, "end_date", None)
+app/services/master_data_service.py:434:                    getattr(row, "bank_name", None) if hasattr(row, "bank_name") else (meta.get("bank_name") or "")
+app/services/master_data_service.py:437:                    getattr(row, "account_no", None)
+app/services/master_data_service.py:438:                    if hasattr(row, "account_no")
+app/services/master_data_service.py:442:                    getattr(row, "account_no", None)
+app/services/master_data_service.py:443:                    if hasattr(row, "account_no")
+app/services/master_data_service.py:447:                    getattr(row, "is_system_seeded", None)
+app/services/master_data_service.py:448:                    if hasattr(row, "is_system_seeded")
+app/services/master_data_service.py:452:                    getattr(row, "is_hidden", None)
+app/services/master_data_service.py:453:                    if hasattr(row, "is_hidden")
+app/services/master_data_service.py:457:                    getattr(row, "seed_batch_code", None)
+app/services/master_data_service.py:458:                    if hasattr(row, "seed_batch_code")
+app/services/master_data_service.py:517:                    self_row = conn.execute(
+app/services/master_data_service.py:523:                    if self_row and str(self_row.code or "").strip() == parent_code:
+app/services/master_data_service.py:605:            saved_id = int(result.lastrowid)
+app/services/master_data_service.py:659:        rows = conn.execute(text(sql), sql_params).fetchall()
+app/services/master_data_service.py:663:    for row in rows:
+app/services/master_data_service.py:664:        code = _normalize_code(row.code)
+app/services/master_data_service.py:670:                "name": row.name or "",
+app/services/master_data_service.py:671:                "is_enabled": int(row.is_enabled or 0),
+app/services/master_data_service.py:672:                "level": int(row.level or 0),
+app/services/master_data_service.py:673:                "parent_code": _normalize_code(row.parent_code),
+app/services/master_data_service.py:674:                "requires_auxiliary": int(row.requires_auxiliary or 0),
+app/services/master_data_service.py:675:                "requires_bank_account_aux": int(row.requires_bank_account_aux or 0),
+app/services/master_data_service.py:732:        row = conn.execute(
+app/services/master_data_service.py:736:        if not row:
+app/services/consolidation_scope_criteria_service.py:49:    rows = conn.execute(
+app/services/consolidation_scope_criteria_service.py:60:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_ownership_service.py:103:        oid = int(result.lastrowid or 0)
+app/services/consolidation_ownership_service.py:125:        rows = conn.execute(
+app/services/consolidation_ownership_service.py:142:    for row in rows:
+app/services/consolidation_ownership_service.py:145:                "id": int(row.id),
+app/services/consolidation_ownership_service.py:146:                "consolidation_group_id": int(row.group_id),
+app/services/consolidation_ownership_service.py:147:                "parent_entity_id": int(row.parent_entity_id),
+app/services/consolidation_ownership_service.py:148:                "child_entity_id": int(row.child_entity_id),
+app/services/consolidation_ownership_service.py:149:                "ownership_pct": float(Decimal(str(row.ownership_pct or 0))),
+app/services/consolidation_ownership_service.py:151:                "effective_from": row.effective_from.isoformat() if row.effective_from else "",
+app/services/consolidation_ownership_service.py:152:                "effective_to": row.effective_to.isoformat() if row.effective_to else "",
+app/services/consolidation_ownership_service.py:153:                "status": str(row.status or ""),
+app/services/consolidation_ownership_service.py:154:                "is_enabled": int(row.is_enabled or 0),
+app/services/consolidation_ownership_service.py:155:                "operator_id": int(row.operator_id or 0),
+app/services/consolidation_ownership_service.py:156:                "created_at": str(row.created_at or ""),
+app/services/consolidation_ic_asset_transfer_service.py:80:    rows = conn.execute(
+app/services/consolidation_ic_asset_transfer_service.py:91:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_ic_asset_transfer_service.py:113:    row = conn.execute(
+app/services/consolidation_ic_asset_transfer_service.py:126:    return _normalize_tax_rate(getattr(row, "tax_rate", None) if row else None)
+app/services/consolidation_ic_asset_transfer_service.py:146:    row = conn.execute(
+app/services/consolidation_ic_asset_transfer_service.py:188:    if not row:
+app/services/consolidation_ic_asset_transfer_service.py:211:        return int(result.lastrowid)
+app/services/consolidation_ic_asset_transfer_service.py:213:    params["id"] = int(row.id)
+app/services/consolidation_ic_asset_transfer_service.py:235:    return int(row.id)
+app/services/consolidation_report_generation_service.py:107:def _aggregate_subject_totals(rows: List[object]) -> Dict[str, Dict[str, Decimal]]:
+app/services/consolidation_report_generation_service.py:109:    for row in rows:
+app/services/consolidation_report_generation_service.py:110:        for line in _parse_lines_json(row.lines_json):
+app/services/consolidation_report_generation_service.py:214:        rows = conn.execute(
+app/services/consolidation_report_generation_service.py:230:        if not rows:
+app/services/consolidation_report_generation_service.py:234:        reports = _build_reports(_aggregate_subject_totals(rows))
+app/services/depreciation_service.py:67:    rows = conn.execute(text(sql), params).fetchall()
+app/services/depreciation_service.py:70:    for r in rows:
+app/services/depreciation_service.py:114:    rows = conn.execute(
+app/services/depreciation_service.py:118:    return {r.asset_id for r in rows}
+app/services/depreciation_service.py:122:    row = conn.execute(
+app/services/depreciation_service.py:136:    return int(row.cnt or 0)
+app/services/depreciation_service.py:402:        rows = conn.execute(
+app/services/depreciation_service.py:409:        for r in rows:
+app/services/depreciation_service.py:523:            batch_id = result.lastrowid
+app/services/depreciation_service.py:631:        rows = conn.execute(
+app/services/depreciation_service.py:645:    for r in rows:
+app/services/depreciation_service.py:680:        rows = conn.execute(
+app/services/depreciation_service.py:693:    for r in rows:
+app/services/consolidation_type_service.py:56:    rows = conn.execute(
+app/services/consolidation_type_service.py:67:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_type_service.py:71:    row = conn.execute(
+app/services/consolidation_type_service.py:75:    if not row:
+app/services/consolidation_type_service.py:87:        row = conn.execute(
+app/services/consolidation_type_service.py:99:    if not row:
+app/services/consolidation_type_service.py:110:    ctype = str(row.consolidation_type or "").strip().lower()
+app/services/consolidation_type_service.py:116:        "id": int(row.id),
+app/services/consolidation_type_service.py:117:        "group_id": int(row.group_id),
+app/services/consolidation_type_service.py:119:        "note": str(row.note or ""),
+app/services/consolidation_type_service.py:120:        "created_by": int(row.created_by or 0),
+app/services/consolidation_type_service.py:121:        "created_at": str(row.created_at or ""),
+app/services/consolidation_type_service.py:122:        "updated_by": int(row.updated_by or 0),
+app/services/consolidation_type_service.py:123:        "updated_at": str(row.updated_at or ""),
+app/services/consolidation_type_service.py:167:        rows = conn.execute(
+app/services/consolidation_type_service.py:185:    for row in rows:
+app/services/consolidation_type_service.py:186:        pct = _parse_decimal(getattr(row, "ownership_pct", 0))
+app/services/consolidation_type_service.py:196:        ctype_raw = str(getattr(row, "control_type", "") or "").strip().lower()
+app/services/consolidation_type_service.py:197:        same_flag = _truthy(getattr(row, "under_common_control", None)) or ctype_raw in {
+app/services/consolidation_type_service.py:218:                "ownership_id": int(getattr(row, "id", 0) or 0),
+app/services/consolidation_type_service.py:219:                "parent_entity_id": int(getattr(row, "parent_entity_id", 0) or 0),
+app/services/consolidation_type_service.py:220:                "child_entity_id": int(getattr(row, "child_entity_id", 0) or 0),
+app/services/consolidation_type_service.py:256:        row = conn.execute(
+app/services/consolidation_type_service.py:269:        if not row:
+app/services/consolidation_type_service.py:281:            new_id = int(result.lastrowid)
+app/services/consolidation_type_service.py:307:        current_type = str(row.consolidation_type or "").strip().lower()
+app/services/consolidation_type_service.py:308:        current_note = str(row.note or "")
+app/services/consolidation_type_service.py:322:                {"id": int(row.id), "ctype": ctype, "note": note, "operator": operator},
+app/services/consolidation_type_service.py:324:            row = conn.execute(
+app/services/consolidation_type_service.py:334:                {"id": int(row.id)},
+app/services/consolidation_type_service.py:338:            "id": int(row.id),
+app/services/consolidation_type_service.py:339:            "group_id": int(row.group_id),
+app/services/consolidation_type_service.py:340:            "consolidation_type": _normalize_type(row.consolidation_type),
+app/services/consolidation_type_service.py:341:            "note": str(row.note or ""),
+app/services/consolidation_type_service.py:342:            "created_by": int(row.created_by or 0),
+app/services/consolidation_type_service.py:343:            "created_at": str(row.created_at or ""),
+app/services/consolidation_type_service.py:344:            "updated_by": int(row.updated_by or 0),
+app/services/consolidation_type_service.py:345:            "updated_at": str(row.updated_at or ""),
+app/services/asset_service.py:94:        category_id = result.lastrowid
+app/services/asset_service.py:175:        rows = conn.execute(
+app/services/asset_service.py:190:    for r in rows:
+app/services/asset_service.py:355:        asset_id = result.lastrowid
+app/services/asset_service.py:540:        rows = conn.execute(
+app/services/asset_service.py:563:    for r in rows:
+app/services/asset_service.py:582:        row = conn.execute(
+app/services/asset_service.py:594:    if not row:
+app/services/asset_service.py:598:        "id": row.id,
+app/services/asset_service.py:599:        "book_id": row.book_id,
+app/services/asset_service.py:600:        "asset_code": row.asset_code,
+app/services/asset_service.py:601:        "asset_name": row.asset_name,
+app/services/asset_service.py:602:        "category_id": row.category_id,
+app/services/asset_service.py:603:        "category_name": row.category_name,
+app/services/asset_service.py:604:        "status": row.status,
+app/services/asset_service.py:605:        "specification_model": row.specification_model or "",
+app/services/asset_service.py:606:        "unit": row.unit or "",
+app/services/asset_service.py:607:        "quantity": float(row.quantity) if row.quantity is not None else 1,
+app/services/asset_service.py:608:        "location": row.location or "",
+app/services/asset_service.py:609:        "purchase_date": row.purchase_date.isoformat() if row.purchase_date else "",
+app/services/asset_service.py:610:        "original_value": float(row.original_value),
+app/services/asset_service.py:611:        "residual_rate": float(row.residual_rate),
+app/services/asset_service.py:612:        "residual_value": float(row.residual_value),
+app/services/asset_service.py:613:        "useful_life_months": row.useful_life_months,
+app/services/asset_service.py:614:        "depreciation_method": row.depreciation_method,
+app/services/asset_service.py:615:        "start_use_date": row.start_use_date.isoformat() if row.start_use_date else "",
+app/services/asset_service.py:616:        "capitalization_date": row.capitalization_date.isoformat() if row.capitalization_date else "",
+app/services/asset_service.py:617:        "department_id": row.department_id or "",
+app/services/asset_service.py:618:        "person_id": row.person_id or "",
+app/services/asset_service.py:619:        "note": row.note or "",
+app/services/asset_service.py:620:        "is_enabled": int(row.is_enabled),
+app/services/asset_service.py:621:        "is_depreciable": int(row.is_depreciable) if row.is_depreciable is not None else 1,
+app/services/asset_service.py:651:def _load_asset_row(conn, asset_id: int):
+app/services/asset_service.py:680:        asset = _load_asset_row(conn, asset_id)
+app/services/asset_service.py:689:        row = conn.execute(
+app/services/asset_service.py:714:        "id": int(row.lastrowid),
+app/services/asset_service.py:736:        asset = _load_asset_row(conn, asset_id)
+app/services/asset_service.py:744:        row = conn.execute(
+app/services/asset_service.py:777:        "id": int(row.lastrowid),
+app/services/asset_service.py:815:        check_id = int(header.lastrowid)
+app/services/asset_service.py:829:            asset = _load_asset_row(conn, asset_id)
+app/services/asset_service.py:885:        asset = _load_asset_row(conn, asset_id)
+app/services/asset_service.py:891:        row = conn.execute(
+app/services/asset_service.py:919:        "id": int(row.lastrowid),
+app/services/asset_service.py:955:        asset = _load_asset_row(conn, asset_id)
+app/services/asset_service.py:959:        row = conn.execute(
+app/services/asset_service.py:987:        "id": int(row.lastrowid),
+app/services/consolidation_unrealized_profit_service.py:46:    rows = conn.execute(
+app/services/consolidation_unrealized_profit_service.py:57:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_unrealized_profit_service.py:118:    row = conn.execute(
+app/services/consolidation_unrealized_profit_service.py:131:    if not row:
+app/services/consolidation_unrealized_profit_service.py:133:    return _normalize_tax_rate(getattr(row, "tax_rate", None))
+app/services/consolidation_unrealized_profit_service.py:160:        row = conn.execute(
+app/services/consolidation_unrealized_profit_service.py:177:        if not row:
+app/services/consolidation_unrealized_profit_service.py:205:        status = str(row.status or "").strip().lower()
+app/services/consolidation_unrealized_profit_service.py:213:        existing_lines = _parse_lines_json(row.lines_json)
+app/services/consolidation_unrealized_profit_service.py:232:            "id": int(row.id),
+app/services/consolidation_unrealized_profit_service.py:274:                "id": int(row.id),
+app/services/consolidation_unrealized_profit_service.py:329:        rows = conn.execute(
+app/services/consolidation_unrealized_profit_service.py:349:    for row in rows:
+app/services/consolidation_unrealized_profit_service.py:350:        qty = _to_decimal(row.qty)
+app/services/consolidation_unrealized_profit_service.py:351:        sales_amount = _to_decimal(row.sales_amount)
+app/services/consolidation_unrealized_profit_service.py:352:        cost_amount = _to_decimal(row.cost_amount)
+app/services/consolidation_unrealized_profit_service.py:353:        ending_qty = _to_decimal(row.ending_inventory_qty)
+app/services/consolidation_unrealized_profit_service.py:362:        base_note = f"doc={row.doc_no} item={row.item_code} seller={int(row.seller_book_id)} buyer={int(row.buyer_book_id)}"
+app/services/consolidation_unrealized_profit_service.py:486:            "txns": len(rows),
+app/services/user_dashboard_service.py:73:        row = conn.execute(
+app/services/user_dashboard_service.py:84:        return int(getattr(row, "cnt", 0) or 0) > 0
+app/services/user_dashboard_service.py:86:        row = conn.execute(
+app/services/user_dashboard_service.py:90:        return int(getattr(row, "cnt", 0) or 0) > 0
+app/services/user_dashboard_service.py:214:    row = conn.execute(text(sql), params).fetchone()
+app/services/user_dashboard_service.py:215:    return int(row.cnt or 0)
+app/services/user_dashboard_service.py:330:        reminder_id = int(result.lastrowid)
+app/services/consolidation_purchase_method_service.py:177:    rows = conn.execute(
+app/services/consolidation_purchase_method_service.py:188:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_purchase_method_service.py:276:    row = conn.execute(
+app/services/consolidation_purchase_method_service.py:295:    if not row:
+app/services/consolidation_purchase_method_service.py:326:        return int(result.lastrowid)
+app/services/consolidation_purchase_method_service.py:344:            "id": int(row.id),
+app/services/consolidation_purchase_method_service.py:354:    return int(row.id)
+app/services/book_service.py:33:    row = conn.execute(
+app/services/book_service.py:37:    existing = int(row.c or 0)
+app/services/book_service.py:43:    subject_row = conn.execute(
+app/services/book_service.py:47:    period_row = conn.execute(
+app/services/book_service.py:51:    subject_count = int(subject_row.c or 0)
+app/services/book_service.py:52:    period_count = int(period_row.c or 0)
+app/services/book_service.py:90:        book_id = result.lastrowid
+app/services/book_service.py:273:        row = conn.execute(
+app/services/book_service.py:277:        if not row:
+app/services/book_service.py:286:        rows = conn.execute(
+app/services/book_service.py:303:            for r in rows
+app/services/export_service.py:56:def _write_sheet(ws, title: str, filters: Dict[str, object], headers: List[str], rows: List[List[object]]):
+app/services/export_service.py:68:    for row in rows:
+app/services/export_service.py:69:        ws.append(row)
+app/services/export_service.py:177:            rows = conn.execute(text(sql), query_params).fetchall()
+app/services/export_service.py:190:        rows_data = [
+app/services/export_service.py:204:            for item in rows
+app/services/export_service.py:206:        _write_sheet(ws, "序时账（会计分录流水）", filters, headers, rows_data)
+app/services/export_service.py:217:        rows = [
+app/services/export_service.py:228:        _write_sheet(ws, "发生余额表", filters, headers, rows)
+app/services/export_service.py:243:        rows = [
+app/services/export_service.py:255:        _write_sheet(ws, "科目明细账", filters, headers, rows)
+app/services/export_service.py:269:        rows = [
+app/services/export_service.py:283:        _write_sheet(ws, "辅助明细账", filters, headers, rows)
+app/services/export_service.py:298:        rows = [
+app/services/export_service.py:308:        _write_sheet(ws, "辅助余额表", filters, headers, rows)
+app/services/export_service.py:320:        rows = [
+app/services/export_service.py:330:        _write_sheet(ws, "账龄分析", filters, headers, rows)
+app/services/export_service.py:337:        rows = [
+app/services/export_service.py:351:        _write_sheet(ws, "支付明细", filters, headers, rows)
+app/services/export_service.py:358:        rows = [
+app/services/export_service.py:365:        _write_sheet(ws, "银行对账报表", filters, headers, rows)
+app/services/export_service.py:372:        rows = [
+app/services/export_service.py:376:        _write_sheet(ws, "税务汇总", filters, headers, rows)
+app/services/export_service.py:410:        rows = [
+app/services/export_service.py:429:        _write_sheet(ws, "固定资产台账", filters, headers, rows)
+app/services/export_service.py:443:        rows = [
+app/services/export_service.py:456:        _write_sheet(ws, "折旧明细", filters, headers, rows)
+app/services/export_service.py:471:        rows = [
+app/services/export_service.py:475:        _write_sheet(ws, "折旧汇总-按类别", filters, headers, rows)
+app/services/export_service.py:479:        rows2 = [
+app/services/export_service.py:483:        _write_sheet(ws2, "折旧汇总-按部门", filters, headers2, rows2)
+app/services/system_auth_service.py:16:def _extract_column_value(row) -> str:
+app/services/system_auth_service.py:17:    mapping = getattr(row, "_mapping", None)
+app/services/system_auth_service.py:18:    if mapping is None and isinstance(row, dict):
+app/services/system_auth_service.py:19:        mapping = row
+app/services/system_auth_service.py:26:        if hasattr(row, attr):
+app/services/system_auth_service.py:27:            return str(getattr(row, attr) or "").strip().lower()
+app/services/system_auth_service.py:28:    if isinstance(row, (tuple, list)) and row:
+app/services/system_auth_service.py:29:        return str(row[0] or "").strip().lower()
+app/services/system_auth_service.py:35:        rows = conn.execute(
+app/services/system_auth_service.py:46:        cols = {_extract_column_value(r) for r in rows}
+app/services/system_auth_service.py:53:        rows = conn.execute(text(f"SHOW COLUMNS FROM {table_name}")).fetchall()
+app/services/system_auth_service.py:54:        cols = {_extract_column_value(r) for r in rows}
+app/services/system_auth_service.py:60:    rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+app/services/system_auth_service.py:61:    cols = {_extract_column_value(r) for r in rows}
+app/services/system_auth_service.py:84:        row = conn.execute(
+app/services/system_auth_service.py:96:        if not row:
+app/services/system_auth_service.py:99:        if int(row.is_enabled or 0) != 1:
+app/services/system_auth_service.py:102:        locked_until = row.locked_until
+app/services/system_auth_service.py:106:        pwd_hash = str(row.password_hash or "").strip()
+app/services/system_auth_service.py:108:            failed_attempts = int(row.failed_attempts or 0) + 1
+app/services/system_auth_service.py:123:                    "id": int(row.id),
+app/services/system_auth_service.py:152:            {"id": int(row.id)},
+app/services/system_auth_service.py:155:        role_row = conn.execute(
+app/services/system_auth_service.py:167:            {"uid": int(row.id)},
+app/services/system_auth_service.py:171:            "id": int(row.id),
+app/services/system_auth_service.py:172:            "username": str(row.username or ""),
+app/services/system_auth_service.py:173:            "display_name": str(row.display_name or ""),
+app/services/system_auth_service.py:174:            "role": str(role_row.code or "") if role_row else "",
+app/services/payment_service.py:55:        rows = conn.execute(
+app/services/payment_service.py:66:        return {str(r.column_name or "").strip().lower() for r in rows}
+app/services/payment_service.py:68:        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+app/services/payment_service.py:69:        return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
+app/services/payment_service.py:167:            payment_id = result.lastrowid
+app/services/payment_service.py:178:        row = conn.execute(
+app/services/payment_service.py:182:        if not row:
+app/services/payment_service.py:184:        if row.status not in ("draft", "pending"):
+app/services/payment_service.py:191:        _log_action(conn, payment_id, "submit", row.status, "in_review", operator, role or "")
+app/services/payment_service.py:204:        row = conn.execute(
+app/services/payment_service.py:208:        if not row:
+app/services/payment_service.py:210:        if row.status != "in_review":
+app/services/payment_service.py:217:        _log_action(conn, payment_id, "approve", row.status, "approved", operator, role, comment)
+app/services/payment_service.py:232:        row = conn.execute(
+app/services/payment_service.py:236:        if not row:
+app/services/payment_service.py:238:        if row.status != "in_review":
+app/services/payment_service.py:245:        _log_action(conn, payment_id, "reject", row.status, "rejected", operator, role, reason)
+app/services/payment_service.py:259:        row = conn.execute(
+app/services/payment_service.py:263:        if not row:
+app/services/payment_service.py:265:        if row.status != "approved":
+app/services/payment_service.py:277:        if str(row.related_type or "").lower() == "payroll" and row.related_id is not None:
+app/services/payment_service.py:281:                slip_params = {"id": int(row.related_id), "now": now, "payment_id": payment_id}
+app/services/payment_service.py:293:        _log_action(conn, payment_id, "execute", row.status, "paid", operator, role)
+app/services/payment_service.py:321:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/payment_service.py:324:    for r in rows:
+app/services/payment_service.py:396:        row = conn.execute(
+app/services/payment_service.py:400:        if not row:
+app/services/payment_service.py:402:        if row.status not in ("draft", "pending", "rejected"):
+app/services/payment_service.py:405:        _log_action(conn, payment_id, "delete", row.status, "deleted", operator or "", role or "")
+app/services/payment_service.py:412:        row = conn.execute(
+app/services/payment_service.py:416:        if not row:
+app/services/payment_service.py:418:        if row.status in ("paid", "void"):
+app/services/payment_service.py:424:        _log_action(conn, payment_id, "void", row.status, "void", operator or "", role or "", reason or "")
+app/services/bank_reconcile_service.py:71:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/bank_reconcile_service.py:74:    for r in rows:
+app/services/bank_reconcile_service.py:131:        rows = conn.execute(text(sql_txn), params_txn).fetchall()
+app/services/bank_reconcile_service.py:133:        for r in rows:
+app/services/bank_reconcile_service.py:150:            vrows = conn.execute(
+app/services/bank_reconcile_service.py:160:            if not vrows:
+app/services/bank_reconcile_service.py:166:            for v in vrows:
+app/services/bank_reconcile_service.py:220:        row = conn.execute(
+app/services/bank_reconcile_service.py:224:        if not row:
+app/services/bank_reconcile_service.py:227:        from_status = row.match_status
+app/services/bank_reconcile_service.py:259:        row = conn.execute(
+app/services/bank_reconcile_service.py:263:        if not row:
+app/services/bank_reconcile_service.py:266:        from_status = row.match_status
+app/services/bank_reconcile_service.py:279:        _log_action(conn, bank_transaction_id, row.matched_voucher_id or None, "cancel", from_status, "unmatched", operator, role)
+app/services/bank_reconcile_service.py:317:        row = conn.execute(text(sql), params_sql).fetchone()
+app/services/bank_reconcile_service.py:322:        "total": int(row.total or 0),
+app/services/bank_reconcile_service.py:323:        "unmatched_count": int(row.unmatched_count or 0),
+app/services/bank_reconcile_service.py:324:        "unmatched_amount": float(Decimal(str(row.unmatched_amount or 0))),
+app/services/bank_reconcile_service.py:325:        "matched_amount": float(Decimal(str(row.matched_amount or 0))),
+app/services/bank_reconcile_service.py:326:        "latest_balance": float(Decimal(str(row.latest_balance or 0))) if row.latest_balance is not None else None,
+app/services/consolidation_unrealized_profit_reversal_service.py:69:    rows = conn.execute(
+app/services/consolidation_unrealized_profit_reversal_service.py:80:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_unrealized_profit_reversal_service.py:110:    rows = conn.execute(
+app/services/consolidation_unrealized_profit_reversal_service.py:123:    for row in rows:
+app/services/consolidation_unrealized_profit_reversal_service.py:124:        qty = _to_decimal(row.qty)
+app/services/consolidation_unrealized_profit_reversal_service.py:127:        margin = _to_decimal(row.sales_amount) - _to_decimal(row.cost_amount)
+app/services/consolidation_unrealized_profit_reversal_service.py:128:        realized_ratio = Decimal("1") - (_to_decimal(row.ending_inventory_qty) / qty)
+app/services/consolidation_unrealized_profit_reversal_service.py:137:def _load_remaining_rows(conn, group_id: int, start_date: date):
+app/services/consolidation_unrealized_profit_reversal_service.py:265:        remaining_rows = _load_remaining_rows(conn, group_id, start_date)
+app/services/consolidation_unrealized_profit_reversal_service.py:266:        remaining_total = sum(_to_decimal(r.remaining_amount if r.remaining_amount is not None else r.remaining_unrealized_profit) for r in remaining_rows)
+app/services/consolidation_unrealized_profit_reversal_service.py:277:        for row in remaining_rows:
+app/services/consolidation_unrealized_profit_reversal_service.py:280:            rem = _to_decimal(row.remaining_amount if row.remaining_amount is not None else row.remaining_unrealized_profit)
+app/services/consolidation_unrealized_profit_reversal_service.py:284:            rate = _to_decimal(row.tax_rate_snapshot)
+app/services/consolidation_unrealized_profit_reversal_service.py:287:            rem_tax = _to_decimal(row.remaining_tax_amount)
+app/services/consolidation_unrealized_profit_reversal_service.py:312:                {"id": int(row.id), "remaining_up": str(new_rem), "remaining_tax": str(new_rem_tax)},
+app/services/consolidation_adjustment_service.py:90:    rows = conn.execute(
+app/services/consolidation_adjustment_service.py:101:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_adjustment_service.py:142:        row = conn.execute(
+app/services/consolidation_adjustment_service.py:146:        if not row:
+app/services/consolidation_adjustment_service.py:236:        adjustment_id = int(result.lastrowid)
+app/services/consolidation_adjustment_service.py:291:        rows = conn.execute(
+app/services/consolidation_adjustment_service.py:309:    for row in rows:
+app/services/consolidation_adjustment_service.py:310:        parsed_lines = _parse_lines_json(row.lines_json)
+app/services/consolidation_adjustment_service.py:313:                "id": int(row.id),
+app/services/consolidation_adjustment_service.py:314:                "group_id": int(row.group_id),
+app/services/consolidation_adjustment_service.py:315:                "period": str(row.period or ""),
+app/services/consolidation_adjustment_service.py:316:                "status": str(row.status or ""),
+app/services/consolidation_adjustment_service.py:317:                "operator_id": int(row.operator_id or 0),
+app/services/consolidation_adjustment_service.py:318:                "created_at": str(row.created_at or ""),
+app/services/consolidation_adjustment_service.py:319:                "source": str(row.source or ""),
+app/services/consolidation_adjustment_service.py:320:                "tag": str(row.tag or ""),
+app/services/consolidation_adjustment_service.py:321:                "rule_code": str(row.rule_code or ""),
+app/services/consolidation_adjustment_service.py:322:                "evidence_ref": str(row.evidence_ref or ""),
+app/services/consolidation_adjustment_service.py:323:                "batch_id": str(row.batch_id or ""),
+app/services/consolidation_adjustment_service.py:324:                "note": str(row.note or ""),
+app/services/consolidation_adjustment_service.py:325:                "period_start": str(row.period_start or ""),
+app/services/consolidation_adjustment_service.py:326:                "period_end": str(row.period_end or ""),
+app/services/consolidation_adjustment_service.py:327:                "origin_period_start": str(row.origin_period_start or ""),
+app/services/consolidation_adjustment_service.py:328:                "origin_period_end": str(row.origin_period_end or ""),
+app/services/consolidation_adjustment_service.py:329:                "original_unrealized_profit": str(row.original_unrealized_profit or ""),
+app/services/consolidation_adjustment_service.py:330:                "remaining_unrealized_profit": str(row.remaining_unrealized_profit or ""),
+app/services/consolidation_adjustment_service.py:331:                "original_amount": str(row.original_amount or ""),
+app/services/consolidation_adjustment_service.py:332:                "remaining_amount": str(row.remaining_amount or ""),
+app/services/consolidation_adjustment_service.py:333:                "original_tax_amount": str(row.original_tax_amount or ""),
+app/services/consolidation_adjustment_service.py:334:                "remaining_tax_amount": str(row.remaining_tax_amount or ""),
+app/services/consolidation_adjustment_service.py:335:                "tax_rate_snapshot": str(row.tax_rate_snapshot or ""),
+app/services/consolidation_adjustment_service.py:336:                "reviewed_by": int(row.reviewed_by or 0) if row.reviewed_by is not None else None,
+app/services/consolidation_adjustment_service.py:337:                "reviewed_at": str(row.reviewed_at or ""),
+app/services/consolidation_adjustment_service.py:338:                "locked_by": int(row.locked_by or 0) if row.locked_by is not None else None,
+app/services/consolidation_adjustment_service.py:339:                "locked_at": str(row.locked_at or ""),
+app/services/consolidation_adjustment_service.py:370:        rows = conn.execute(
+app/services/consolidation_adjustment_service.py:386:    for row in rows:
+app/services/consolidation_adjustment_service.py:387:        set_id = str(row.batch_id or "").strip()
+app/services/consolidation_adjustment_service.py:390:        parsed_lines = _parse_lines_json(row.lines_json)
+app/services/consolidation_adjustment_service.py:395:                "group_id": int(row.group_id),
+app/services/consolidation_adjustment_service.py:396:                "period": str(row.period or ""),
+app/services/consolidation_adjustment_service.py:397:                "status": str(row.status or ""),
+app/services/consolidation_adjustment_service.py:398:                "operator_id": int(row.operator_id or 0),
+app/services/consolidation_adjustment_service.py:399:                "created_at": str(row.created_at or ""),
+app/services/consolidation_adjustment_service.py:400:                "source": str(row.source or ""),
+app/services/consolidation_adjustment_service.py:401:                "rule_code": str(row.rule_code or ""),
+app/services/consolidation_adjustment_service.py:402:                "evidence_ref": str(row.evidence_ref or ""),
+app/services/consolidation_adjustment_service.py:403:                "tag": str(row.tag or ""),
+app/services/consolidation_adjustment_service.py:404:                "note": str(row.note or ""),
+app/services/consolidation_adjustment_service.py:405:                "reviewed_by": int(row.reviewed_by or 0) if row.reviewed_by is not None else None,
+app/services/consolidation_adjustment_service.py:406:                "reviewed_at": str(row.reviewed_at or ""),
+app/services/consolidation_adjustment_service.py:407:                "locked_by": int(row.locked_by or 0) if row.locked_by is not None else None,
+app/services/consolidation_adjustment_service.py:408:                "locked_at": str(row.locked_at or ""),
+app/services/consolidation_adjustment_service.py:413:        item["adjustment_ids"].append(int(row.id))
+app/services/consolidation_adjustment_service.py:441:        row = conn.execute(
+app/services/consolidation_adjustment_service.py:453:        if not row:
+app/services/consolidation_adjustment_service.py:455:        current = str(row.status or "").strip().lower()
+app/services/consolidation_adjustment_service.py:512:        "group_id": int(row.group_id),
+app/services/consolidation_adjustment_service.py:513:        "period": str(row.period or ""),
+app/services/consolidation_adjustment_service.py:535:        row = conn.execute(
+app/services/consolidation_adjustment_service.py:548:        if not row:
+app/services/consolidation_adjustment_service.py:551:        "id": int(row.id),
+app/services/consolidation_adjustment_service.py:552:        "set_id": str(row.batch_id or ""),
+app/services/consolidation_adjustment_service.py:553:        "group_id": int(row.group_id),
+app/services/consolidation_adjustment_service.py:554:        "period": str(row.period or ""),
+app/services/consolidation_adjustment_service.py:555:        "status": str(row.status or "").strip().lower(),
+app/services/consolidation_adjustment_service.py:556:        "source": str(row.source or ""),
+app/services/consolidation_adjustment_service.py:557:        "tag": str(row.tag or ""),
+app/services/consolidation_adjustment_service.py:558:        "rule_code": str(row.rule_code or ""),
+app/services/consolidation_adjustment_service.py:559:        "evidence_ref": str(row.evidence_ref or ""),
+app/services/consolidation_adjustment_service.py:560:        "note": str(row.note or ""),
+app/services/consolidation_adjustment_service.py:561:        "reviewed_by": int(row.reviewed_by or 0) if row.reviewed_by is not None else None,
+app/services/consolidation_adjustment_service.py:562:        "reviewed_at": str(row.reviewed_at or ""),
+app/services/consolidation_adjustment_service.py:563:        "locked_by": int(row.locked_by or 0) if row.locked_by is not None else None,
+app/services/consolidation_adjustment_service.py:564:        "locked_at": str(row.locked_at or ""),
+app/services/consolidation_adjustment_service.py:599:        row = conn.execute(
+app/services/consolidation_adjustment_service.py:622:        if not row:
+app/services/consolidation_adjustment_service.py:643:            created_id = int(insert_result.lastrowid)
+app/services/consolidation_adjustment_service.py:662:        current_status = str(row.status or "").strip().lower()
+app/services/consolidation_adjustment_service.py:670:        existing_lines = _parse_lines_json(row.lines_json)
+app/services/consolidation_adjustment_service.py:689:            {"lines_json": json.dumps(merged_lines, ensure_ascii=False), "operator_id": normalized_operator, "id": int(row.id)},
+app/services/consolidation_adjustment_service.py:695:                "id": int(row.id),
+app/services/consolidation_adjustment_service.py:711:    rows = conn.execute(
+app/services/consolidation_adjustment_service.py:725:    for row in rows:
+app/services/consolidation_adjustment_service.py:727:            lines = json.loads(str(row.lines_json or "[]"))
+app/services/bank_import_service.py:96:def _hash_row(book_id: int, bank_account_id: int, txn_date: date, amount: Decimal, summary: str, serial_no: str) -> str:
+app/services/bank_import_service.py:113:def _insert_row(conn, row: Dict[str, object]) -> bool:
+app/services/bank_import_service.py:116:        {"h": row["import_hash"]},
+app/services/bank_import_service.py:133:        _db_params(row),
+app/services/bank_import_service.py:138:def _rows_from_csv(file_bytes: bytes) -> Tuple[List[str], List[List[str]]]:
+app/services/bank_import_service.py:141:    rows = list(reader)
+app/services/bank_import_service.py:142:    if not rows:
+app/services/bank_import_service.py:144:    headers = rows[0]
+app/services/bank_import_service.py:145:    data_rows = rows[1:]
+app/services/bank_import_service.py:146:    return headers, data_rows
+app/services/bank_import_service.py:149:def _rows_from_excel(file_bytes: bytes) -> Tuple[List[str], List[List[str]]]:
+app/services/bank_import_service.py:152:    rows = list(sheet.iter_rows(values_only=True))
+app/services/bank_import_service.py:153:    if not rows:
+app/services/bank_import_service.py:155:    headers = [str(h) if h is not None else "" for h in rows[0]]
+app/services/bank_import_service.py:156:    data_rows = [list(r) for r in rows[1:]]
+app/services/bank_import_service.py:157:    return headers, data_rows
+app/services/bank_import_service.py:160:def _classify_row_error(err: Exception) -> str:
+app/services/bank_import_service.py:168:    return "row_parse_error"
+app/services/bank_import_service.py:171:def handle_import_error(err: Exception, row_no: int, row_data: List[object]) -> Dict[str, object]:
+app/services/bank_import_service.py:173:        "row": int(row_no),
+app/services/bank_import_service.py:174:        "error_code": _classify_row_error(err),
+app/services/bank_import_service.py:176:        "row_data": ["" if c is None else str(c) for c in (row_data or [])],
+app/services/bank_import_service.py:191:        headers, data_rows = _rows_from_csv(file_bytes)
+app/services/bank_import_service.py:193:        headers, data_rows = _rows_from_excel(file_bytes)
+app/services/bank_import_service.py:216:        for i, row in enumerate(data_rows, start=2):
+app/services/bank_import_service.py:217:            if not any([str(c).strip() for c in row if c is not None]):
+app/services/bank_import_service.py:221:                txn_date = _parse_date(row[index_map["date"]])
+app/services/bank_import_service.py:222:                amount = _parse_decimal(row[index_map["amount"]])
+app/services/bank_import_service.py:224:                    str(row[index_map["summary"]]).strip()
+app/services/bank_import_service.py:225:                    if "summary" in index_map and row[index_map["summary"]] is not None
+app/services/bank_import_service.py:229:                    str(row[index_map["counterparty"]]).strip()
+app/services/bank_import_service.py:230:                    if "counterparty" in index_map and row[index_map["counterparty"]] is not None
+app/services/bank_import_service.py:234:                    _parse_decimal(row[index_map["balance"]])
+app/services/bank_import_service.py:235:                    if "balance" in index_map and row[index_map["balance"]] not in (None, "")
+app/services/bank_import_service.py:239:                    str(row[index_map["serial_no"]]).strip()
+app/services/bank_import_service.py:240:                    if "serial_no" in index_map and row[index_map["serial_no"]] is not None
+app/services/bank_import_service.py:247:                import_hash = _hash_row(book_id, bank_account_id, txn_date, amount, summary, serial_no)
+app/services/bank_import_service.py:252:                inserted = _insert_row(
+app/services/bank_import_service.py:274:                receipt = handle_import_error(err, i, row)
+app/services/bank_import_service.py:276:                errors.append({"row": i, "error": str(err)})
+app/services/bank_import_service.py:323:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/bank_import_service.py:326:    for r in rows:
+app/services/consolidation_audit_permission_service.py:45:    rows = conn.execute(
+app/services/consolidation_audit_permission_service.py:56:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_audit_permission_service.py:114:        audit_id = int(result.lastrowid or 0)
+app/services/consolidation_audit_permission_service.py:115:        row = conn.execute(
+app/services/consolidation_audit_permission_service.py:133:            "id": int(row.id or 0),
+app/services/consolidation_audit_permission_service.py:134:            "ts": str(row.ts or ""),
+app/services/consolidation_audit_permission_service.py:135:            "operator_id": int(row.operator_id or 0),
+app/services/consolidation_audit_permission_service.py:136:            "action": str(row.action or ""),
+app/services/consolidation_audit_permission_service.py:137:            "group_id": int(row.group_id or 0),
+app/services/consolidation_audit_permission_service.py:138:            "payload_json": str(row.payload_json or "{}"),
+app/services/consolidation_audit_permission_service.py:139:            "result_status": str(row.result_status or ""),
+app/services/consolidation_audit_permission_service.py:140:            "result_code": int(row.result_code or 0),
+app/services/consolidation_audit_permission_service.py:141:            "note": str(row.note or ""),
+app/services/aux_reports_service.py:107:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/aux_reports_service.py:110:    for r in rows:
+app/services/aux_reports_service.py:167:        rows = conn.execute(
+app/services/aux_reports_service.py:180:    for r in rows:
+app/services/consolidation_control_service.py:39:    rows = conn.execute(
+app/services/consolidation_control_service.py:50:    return {str(r[0] or "").strip().lower() for r in rows}
+app/services/consolidation_control_service.py:69:    rows = conn.execute(
+app/services/consolidation_control_service.py:80:    for r in rows:
+app/services/consolidation_control_service.py:95:        rows = conn.execute(
+app/services/consolidation_control_service.py:112:    for row in rows:
+app/services/consolidation_control_service.py:113:        pct = Decimal(str(row.ownership_pct or 0))
+app/services/consolidation_control_service.py:128:                "ownership_id": int(row.id),
+app/services/consolidation_control_service.py:129:                "parent_entity_id": int(row.parent_entity_id),
+app/services/consolidation_control_service.py:130:                "child_entity_id": int(row.child_entity_id),
+app/services/asset_change_service.py:131:        change_id = result.lastrowid
+app/services/asset_change_service.py:184:        rows = conn.execute(text(sql), params_sql).fetchall()
+app/services/asset_change_service.py:187:    for r in rows:
+app/services/tax_service.py:192:def _rows_from_csv(file_bytes: bytes) -> Tuple[List[str], List[List[str]]]:
+app/services/tax_service.py:195:    rows = list(reader)
+app/services/tax_service.py:196:    if not rows:
+app/services/tax_service.py:198:    return rows[0], rows[1:]
+app/services/tax_service.py:201:def _rows_from_excel(file_bytes: bytes) -> Tuple[List[str], List[List[str]]]:
+app/services/tax_service.py:204:    rows = list(sheet.iter_rows(values_only=True))
+app/services/tax_service.py:205:    if not rows:
+app/services/tax_service.py:207:    headers = [str(h) if h is not None else "" for h in rows[0]]
+app/services/tax_service.py:208:    data_rows = [list(r) for r in rows[1:]]
+app/services/tax_service.py:209:    return headers, data_rows
+app/services/tax_service.py:233:        rows = conn.execute(
+app/services/tax_service.py:244:        return {str(r.column_name or "").strip().lower() for r in rows}
+app/services/tax_service.py:246:        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+app/services/tax_service.py:247:        return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
+app/services/tax_service.py:290:        rule_id = result.lastrowid
+app/services/tax_service.py:298:        rows = conn.execute(
+app/services/tax_service.py:309:    for r in rows:
+app/services/tax_service.py:331:        headers, data_rows = _rows_from_csv(file_bytes)
+app/services/tax_service.py:333:        headers, data_rows = _rows_from_excel(file_bytes)
+app/services/tax_service.py:349:        for i, row in enumerate(data_rows, start=2):
+app/services/tax_service.py:350:            if not any([str(c).strip() for c in row if c is not None]):
+app/services/tax_service.py:354:                invoice_no = str(row[index_map["invoice_no"]]).strip()
+app/services/tax_service.py:356:                    str(row[index_map["invoice_code"]]).strip()
+app/services/tax_service.py:357:                    if "invoice_code" in index_map and row[index_map["invoice_code"]] is not None
+app/services/tax_service.py:360:                invoice_date = _parse_date(row[index_map["invoice_date"]])
+app/services/tax_service.py:361:                amount = _parse_decimal(row[index_map["amount"]])
+app/services/tax_service.py:363:                    _parse_decimal(row[index_map["tax_rate"]])
+app/services/tax_service.py:364:                    if "tax_rate" in index_map and row[index_map["tax_rate"]] not in (None, "")
+app/services/tax_service.py:368:                    _parse_decimal(row[index_map["tax_amount"]])
+app/services/tax_service.py:369:                    if "tax_amount" in index_map and row[index_map["tax_amount"]] not in (None, "")
+app/services/tax_service.py:373:                    str(row[index_map["seller_name"]]).strip()
+app/services/tax_service.py:374:                    if "seller_name" in index_map and row[index_map["seller_name"]] is not None
+app/services/tax_service.py:378:                    str(row[index_map["buyer_name"]]).strip()
+app/services/tax_service.py:379:                    if "buyer_name" in index_map and row[index_map["buyer_name"]] is not None
+app/services/tax_service.py:383:                    str(row[index_map["category"]]).strip()
+app/services/tax_service.py:384:                    if "category" in index_map and row[index_map["category"]] is not None
+app/services/tax_service.py:433:                errors.append({"row": i, "error": str(err)})
+app/services/tax_service.py:464:        rows = conn.execute(text(sql), {"book_id": book_id}).fetchall()
+app/services/tax_service.py:467:    for r in rows:
+app/services/tax_service.py:497:        rows = conn.execute(
+app/services/tax_service.py:513:    for r in rows:
+app/services/tax_service.py:538:        rows = conn.execute(
+app/services/tax_service.py:549:    for r in rows:
+app/services/tax_service.py:574:        rows = conn.execute(
+app/services/tax_service.py:585:    for r in rows:
+app/services/tax_service.py:624:        rows = conn.execute(
+app/services/tax_service.py:637:    for r in rows:
+app/services/tax_service.py:719:            row = conn.execute(
+app/services/tax_service.py:729:            if not row:
+app/services/tax_service.py:732:                "invoice_code": row.invoice_code,
+app/services/tax_service.py:733:                "invoice_no": row.invoice_no,
+app/services/tax_service.py:734:                "invoice_date": row.invoice_date,
+app/services/tax_service.py:735:                "amount": row.amount,
+app/services/tax_service.py:736:                "tax_rate": row.tax_rate,
+app/services/tax_service.py:737:                "tax_amount": row.tax_amount,
+app/services/tax_service.py:738:                "seller_name": row.seller_name,
+app/services/tax_service.py:739:                "buyer_name": row.buyer_name,
+app/services/tax_service.py:820:        entry_id = int(result.lastrowid)
+app/services/tax_service.py:847:        rows = conn.execute(text(sql), args).fetchall()
+app/services/tax_service.py:862:            for r in rows
+app/services/tax_service.py:913:        for row in normalized:
+app/services/tax_service.py:928:                        **row,
+app/services/tax_service.py:950:        rows = conn.execute(
+app/services/tax_service.py:975:            for r in rows
+app/services/consolidation_manage_service.py:14:    rows = conn.execute(
+app/services/consolidation_manage_service.py:25:    return {str(r[0]).strip().lower() for r in rows if r and r[0]}
+app/services/consolidation_manage_service.py:79:    rows = conn.execute(
+app/services/consolidation_manage_service.py:91:    for r in rows:
+app/services/consolidation_manage_service.py:104:    rows = conn.execute(
+app/services/consolidation_manage_service.py:115:    for r in rows:
+app/services/consolidation_manage_service.py:130:    row = conn.execute(
+app/services/consolidation_manage_service.py:141:    if row:
+app/services/consolidation_manage_service.py:142:        kind = str(row.entity_kind or "").strip().lower()
+app/services/consolidation_manage_service.py:146:            "entity_id": int(row.id),
+app/services/consolidation_manage_service.py:147:            "entity_code": str(row.entity_code or ""),
+app/services/consolidation_manage_service.py:148:            "entity_name": str(row.entity_name or ""),
+app/services/consolidation_manage_service.py:150:            "book_id": int(row.book_id),
+app/services/consolidation_manage_service.py:178:        entity_id = int(result.lastrowid)
+app/services/consolidation_manage_service.py:180:        row2 = conn.execute(
+app/services/consolidation_manage_service.py:184:        if not row2:
+app/services/consolidation_manage_service.py:186:        entity_id = int(row2.id)
+app/services/consolidation_manage_service.py:187:        entity_code = str(row2.entity_code or entity_code)
+app/services/consolidation_manage_service.py:188:        entity_name = str(row2.entity_name or entity_name)
+app/services/consolidation_manage_service.py:204:    row = conn.execute(
+app/services/consolidation_manage_service.py:222:    if row:
+app/services/consolidation_manage_service.py:223:        return int(row.id)
+app/services/consolidation_manage_service.py:257:        group_id = int(result.lastrowid)
+app/services/consolidation_manage_service.py:259:        row2 = conn.execute(
+app/services/consolidation_manage_service.py:263:        if not row2:
+app/services/consolidation_manage_service.py:265:        group_id = int(row2.id)
+app/services/consolidation_manage_service.py:337:        rows_legal = conn.execute(
+app/services/consolidation_manage_service.py:352:        for r in rows_legal:
+app/services/consolidation_manage_service.py:356:        rows_nonlegal = conn.execute(
+app/services/consolidation_manage_service.py:371:        for r in rows_nonlegal:
+app/services/consolidation_manage_service.py:429:        # some legacy books may not yet have legal_entities rows; expose them as legal candidates
+app/services/consolidation_manage_service.py:455:        virtual_rows = conn.execute(
+app/services/consolidation_manage_service.py:467:        for v in virtual_rows:
+app/services/consolidation_manage_service.py:628:    rule_row = conn.execute(
+app/services/consolidation_manage_service.py:632:    group_id = int(rule_row.rule_value) if rule_row and str(rule_row.rule_value or "").strip().isdigit() else None
+app/services/consolidation_manage_service.py:635:        group_row = conn.execute(
+app/services/consolidation_manage_service.py:639:        if group_row:
+app/services/consolidation_manage_service.py:709:    group_id = int(gres.lastrowid)
+app/services/consolidation_manage_service.py:769:        virtual_id = int(vres.lastrowid)
+app/services/consolidation_manage_service.py:788:    row = conn.execute(
+app/services/consolidation_manage_service.py:801:    if not row:
+app/services/consolidation_manage_service.py:803:    gid = int(row.group_id) if str(row.group_id or "").strip().isdigit() else None
+app/services/consolidation_manage_service.py:807:            virtual_id=int(row.id),
+app/services/consolidation_manage_service.py:808:            virtual_code=str(row.virtual_code or ""),
+app/services/consolidation_manage_service.py:809:            virtual_name=str(row.virtual_name or f"虚拟主体{int(row.id)}"),
+app/services/consolidation_manage_service.py:810:            is_enabled=int(row.is_enabled or 0) or 1,
+app/services/consolidation_manage_service.py:813:        "id": int(row.id),
+app/services/consolidation_manage_service.py:814:        "virtual_code": str(row.virtual_code or ""),
+app/services/consolidation_manage_service.py:815:        "virtual_name": str(row.virtual_name or ""),
+app/services/consolidation_manage_service.py:816:        "status": str(row.status or ""),
+app/services/consolidation_manage_service.py:817:        "is_enabled": int(row.is_enabled or 0),
+app/services/consolidation_manage_service.py:818:        "note": str(row.note or ""),
+app/services/consolidation_manage_service.py:842:        rows = conn.execute(
+app/services/consolidation_manage_service.py:861:        for r in rows:
+app/services/consolidation_manage_service.py:969:        member_id = int(res.lastrowid)
+app/services/consolidation_manage_service.py:977:        row = conn.execute(
+app/services/consolidation_manage_service.py:981:        if not row:
+app/services/consolidation_manage_service.py:983:        if str(row.member_type or "").strip().upper() != "LEGAL":
+app/services/voucher_service.py:34:def _require(cond: bool, errors: List[Dict[str, object]], row: int, field: str, msg: str):
+app/services/voucher_service.py:36:        errors.append({"row": row, "field": field, "message": msg})
+app/services/voucher_service.py:48:    row = conn.execute(
+app/services/voucher_service.py:54:    if not row:
+app/services/voucher_service.py:56:    if row.status != "open":
+app/services/voucher_service.py:103:        errors.append({"row": 0, "field": "lines", "message": "lines is required"})
+app/services/voucher_service.py:109:        errors.append({"row": 0, "field": "book_id", "message": "book_id must be integer"})
+app/services/voucher_service.py:116:        errors.append({"row": 0, "field": "voucher_date", "message": "voucher_date invalid"})
+app/services/voucher_service.py:123:            errors.append({"row": 0, "field": "voucher_date", "message": msg})
+app/services/voucher_service.py:130:            row_no = idx + 1
+app/services/voucher_service.py:141:            _require(subject_code, errors, row_no, "subject_code", "科目必填")
+app/services/voucher_service.py:147:                errors.append({"row": row_no, "field": "amount", "message": "金额格式非法"})
+app/services/voucher_service.py:151:                errors.append({"row": row_no, "field": "amount", "message": "金额不能为负"})
+app/services/voucher_service.py:155:                errors.append({"row": row_no, "field": "amount", "message": "借贷金额不能同时为0"})
+app/services/voucher_service.py:158:                errors.append({"row": row_no, "field": "amount", "message": "借贷金额不能同时填写"})
+app/services/voucher_service.py:173:                errors.append({"row": row_no, "field": "subject_code", "message": "科目不存在"})
+app/services/voucher_service.py:176:                errors.append({"row": row_no, "field": "subject_code", "message": "科目已停用"})
+app/services/voucher_service.py:180:                errors.append({"row": row_no, "field": "aux_display", "message": "该科目要求填写辅助核算"})
+app/services/voucher_service.py:185:                    errors.append({"row": row_no, "field": "due_date", "message": "往来类科目需填写到期日"})
+app/services/voucher_service.py:189:            errors.append({"row": 0, "field": "balance", "message": f"凭证借贷不平衡，差额：{diff:.2f}"})
+app/services/voucher_service.py:211:        voucher_id = result.lastrowid
+
+==[3/8] Determine actual sidebar/content DOM selectors from rendered HTML ==
+--- DOM hints (ids/classes) ---
+
+==[4/8] Identify 'mobile mode switch' breakpoint by searching for d-*-none / display rules ==
+templates/main_layout.html:356:  #sidebar .accordion-button {
+templates/main_layout.html:379:     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+templates/main_layout.html:391:  /* Keep sidebar as sidebar (never become top accordion/list) */
+templates/main_layout.html:420:  .force-desktop .offcanvas,
+templates/main_layout.html:423:  .force-desktop .accordion-nav {
+
+==[5/8] Create a dedicated override CSS loaded last: static/css/force_desktop.css ==
+==[6/8] Ensure main_layout.html loads force_desktop.css LAST ==
+Inserted force_desktop.css link into main_layout.html
+
+==[7/8] Restart server and generate verification hints ==
+000000  /system/books  
+000000  /dashboard  
+000000  /  
+
+MANUAL CHECK:
+1) Open http://localhost:5000/system/books
+2) Zoom 90% / 100% / 110% / 125%
+Expected: still sidebar left + content right; no mode switch.
+
+If still switches:
+- It means sidebar element is NOT matched by #sidebar/.sidebar selectors.
+- Then update selectors in static/css/force_desktop.css based on DOM hints printed in [3/8].
+
+==[8/8] Commit + evidence ==
