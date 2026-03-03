@@ -1,4 +1,6 @@
+import json
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Dict, List, Optional
 
 from sqlalchemy import text
@@ -581,4 +583,488 @@ def resolve_consolidation_group(conn, consolidation_group_id: int) -> Dict[str, 
         "consolidation_group_code": result["group_code"],
         "consolidation_group_name": result["group_name"],
         "member_book_ids": result["member_book_ids"],
+    }
+
+
+def _parse_positive_int(value: object, field: str) -> int:
+    raw = str(value or "").strip()
+    if not raw:
+        raise ConsolidationError(f"{field}_required")
+    try:
+        parsed = int(raw)
+    except Exception as err:
+        raise ConsolidationError(f"{field}_invalid") from err
+    if parsed <= 0:
+        raise ConsolidationError(f"{field}_invalid")
+    return parsed
+
+
+def _parse_period(value: object) -> str:
+    raw = str(value or "").strip()
+    if len(raw) != 7 or raw[4] != "-":
+        raise ConsolidationError("period_invalid")
+    yy = raw[:4]
+    mm = raw[5:]
+    if not yy.isdigit() or not mm.isdigit():
+        raise ConsolidationError("period_invalid")
+    m = int(mm)
+    if m < 1 or m > 12:
+        raise ConsolidationError("period_invalid")
+    return f"{int(yy):04d}-{m:02d}"
+
+
+def _as_of_to_period(value: object) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        raise ConsolidationError("as_of_required")
+    try:
+        parsed = date.fromisoformat(raw)
+    except Exception as err:
+        raise ConsolidationError("as_of_invalid") from err
+    return parsed.strftime("%Y-%m")
+
+
+def _as_decimal(value: object) -> Decimal:
+    try:
+        return Decimal(str(value or "0"))
+    except Exception:
+        return Decimal("0")
+
+
+def _load_reports(conn, group_id: int, period: str) -> Dict[str, Dict[str, object]]:
+    rows = conn.execute(
+        text(
+            """
+            SELECT report_code, report_json, batch_id
+            FROM consolidation_report_snapshots
+            WHERE group_id=:group_id AND period=:period
+            ORDER BY report_code ASC
+            """
+        ),
+        {"group_id": group_id, "period": period},
+    ).fetchall()
+    reports: Dict[str, Dict[str, object]] = {}
+    for row in rows:
+        report_code = str(row.report_code or "").strip()
+        if not report_code:
+            continue
+        try:
+            payload = json.loads(str(row.report_json or "{}"))
+        except Exception:
+            payload = {}
+        payload["_batch_id"] = str(row.batch_id or "")
+        reports[report_code] = payload
+    return reports
+
+
+def _ensure_consolidation_enhance_tables(conn) -> None:
+    try:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS consolidation_disclosure_checks (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    group_id BIGINT NOT NULL,
+                    period VARCHAR(7) NOT NULL,
+                    batch_id VARCHAR(64) NOT NULL,
+                    check_code VARCHAR(64) NOT NULL,
+                    check_result VARCHAR(16) NOT NULL,
+                    check_value DECIMAL(18,2) NULL,
+                    threshold_value DECIMAL(18,2) NULL,
+                    note VARCHAR(255) NULL,
+                    operator_id BIGINT NOT NULL DEFAULT 0,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_conso_disclosure_check (group_id, period, batch_id, check_code)
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS consolidation_audit_indexes (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    group_id BIGINT NOT NULL,
+                    period VARCHAR(7) NOT NULL,
+                    batch_id VARCHAR(64) NOT NULL,
+                    report_code VARCHAR(64) NOT NULL,
+                    item_code VARCHAR(128) NOT NULL,
+                    item_label VARCHAR(255) NULL,
+                    amount DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+                    evidence_ref VARCHAR(255) NOT NULL,
+                    source_batch_id VARCHAR(64) NULL,
+                    operator_id BIGINT NOT NULL DEFAULT 0,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    KEY ix_conso_audit_idx_gp_batch (group_id, period, batch_id)
+                )
+                """
+            )
+        )
+    except Exception:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS consolidation_disclosure_checks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    group_id INTEGER NOT NULL,
+                    period TEXT NOT NULL,
+                    batch_id TEXT NOT NULL,
+                    check_code TEXT NOT NULL,
+                    check_result TEXT NOT NULL,
+                    check_value NUMERIC NULL,
+                    threshold_value NUMERIC NULL,
+                    note TEXT NULL,
+                    operator_id INTEGER NOT NULL DEFAULT 0,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE (group_id, period, batch_id, check_code)
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS consolidation_audit_indexes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    group_id INTEGER NOT NULL,
+                    period TEXT NOT NULL,
+                    batch_id TEXT NOT NULL,
+                    report_code TEXT NOT NULL,
+                    item_code TEXT NOT NULL,
+                    item_label TEXT NULL,
+                    amount NUMERIC NOT NULL DEFAULT 0,
+                    evidence_ref TEXT NOT NULL,
+                    source_batch_id TEXT NULL,
+                    operator_id INTEGER NOT NULL DEFAULT 0,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+
+
+def generate_disclosure_notes(payload: Dict[str, object], operator_id: object = 0) -> Dict[str, object]:
+    group_id = _parse_positive_int(payload.get("consolidation_group_id") or payload.get("group_id"), "consolidation_group_id")
+    period_raw = str(payload.get("period") or "").strip()
+    period = _parse_period(period_raw) if period_raw else _as_of_to_period(payload.get("as_of"))
+    operator = _parse_positive_int(operator_id or 1, "operator_id")
+    batch_id = f"DISCCHK-{group_id}-{period.replace('-', '')}"
+
+    provider = get_connection_provider()
+    with provider.begin() as conn:
+        _ensure_consolidation_enhance_tables(conn)
+        reports = _load_reports(conn, group_id, period)
+        required = {"BALANCE_SHEET", "INCOME_STATEMENT", "CASH_FLOW", "EQUITY_CHANGE"}
+        report_complete = 1 if required.issubset(set(reports.keys())) else 0
+
+        adj_rows = conn.execute(
+            text(
+                """
+                SELECT lines_json
+                FROM consolidation_adjustments
+                WHERE group_id=:group_id AND period=:period
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        debit_total = Decimal("0")
+        credit_total = Decimal("0")
+        for row in adj_rows:
+            try:
+                lines = json.loads(str(row.lines_json or "[]"))
+            except Exception:
+                lines = []
+            if not isinstance(lines, list):
+                continue
+            for line in lines:
+                if not isinstance(line, dict):
+                    continue
+                debit_total += _as_decimal(line.get("debit"))
+                credit_total += _as_decimal(line.get("credit"))
+
+        diff = abs(debit_total - credit_total)
+        balanced = 1 if diff <= Decimal("0.01") else 0
+
+        flow_row = conn.execute(
+            text(
+                """
+                SELECT id, approval_status, check_result
+                FROM consolidation_approval_flows
+                WHERE group_id=:group_id AND period=:period
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchone()
+        approved = 1 if flow_row and str(flow_row.check_result or "") == "passed" else 0
+
+        checks = [
+            {
+                "check_code": "REPORT_SNAPSHOT_COMPLETE",
+                "check_result": "pass" if report_complete else "fail",
+                "check_value": Decimal(str(report_complete)),
+                "threshold_value": Decimal("1"),
+                "note": "四大报表快照齐备",
+            },
+            {
+                "check_code": "ADJUSTMENT_DEBIT_CREDIT_BALANCED",
+                "check_result": "pass" if balanced else "fail",
+                "check_value": diff,
+                "threshold_value": Decimal("0.01"),
+                "note": "抵销分录借贷平衡",
+            },
+            {
+                "check_code": "FINAL_APPROVAL_PASSED",
+                "check_result": "pass" if approved else "fail",
+                "check_value": Decimal(str(approved)),
+                "threshold_value": Decimal("1"),
+                "note": "最终校验审批通过",
+            },
+        ]
+
+        conn.execute(
+            text(
+                """
+                DELETE FROM consolidation_disclosure_checks
+                WHERE group_id=:group_id AND period=:period AND batch_id=:batch_id
+                """
+            ),
+            {"group_id": group_id, "period": period, "batch_id": batch_id},
+        )
+        for item in checks:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO consolidation_disclosure_checks (
+                        group_id, period, batch_id, check_code, check_result,
+                        check_value, threshold_value, note, operator_id
+                    ) VALUES (
+                        :group_id, :period, :batch_id, :check_code, :check_result,
+                        :check_value, :threshold_value, :note, :operator_id
+                    )
+                    """
+                ),
+                {
+                    "group_id": group_id,
+                    "period": period,
+                    "batch_id": batch_id,
+                    "check_code": item["check_code"],
+                    "check_result": item["check_result"],
+                    "check_value": str(item["check_value"]),
+                    "threshold_value": str(item["threshold_value"]),
+                    "note": item["note"],
+                    "operator_id": operator,
+                },
+            )
+
+    return {
+        "group_id": group_id,
+        "period": period,
+        "batch_id": batch_id,
+        "check_count": len(checks),
+        "failed_count": len([c for c in checks if c["check_result"] != "pass"]),
+        "checks": [
+            {
+                "check_code": c["check_code"],
+                "check_result": c["check_result"],
+                "check_value": float(c["check_value"]),
+                "threshold_value": float(c["threshold_value"]),
+                "note": c["note"],
+            }
+            for c in checks
+        ],
+    }
+
+
+def create_audit_index(payload: Dict[str, object], operator_id: object = 0) -> Dict[str, object]:
+    group_id = _parse_positive_int(payload.get("consolidation_group_id") or payload.get("group_id"), "consolidation_group_id")
+    period_raw = str(payload.get("period") or "").strip()
+    period = _parse_period(period_raw) if period_raw else _as_of_to_period(payload.get("as_of"))
+    operator = _parse_positive_int(operator_id or 1, "operator_id")
+    batch_id = f"AUDIDX-{group_id}-{period.replace('-', '')}"
+
+    provider = get_connection_provider()
+    with provider.begin() as conn:
+        _ensure_consolidation_enhance_tables(conn)
+        reports = _load_reports(conn, group_id, period)
+        if not reports:
+            raise ConsolidationError("report_snapshots_not_ready")
+
+        conn.execute(
+            text(
+                """
+                DELETE FROM consolidation_audit_indexes
+                WHERE group_id=:group_id AND period=:period AND batch_id=:batch_id
+                """
+            ),
+            {"group_id": group_id, "period": period, "batch_id": batch_id},
+        )
+
+        indexed = 0
+        report_count = 0
+        for report_code, report in reports.items():
+            report_count += 1
+            source_batch_id = str(report.get("_batch_id") or "")
+            items = report.get("items") or []
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                item_code = str(item.get("item_code") or "").strip() or f"ROW{indexed+1}"
+                item_label = str(item.get("label") or "").strip() or None
+                amount = _as_decimal(item.get("amount"))
+                evidence_ref = f"RPT-{group_id}-{period.replace('-', '')}-{report_code}-{item_code}"
+                conn.execute(
+                    text(
+                        """
+                        INSERT INTO consolidation_audit_indexes (
+                            group_id, period, batch_id, report_code, item_code, item_label,
+                            amount, evidence_ref, source_batch_id, operator_id
+                        ) VALUES (
+                            :group_id, :period, :batch_id, :report_code, :item_code, :item_label,
+                            :amount, :evidence_ref, :source_batch_id, :operator_id
+                        )
+                        """
+                    ),
+                    {
+                        "group_id": group_id,
+                        "period": period,
+                        "batch_id": batch_id,
+                        "report_code": report_code,
+                        "item_code": item_code,
+                        "item_label": item_label,
+                        "amount": str(amount),
+                        "evidence_ref": evidence_ref,
+                        "source_batch_id": source_batch_id or None,
+                        "operator_id": operator,
+                    },
+                )
+                indexed += 1
+
+    return {
+        "group_id": group_id,
+        "period": period,
+        "batch_id": batch_id,
+        "report_count": report_count,
+        "indexed_count": indexed,
+    }
+
+
+def trace_consolidation_batch(payload: Dict[str, object]) -> Dict[str, object]:
+    group_id = _parse_positive_int(payload.get("consolidation_group_id") or payload.get("group_id"), "consolidation_group_id")
+    period_raw = str(payload.get("period") or "").strip()
+    period = _parse_period(period_raw) if period_raw else _as_of_to_period(payload.get("as_of"))
+    requested_batch = str(payload.get("batch_id") or "").strip()
+
+    provider = get_connection_provider()
+    with provider.connect() as conn:
+        _ensure_consolidation_enhance_tables(conn)
+        trace_items: List[Dict[str, object]] = []
+
+        def _push(stage: str, batch_id: str, ref: str, status: str, created_at: object):
+            if requested_batch and requested_batch != batch_id:
+                return
+            trace_items.append(
+                {
+                    "stage": stage,
+                    "batch_id": str(batch_id or ""),
+                    "ref": str(ref or ""),
+                    "status": str(status or ""),
+                    "created_at": str(created_at or ""),
+                }
+            )
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, batch_id, status, created_at
+                FROM consolidation_adjustments
+                WHERE group_id=:group_id AND period=:period AND COALESCE(batch_id,'')<>''
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        for row in rows:
+            _push("adjustment", str(row.batch_id or ""), f"adj:{int(row.id)}", str(row.status or ""), row.created_at)
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, batch_id, report_code, status, created_at
+                FROM consolidation_report_snapshots
+                WHERE group_id=:group_id AND period=:period
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        for row in rows:
+            _push("report_snapshot", str(row.batch_id or ""), str(row.report_code or ""), str(row.status or ""), row.created_at)
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, batch_id, approval_status, created_at
+                FROM consolidation_approval_flows
+                WHERE group_id=:group_id AND period=:period
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        for row in rows:
+            _push("approval_flow", str(row.batch_id or ""), f"approval:{int(row.id)}", str(row.approval_status or ""), row.created_at)
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, batch_id, status, created_at
+                FROM consolidation_audit_packages
+                WHERE group_id=:group_id AND period=:period
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        for row in rows:
+            _push("audit_package", str(row.batch_id or ""), f"package:{int(row.id)}", str(row.status or ""), row.created_at)
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, batch_id, check_code, check_result, created_at
+                FROM consolidation_disclosure_checks
+                WHERE group_id=:group_id AND period=:period
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        for row in rows:
+            _push("disclosure_check", str(row.batch_id or ""), str(row.check_code or ""), str(row.check_result or ""), row.created_at)
+
+        rows = conn.execute(
+            text(
+                """
+                SELECT id, batch_id, report_code, created_at
+                FROM consolidation_audit_indexes
+                WHERE group_id=:group_id AND period=:period
+                ORDER BY created_at ASC, id ASC
+                """
+            ),
+            {"group_id": group_id, "period": period},
+        ).fetchall()
+        for row in rows:
+            _push("audit_index", str(row.batch_id or ""), str(row.report_code or ""), "indexed", row.created_at)
+
+    trace_items.sort(key=lambda x: (x.get("created_at") or "", x.get("stage") or "", x.get("ref") or ""))
+    return {
+        "group_id": group_id,
+        "period": period,
+        "requested_batch_id": requested_batch,
+        "trace_count": len(trace_items),
+        "items": trace_items,
     }

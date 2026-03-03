@@ -64,8 +64,11 @@ from app.services.book_service import (
 from app.services.consolidation_service import (
     ConsolidationError,
     add_consolidation_group_member,
+    create_audit_index,
     create_consolidation_group,
+    generate_disclosure_notes,
     get_effective_group_members,
+    trace_consolidation_batch,
 )
 from app.services.consolidation_manage_service import (
     ConsolidationManageError,
@@ -1361,6 +1364,77 @@ def create_app() -> Flask:
                 code=500,
                 operator_id=operator_id,
                 payload=args,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/api/consolidation/enhancements")
+    def api_consolidation_enhancements():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            period_raw = str(payload.get("period") or "").strip()
+            if period_raw:
+                as_of = _period_to_as_of_date(period_raw)
+            else:
+                as_of = date.fromisoformat(str(payload.get("as_of") or "").strip())
+            with get_connection_provider().connect() as conn:
+                assert_virtual_authorized(conn, group_id, as_of)
+
+            notes = generate_disclosure_notes(payload, operator_id=operator_id)
+            audit_idx = create_audit_index(payload, operator_id=operator_id)
+            trace = trace_consolidation_batch(
+                {
+                    "consolidation_group_id": group_id,
+                    "period": notes.get("period"),
+                    "batch_id": str(payload.get("trace_batch_id") or ""),
+                }
+            )
+            _safe_log_consolidation_audit(
+                action="enhancements_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"disc={notes.get('batch_id','')};idx={audit_idx.get('batch_id','')};trace={trace.get('trace_count',0)}",
+            )
+            return jsonify({"ok": True, "disclosure_notes": notes, "audit_index": audit_idx, "batch_trace": trace}), 200
+        except ConsolidationAuthorizationError as err:
+            _safe_log_consolidation_audit(
+                action="enhancements_generate",
+                group_id=group_id,
+                status="forbidden",
+                code=403,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"error": "forbidden"}), 403
+        except (TypeError, ValueError, ConsolidationError) as err:
+            _safe_log_consolidation_audit(
+                action="enhancements_generate",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_enhancements_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="enhancements_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
                 note="internal_error",
             )
             return jsonify({"ok": False, "error": "internal_error"}), 500
