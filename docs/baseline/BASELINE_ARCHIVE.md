@@ -16,3 +16,9 @@
 - Files: templates/main_layout.html, static/js/sidebar_shadow_toggle.js
 - Evidence: snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-02_20260303_193528.txt
 - DoD: button visible on /system/books; click toggles html class xinyi-sidebar-collapsed; left edge handle appears when collapsed.
+
+## P1-UX-SIDEBAR-COLLAPSE-03 (20260303_194229)
+- Goal: server-side after_request inject shadow toggle into ALL html responses (template-independent).
+- Files: app.py, static/js/sidebar_shadow_toggle.js
+- Evidence: snapshots/uat/P1-UX-SIDEBAR-COLLAPSE-03_20260303_194229.txt
+- DoD: HTML pages contain injected script; button appears; click collapses/expands sidebar.

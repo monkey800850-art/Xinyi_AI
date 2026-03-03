@@ -570,6 +570,39 @@ def create_app() -> Flask:
         sys.exit(1)
 
     app = Flask(__name__)
+
+        # P1-UX-SIDEBAR-COLLAPSE-03: after_request html injector
+        @app.after_request
+        def _inject_sidebar_shadow_toggle(resp):
+            try:
+                ct = resp.headers.get("Content-Type", "") or ""
+                # only inject into HTML pages
+                if "text/html" not in ct.lower():
+                    return resp
+
+                # avoid double injection
+                body = resp.get_data(as_text=True)
+                if "sidebar_shadow_toggle.js" in body:
+                    return resp
+
+                # inject script tag before </body> (or append if missing)
+                sha = os.getenv("ASSET_VERSION", "")
+                v = f"?v={sha}" if sha else ""
+                tag = f'<script src="/static/js/sidebar_shadow_toggle.js{v}"></script>'
+
+                if "</body>" in body:
+                    body = body.replace("</body>", tag + "\n</body>", 1)
+                else:
+                    body = body + "\n" + tag
+
+                resp.set_data(body)
+                # content-length may change
+                if "Content-Length" in resp.headers:
+                    resp.headers.pop("Content-Length", None)
+            except Exception:
+                # never block page
+                return resp
+            return resp
     app.secret_key = os.getenv("SECRET_KEY")
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     default_samesite = "Strict" if app_env == "production" else "Lax"

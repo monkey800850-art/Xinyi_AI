@@ -1,0 +1,27 @@
+== P1-UX-SIDEBAR-COLLAPSE-03 ==
+TIME: 20260303_194229
+HEAD: 74d8c0e
+
+==[1/8] Write static/js/sidebar_shadow_toggle.js ==
+OK: static/js/sidebar_shadow_toggle.js
+
+==[2/8] Patch app.py: add after_request HTML injector ==
+--- app.py patch markers ---
+574:        # P1-UX-SIDEBAR-COLLAPSE-03: after_request html injector
+575:        @app.after_request
+585:                if "sidebar_shadow_toggle.js" in body:
+591:                tag = f'<script src="/static/js/sidebar_shadow_toggle.js{v}"></script>'
+964:    @app.after_request
+
+==[3/8] Restart server ==
+LISTEN 0      0             0.0.0.0:5000      0.0.0.0:*          
+
+==[4/8] Verify HTML contains injected script ==
+--- GET /system/books ---
+--- GET /dashboard ---
+--- GET / ---
+
+==[5/8] Verify JS is served (200) ==
+
+==[6/8] Update baseline ==
+==[7/8] Git commit ==
