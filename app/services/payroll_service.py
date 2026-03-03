@@ -327,6 +327,195 @@ def list_payroll_slips(params: Dict[str, str]) -> Dict[str, object]:
     return {"items": items}
 
 
+def set_payroll_period_status(period_id: int, action: str, operator_id: int | None = None) -> Dict[str, object]:
+    pid = int(period_id)
+    action = str(action or "").strip().lower()
+    if action not in ("close", "reopen"):
+        raise PayrollError("validation_error", [{"field": "action", "message": "仅支持 close/reopen"}])
+    engine = get_engine()
+    now = datetime.now()
+    with engine.begin() as conn:
+        row = conn.execute(
+            text("SELECT id, status FROM payroll_periods WHERE id=:id"),
+            {"id": pid},
+        ).fetchone()
+        if not row:
+            raise PayrollError("period_not_found")
+        cur = str(row.status or "").lower()
+        if action == "close":
+            if cur == "closed":
+                return {"id": pid, "status": "closed", "already_closed": True}
+            cnt = conn.execute(
+                text(
+                    """
+                    SELECT COUNT(*) AS c
+                    FROM payroll_slips
+                    WHERE period=(SELECT period FROM payroll_periods WHERE id=:id)
+                      AND book_id=(SELECT book_id FROM payroll_periods WHERE id=:id)
+                      AND status<>'confirmed'
+                    """
+                ),
+                {"id": pid},
+            ).fetchone()
+            if int(getattr(cnt, "c", 0) or 0) > 0:
+                raise PayrollError("period_close_blocked_unconfirmed_slips")
+            conn.execute(
+                text(
+                    """
+                    UPDATE payroll_periods
+                    SET status='closed', locked_by=:locked_by, locked_at=:locked_at, updated_at=:updated_at
+                    WHERE id=:id
+                    """
+                ),
+                _db_params({"id": pid, "locked_by": operator_id, "locked_at": now, "updated_at": now}),
+            )
+            return {"id": pid, "status": "closed"}
+
+        if cur == "open":
+            return {"id": pid, "status": "open", "already_open": True}
+        conn.execute(
+            text(
+                """
+                UPDATE payroll_periods
+                SET status='open', locked_by=NULL, locked_at=NULL, updated_at=:updated_at
+                WHERE id=:id
+                """
+            ),
+            _db_params({"id": pid, "updated_at": now}),
+        )
+    return {"id": pid, "status": "open"}
+
+
+def get_payroll_voucher_suggestion(slip_id: int) -> Dict[str, object]:
+    sid = int(slip_id)
+    engine = get_engine()
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT * FROM payroll_slips WHERE id=:id"), {"id": sid}).fetchone()
+        if not row:
+            raise PayrollError("not_found")
+        if str(row.status or "").lower() != "confirmed":
+            raise PayrollError("slip_not_confirmed")
+
+    gross = _as_decimal(getattr(row, "gross_amount", 0), "gross_amount")
+    social = _as_decimal(getattr(row, "social_insurance", 0), "social_insurance")
+    fund = _as_decimal(getattr(row, "housing_fund", 0), "housing_fund")
+    tax = _as_decimal(getattr(row, "tax_amount", 0), "tax_amount")
+    net = _as_decimal(getattr(row, "net_amount", 0), "net_amount")
+
+    # Small listed-company practical mapping (can be overridden by subject master rules later)
+    # debit 6602.01 职工薪酬; credit 2211.01 工资, 2211.04 公积金, 2241.03 个税
+    lines = [
+        {"subject_code": "6602.01", "debit": float(gross), "credit": 0.0, "summary": "计提工资薪酬"},
+        {"subject_code": "2211.01", "debit": 0.0, "credit": float(net), "summary": "应付职工薪酬-工资"},
+    ]
+    if social > 0:
+        lines.append({"subject_code": "2211.02", "debit": 0.0, "credit": float(social), "summary": "应付职工薪酬-社保"})
+    if fund > 0:
+        lines.append({"subject_code": "2211.04", "debit": 0.0, "credit": float(fund), "summary": "应付职工薪酬-公积金"})
+    if tax > 0:
+        lines.append({"subject_code": "2241.03", "debit": 0.0, "credit": float(tax), "summary": "代扣个税"})
+
+    return {
+        "slip_id": sid,
+        "book_id": int(row.book_id),
+        "period": str(row.period),
+        "employee_id": int(row.employee_id),
+        "status": "confirmed",
+        "voucher_draft": {
+            "voucher_word": "记",
+            "summary": f"工资计提 {row.period}",
+            "lines": lines,
+        },
+    }
+
+
+def create_payroll_payment_request(slip_id: int, operator: str, role: str) -> Dict[str, object]:
+    sid = int(slip_id)
+    if not operator:
+        raise PayrollError("operator_required")
+    engine = get_engine()
+    now = datetime.now()
+    with engine.begin() as conn:
+        slip = conn.execute(text("SELECT * FROM payroll_slips WHERE id=:id"), {"id": sid}).fetchone()
+        if not slip:
+            raise PayrollError("not_found")
+        if str(slip.status or "").lower() != "confirmed":
+            raise PayrollError("slip_not_confirmed")
+
+        existing = conn.execute(
+            text(
+                """
+                SELECT id, status
+                FROM payment_requests
+                WHERE related_type='payroll'
+                  AND related_id=:sid
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {"sid": sid},
+        ).fetchone()
+        if existing:
+            return {"payment_id": int(existing.id), "status": str(existing.status), "already_exists": True}
+
+        result = conn.execute(
+            text(
+                """
+                INSERT INTO payment_requests (
+                    book_id, title, payee_name, payee_account, pay_method, amount,
+                    status, related_type, related_id, reimbursement_id, created_at, updated_at
+                ) VALUES (
+                    :book_id, :title, :payee_name, :payee_account, :pay_method, :amount,
+                    'pending', 'payroll', :related_id, NULL, :created_at, :updated_at
+                )
+                """
+            ),
+            _db_params(
+                {
+                    "book_id": int(slip.book_id),
+                    "title": f"工资发放 {slip.period}",
+                    "payee_name": str(slip.employee_name or f"EMP-{slip.employee_id}"),
+                    "payee_account": "",
+                    "pay_method": "bank_transfer",
+                    "amount": _as_decimal(getattr(slip, "net_amount", 0), "net_amount"),
+                    "related_id": sid,
+                    "created_at": now,
+                    "updated_at": now,
+                }
+            ),
+        )
+        payment_id = int(result.lastrowid)
+
+        cols = _table_columns(conn, "payroll_tax_ledger")
+        if "snapshot_json" in cols:
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO payroll_tax_ledger (
+                        book_id, employee_id, period, tax_type, taxable_base, tax_amount, calc_version, snapshot_json, created_at
+                    ) VALUES (
+                        :book_id, :employee_id, :period, 'payment_link', 0, 0, 'v1-link',
+                        :snapshot_json, :created_at
+                    )
+                    """
+                ),
+                _db_params(
+                    {
+                        "book_id": int(slip.book_id),
+                        "employee_id": int(slip.employee_id),
+                        "period": str(slip.period),
+                        "snapshot_json": json.dumps(
+                            {"slip_id": sid, "payment_id": payment_id, "operator": operator, "role": role},
+                            ensure_ascii=False,
+                        ),
+                        "created_at": now,
+                    }
+                ),
+            )
+
+    return {"payment_id": payment_id, "status": "pending", "related_type": "payroll", "related_id": sid}
+
+
 def confirm_payroll_slip(slip_id: int, operator: str, role: str) -> Dict[str, object]:
     if not operator:
         raise PayrollError("operator_required")

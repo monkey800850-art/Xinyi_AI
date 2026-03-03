@@ -219,8 +219,11 @@ from app.services.payment_service import (
 from app.services.payroll_service import (
     PayrollError,
     confirm_payroll_slip,
+    create_payroll_payment_request,
+    get_payroll_voucher_suggestion,
     list_payroll_periods,
     list_payroll_slips,
+    set_payroll_period_status,
     sync_attendance_interface,
     upsert_payroll_period,
     upsert_payroll_slip,
@@ -3901,6 +3904,8 @@ def create_app() -> Flask:
     @app.post("/api/payroll/periods")
     def api_payroll_upsert_period():
         operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin"):
+            return jsonify({"error": "forbidden"}), 403
         payload = request.get_json(silent=True) or {}
         try:
             result = upsert_payroll_period(payload)
@@ -3911,8 +3916,36 @@ def create_app() -> Flask:
 
     @app.get("/api/payroll/periods")
     def api_payroll_list_periods():
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
         try:
             result = list_payroll_periods(request.args)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/periods/<int:period_id>/close")
+    def api_payroll_close_period(period_id: int):
+        operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "admin"):
+            return jsonify({"error": "forbidden"}), 403
+        operator_id = _get_operator_id({})
+        try:
+            result = set_payroll_period_status(period_id, "close", operator_id)
+            log_audit("payroll", "period_close", "payroll_period", period_id, operator, role, result)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/periods/<int:period_id>/reopen")
+    def api_payroll_reopen_period(period_id: int):
+        operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "admin"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = set_payroll_period_status(period_id, "reopen", None)
+            log_audit("payroll", "period_reopen", "payroll_period", period_id, operator, role, result)
             return jsonify(result), 200
         except PayrollError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
@@ -3920,6 +3953,8 @@ def create_app() -> Flask:
     @app.post("/api/payroll/slips")
     def api_payroll_upsert_slip():
         operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin"):
+            return jsonify({"error": "forbidden"}), 403
         payload = request.get_json(silent=True) or {}
         try:
             result = upsert_payroll_slip(payload)
@@ -3930,6 +3965,9 @@ def create_app() -> Flask:
 
     @app.get("/api/payroll/slips")
     def api_payroll_list_slips():
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
         try:
             result = list_payroll_slips(request.args)
             return jsonify(result), 200
@@ -3939,6 +3977,8 @@ def create_app() -> Flask:
     @app.post("/api/payroll/slips/<int:slip_id>/confirm")
     def api_payroll_confirm_slip(slip_id: int):
         operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "admin"):
+            return jsonify({"error": "forbidden"}), 403
         try:
             result = confirm_payroll_slip(slip_id, operator, role)
             log_audit("payroll", "slip_confirm", "payroll_slip", slip_id, operator, role, result)
@@ -3946,8 +3986,34 @@ def create_app() -> Flask:
         except PayrollError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
 
+    @app.get("/api/payroll/slips/<int:slip_id>/voucher-suggestion")
+    def api_payroll_voucher_suggestion(slip_id: int):
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = get_payroll_voucher_suggestion(slip_id)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/slips/<int:slip_id>/create-payment-request")
+    def api_payroll_create_payment_request(slip_id: int):
+        operator, role = _get_operator_from_headers()
+        if role not in ("payroll", "cashier", "admin"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = create_payroll_payment_request(slip_id, operator, role)
+            log_audit("payroll", "create_payment_request", "payroll_slip", slip_id, operator, role, result)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
     @app.post("/api/payroll/attendance/sync")
     def api_payroll_attendance_sync():
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin", "attendance", "system"):
+            return jsonify({"error": "forbidden"}), 403
         payload = request.get_json(silent=True) or {}
         try:
             result = sync_attendance_interface(payload)
@@ -3958,6 +4024,9 @@ def create_app() -> Flask:
     # Keep attendance interface compatible for external systems.
     @app.post("/api/attendance/sync")
     def api_attendance_sync():
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "hr", "admin", "attendance", "system"):
+            return jsonify({"error": "forbidden"}), 403
         payload = request.get_json(silent=True) or {}
         try:
             result = sync_attendance_interface(payload)

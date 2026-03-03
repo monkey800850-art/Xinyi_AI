@@ -9,8 +9,11 @@ from sqlalchemy import create_engine, text
 
 from app.services.payroll_service import (
     confirm_payroll_slip,
+    create_payroll_payment_request,
+    get_payroll_voucher_suggestion,
     list_payroll_periods,
     list_payroll_slips,
+    set_payroll_period_status,
     sync_attendance_interface,
     upsert_payroll_period,
     upsert_payroll_slip,
@@ -88,6 +91,27 @@ class PayrollMvpUnitTest(unittest.TestCase):
                     """
                 )
             )
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS payment_requests (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        book_id INTEGER NOT NULL,
+                        title TEXT NULL,
+                        payee_name TEXT NULL,
+                        payee_account TEXT NULL,
+                        pay_method TEXT NULL,
+                        amount NUMERIC NOT NULL DEFAULT 0,
+                        status TEXT NOT NULL DEFAULT 'draft',
+                        related_type TEXT NULL,
+                        related_id INTEGER NULL,
+                        reimbursement_id INTEGER NULL,
+                        created_at DATETIME NULL,
+                        updated_at DATETIME NULL
+                    )
+                    """
+                )
+            )
 
     @classmethod
     def tearDownClass(cls):
@@ -99,6 +123,7 @@ class PayrollMvpUnitTest(unittest.TestCase):
 
     def setUp(self):
         with self.engine.begin() as conn:
+            conn.execute(text("DELETE FROM payment_requests"))
             conn.execute(text("DELETE FROM payroll_tax_ledger"))
             conn.execute(text("DELETE FROM payroll_slips"))
             conn.execute(text("DELETE FROM payroll_periods"))
@@ -138,9 +163,24 @@ class PayrollMvpUnitTest(unittest.TestCase):
             confirmed = confirm_payroll_slip(int(slip["id"]), "admin_user", "admin")
             self.assertEqual(confirmed["status"], "confirmed")
 
+            suggestion = get_payroll_voucher_suggestion(int(slip["id"]))
+            self.assertEqual(suggestion["status"], "confirmed")
+            self.assertTrue(len(suggestion["voucher_draft"]["lines"]) >= 2)
+
+            pay_req = create_payroll_payment_request(int(slip["id"]), "cashier_a", "cashier")
+            self.assertEqual(pay_req["status"], "pending")
+
             with self.engine.connect() as conn:
                 row = conn.execute(text("SELECT COUNT(*) AS c FROM payroll_tax_ledger")).fetchone()
-                self.assertEqual(int(row.c), 1)
+                self.assertEqual(int(row.c), 2)
+                pay_row = conn.execute(text("SELECT COUNT(*) AS c FROM payment_requests")).fetchone()
+                self.assertEqual(int(pay_row.c), 1)
+
+            closed = set_payroll_period_status(int(p["id"]), "close", operator_id=1)
+            self.assertEqual(closed["status"], "closed")
+
+            reopened = set_payroll_period_status(int(p["id"]), "reopen")
+            self.assertEqual(reopened["status"], "open")
 
     def test_attendance_interface_preserved(self):
         payload = {
