@@ -1,0 +1,23 @@
+507:          <li class="nav-item"><a href="/dashboard/boss" class="nav-link ">老板看板</a></li>
+517:          <li class="nav-item"><a href="/system/consolidation" class="nav-link ">账套关系与合并管理</a></li>
+519:          <li class="nav-item"><a href="/system/book-init" class="nav-link ">建账初始化</a></li>
+561:          <li class="nav-item"><a href="/voucher/entry" class="nav-link ">凭证录入</a></li>
+577:          <li class="nav-item"><a href="/reports/trial_balance" class="nav-link ">发生余额表</a></li>
+637:          <li class="nav-item"><a href="/reimbursements/new" class="nav-link ">新建报销单</a></li>
+754:  <a href="/dashboard/boss" data-search="老板看板 dashboard boss">老板看板</a>
+755:  <a href="/dashboard">待办工作台</a>
+756:  <a href="/voucher/entry">凭证录入</a>
+757:  <a href="/reports/trial_balance" data-search="余额表 报表">发生余额表</a>
+758:  <a href="/reports/trial_balance?subject_type=virtual" data-search="合并单位 选择 主体">合并单位选择</a>
+760:  <a href="/reimbursements/new">新建报销单</a>
+761:  <a href="/banks/import">银行流水导入</a>
+762:  <a href="/system/consolidation">账套关系与合并管理</a>
+763:  <a href="/system/book-init">建账初始化</a>
+767:  <input id="home-nav-search" type="text" placeholder="搜索入口，例如：余额表 / 报销 / 合并 / 税务" />
+778:      <a href="/voucher/entry" data-search="凭证录入 /voucher/entry">凭证录入</a>
+822:      <a href="/reports/trial_balance" data-search="发生余额表 /reports/trial_balance">发生余额表</a>
+854:      <a href="/dashboard/boss" data-search="老板看板 /dashboard/boss">老板看板</a>
+864:      <a href="/system/consolidation" data-search="账套关系与合并管理 /system/consolidation">账套关系与合并管理</a>
+866:      <a href="/system/book-init" data-search="建账初始化 /system/book-init">建账初始化</a>
+882:      <a href="/reimbursements/new" data-search="新建报销单 /reimbursements/new">新建报销单</a>
+995:    var input = document.getElementById("home-nav-search");

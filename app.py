@@ -400,6 +400,7 @@ def _build_main_nav(path: str):
             "label": "系统管理",
             "items": [
                 {"label": "工作台", "url": "/dashboard", "prefixes": ["/dashboard"]},
+                {"label": "老板看板", "url": "/dashboard/boss", "prefixes": ["/dashboard/boss"]},
                 {"label": "系统用户", "url": "/system/users", "prefixes": ["/system/users"]},
                 {"label": "系统角色", "url": "/system/roles", "prefixes": ["/system/roles"]},
                 {"label": "系统规则", "url": "/system/rules", "prefixes": ["/system/rules"]},
@@ -478,6 +479,14 @@ def _build_main_nav(path: str):
                 {"label": "资产折旧", "url": "/assets/depreciation", "prefixes": ["/assets/depreciation"]},
                 {"label": "资产台账报表", "url": "/assets/reports/ledger", "prefixes": ["/assets/reports/ledger"]},
                 {"label": "资产折旧汇总", "url": "/assets/reports/depreciation", "prefixes": ["/assets/reports/depreciation"]},
+            ],
+        },
+        {
+            "key": "tools",
+            "label": "工具与演示",
+            "items": [
+                {"label": "联想输入演示", "url": "/demo/autocomplete", "prefixes": ["/demo/autocomplete"]},
+                {"label": "筛选器演示", "url": "/demo/filters", "prefixes": ["/demo/filters"]},
             ],
         },
     ]

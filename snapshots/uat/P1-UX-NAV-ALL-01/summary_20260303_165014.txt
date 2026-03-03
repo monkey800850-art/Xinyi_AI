@@ -1,0 +1,6 @@
+P1-UX-NAV-ALL-01 summary
+- page_route_count: 44
+- menu_candidate_count: 40
+- nav_url_count: 40
+- missing_in_nav_count: 0
+- module_counts: {'合并': 1, '基础资料/辅助': 6, '工作台': 2, '工具/演示': 2, '总账与凭证': 2, '报表': 4, '报销': 2, '税务': 3, '系统': 7, '资产': 7, '资金': 4}

@@ -1,0 +1,16 @@
+507:          <li class="nav-item"><a href="/dashboard/boss" class="nav-link ">老板看板</a></li>
+517:          <li class="nav-item"><a href="/system/consolidation" class="nav-link ">账套关系与合并管理</a></li>
+519:          <li class="nav-item"><a href="/system/book-init" class="nav-link ">建账初始化</a></li>
+577:          <li class="nav-item"><a href="/reports/trial_balance" class="nav-link ">发生余额表</a></li>
+677:          <li class="nav-item"><a href="/demo/autocomplete" class="nav-link ">联想输入演示</a></li>
+679:          <li class="nav-item"><a href="/demo/filters" class="nav-link ">筛选器演示</a></li>
+754:  <a href="/dashboard/boss" data-search="老板看板 dashboard boss">老板看板</a>
+757:  <a href="/reports/trial_balance" data-search="余额表 报表">发生余额表</a>
+762:  <a href="/system/consolidation">账套关系与合并管理</a>
+763:  <a href="/system/book-init">建账初始化</a>
+810:      <a href="/demo/autocomplete" data-search="联想输入演示 /demo/autocomplete">联想输入演示</a>
+812:      <a href="/demo/filters" data-search="筛选器演示 /demo/filters">筛选器演示</a>
+822:      <a href="/reports/trial_balance" data-search="发生余额表 /reports/trial_balance">发生余额表</a>
+854:      <a href="/dashboard/boss" data-search="老板看板 /dashboard/boss">老板看板</a>
+864:      <a href="/system/consolidation" data-search="账套关系与合并管理 /system/consolidation">账套关系与合并管理</a>
+866:      <a href="/system/book-init" data-search="建账初始化 /system/book-init">建账初始化</a>

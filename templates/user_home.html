@@ -65,7 +65,7 @@
   .home-quick {
     margin-top: 12px;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
   }
   .home-quick a {
@@ -77,6 +77,23 @@
     padding: 10px 12px;
     font-weight: 600;
     font-size: 14px;
+  }
+  .home-search {
+    margin-top: 12px;
+    display: grid;
+    gap: 8px;
+  }
+  .home-search input {
+    border: 1px solid #c8d7e9;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    background: #fff;
+    color: #16324d;
+  }
+  .home-search-tip {
+    color: #607793;
+    font-size: 12px;
   }
   .home-modules {
     margin-top: 14px;
@@ -103,8 +120,12 @@
     font-size: 13px;
     margin-bottom: 10px;
   }
-  .module-enter {
-    display: inline-block;
+  .module-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .module-links a {
     text-decoration: none;
     color: #184f88;
     border: 1px solid #c6d9ee;
@@ -114,7 +135,7 @@
     font-size: 13px;
     font-weight: 700;
   }
-  .module-enter:hover {
+  .module-links a:hover {
     background: #deebfb;
     border-color: #aac7e5;
   }
@@ -171,24 +192,63 @@
 </section>
 
 <section class="home-quick">
+  <a href="/dashboard/boss" data-search="老板看板 dashboard boss">老板看板</a>
   <a href="/dashboard">待办工作台</a>
-  <a href="/reports/trial_balance">发生余额表</a>
-  <a href="/reports/trial_balance?subject_type=virtual">合并单位选择</a>
   <a href="/voucher/entry">凭证录入</a>
+  <a href="/reports/trial_balance" data-search="余额表 报表">发生余额表</a>
+  <a href="/reports/trial_balance?subject_type=virtual" data-search="合并单位 选择 主体">合并单位选择</a>
+  <a href="/reports/subject_ledger">科目明细账</a>
+  <a href="/reimbursements/new">新建报销单</a>
+  <a href="/banks/import">银行流水导入</a>
   <a href="/system/consolidation">账套关系与合并管理</a>
+  <a href="/system/book-init">建账初始化</a>
+</section>
+
+<section class="home-search">
+  <input id="home-nav-search" type="text" placeholder="搜索入口，例如：余额表 / 报销 / 合并 / 税务" />
+  <div class="home-search-tip">搜索会同时过滤快捷入口与下方模块入口。</div>
 </section>
 
 <section class="home-modules">
   {% for group in home_groups %}
-  <article class="module-card">
+  <article class="module-card" data-search="{{ group['label'] }}">
     <h3>{{ group["label"] }}</h3>
     <div class="module-meta">本模块包含 {{ group["items"]|length }} 项操作，请从左侧树形导航进入具体页面。</div>
-    {% set first = (group["items"][0] if group["items"]|length > 0 else None) %}
-    {% if first %}
-    <a class="module-enter" href="{{ first['url'] }}">进入模块</a>
-    {% endif %}
+    <div class="module-links">
+      {% for item in group["items"] %}
+      <a href="{{ item['url'] }}" data-search="{{ item['label'] }} {{ item['url'] }}">{{ item['label'] }}</a>
+      {% endfor %}
+    </div>
   </article>
   {% endfor %}
 </section>
 {% endblock %}
-{% block extra_js %}{% endblock %}
+{% block extra_js %}
+<script>
+  (function () {
+    var input = document.getElementById("home-nav-search");
+    if (!input) return;
+    var quickLinks = Array.prototype.slice.call(document.querySelectorAll(".home-quick a"));
+    var moduleCards = Array.prototype.slice.call(document.querySelectorAll(".home-modules .module-card"));
+
+    function matchText(text, keyword) {
+      if (!keyword) return true;
+      return String(text || "").toLowerCase().indexOf(keyword) >= 0;
+    }
+
+    function applyFilter() {
+      var kw = String(input.value || "").trim().toLowerCase();
+      quickLinks.forEach(function (a) {
+        var text = (a.getAttribute("data-search") || "") + " " + (a.textContent || "");
+        a.style.display = matchText(text, kw) ? "" : "none";
+      });
+      moduleCards.forEach(function (card) {
+        var texts = [card.getAttribute("data-search") || "", card.textContent || ""].join(" ");
+        card.style.display = matchText(texts, kw) ? "" : "none";
+      });
+    }
+
+    input.addEventListener("input", applyFilter);
+  })();
+</script>
+{% endblock %}
