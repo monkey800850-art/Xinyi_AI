@@ -441,7 +441,7 @@ def _build_main_nav(path: str):
 
 
 def create_app() -> Flask:
-    load_env()
+    app_env = load_env()
 
     try:
         host, port, name = test_db_connection()
@@ -456,9 +456,11 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY")
     app.config["SESSION_COOKIE_HTTPONLY"] = True
-    app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+    default_samesite = "Strict" if app_env == "production" else "Lax"
+    default_secure = "1" if app_env == "production" else "0"
+    app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", default_samesite)
     app.config["SESSION_COOKIE_SECURE"] = (
-        str(os.getenv("SESSION_COOKIE_SECURE", "0")).strip().lower() in ("1", "true", "yes", "on")
+        str(os.getenv("SESSION_COOKIE_SECURE", default_secure)).strip().lower() in ("1", "true", "yes", "on")
     )
 
     def _as_positive_int(raw: str, fallback: int) -> int:
@@ -4519,4 +4521,4 @@ if __name__ == "__main__":
     if cli_exit_code is not None:
         sys.exit(cli_exit_code)
     app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
