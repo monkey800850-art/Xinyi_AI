@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from flask import Flask, jsonify, request, send_file, session
 from sqlalchemy import text
+from werkzeug.exceptions import HTTPException
 
 from app.config import DatabaseConfigError, load_env
 from app.db import test_db_connection
@@ -255,6 +256,7 @@ from app.services.voucher_template_service import (
     list_template_candidates,
 )
 from app.services.voucher_status_service import VoucherStatusError, change_voucher_status
+from app.utils.errors import APIError, build_api_error_response
 
 
 def _get_operator_from_headers():
@@ -541,6 +543,83 @@ def create_app() -> Flask:
 
     app.register_blueprint(core_pages_bp)
     app.register_blueprint(consolidation_bp)
+
+    def _is_api_or_task_path() -> bool:
+        path = str(getattr(request, "path", "") or "")
+        return path.startswith("/api/") or path.startswith("/task/")
+
+    def _build_contract_error(
+        code: str,
+        message: str,
+        details: dict | None = None,
+    ) -> dict:
+        request_id = (
+            request.headers.get("X-Request-Id")
+            or request.headers.get("X-Correlation-Id")
+            or ""
+        )
+        return build_api_error_response(
+            code=code,
+            message=message,
+            details=details or {},
+            request_id=str(request_id or "").strip(),
+            path=request.path,
+            method=request.method,
+        )
+
+    def _safe_audit_error(action: str, detail: dict):
+        try:
+            operator, role = _get_operator_from_headers()
+            log_audit("api", action, "request", None, operator, role, detail)
+        except Exception:
+            app.logger.exception("api_error_audit_failed action=%s", action)
+
+    @app.errorhandler(APIError)
+    def _handle_api_error(error: APIError):
+        payload = _build_contract_error(error.code, error.message, error.details)
+        _safe_audit_error(
+            "api_error",
+            {
+                "code": error.code,
+                "status_code": int(error.status_code),
+                "path": request.path,
+                "method": request.method,
+            },
+        )
+        return jsonify(payload), int(error.status_code)
+
+    @app.errorhandler(HTTPException)
+    def _handle_http_exception(error: HTTPException):
+        if not _is_api_or_task_path():
+            return error
+        code = "not_found" if int(error.code or 500) == 404 else "http_error"
+        payload = _build_contract_error(code, str(error.name or "http_error"), {"description": str(error.description or "")})
+        _safe_audit_error(
+            "http_exception",
+            {
+                "code": int(error.code or 500),
+                "name": str(error.name or ""),
+                "path": request.path,
+                "method": request.method,
+            },
+        )
+        return jsonify(payload), int(error.code or 500)
+
+    @app.errorhandler(Exception)
+    def _handle_unexpected_exception(error: Exception):
+        if not _is_api_or_task_path():
+            raise error
+        app.logger.exception("api_unexpected_error path=%s", request.path)
+        payload = _build_contract_error("internal_error", "internal_error", {})
+        _safe_audit_error(
+            "internal_error",
+            {
+                "error": str(type(error).__name__),
+                "path": request.path,
+                "method": request.method,
+            },
+        )
+        return jsonify(payload), 500
 
     @app.context_processor
     def _inject_main_nav():
