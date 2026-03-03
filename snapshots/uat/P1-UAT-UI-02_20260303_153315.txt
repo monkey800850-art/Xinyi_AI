@@ -1,0 +1,129 @@
+== P1-UAT-UI-02 Auth Smoke Report ==
+TIME: 20260303_153315
+
+==[1/7] Ensure server running ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+[5/6] Starting server...
+[6/6] Verify...
+Server OK: http://localhost:5000/dashboard
+LISTEN 0      128           0.0.0.0:5000      0.0.0.0:*    users:(("python3",pid=82348,fd=4))
+
+==[2/7] Pre-check APIs (should be 401 when not logged in) ==
+--- /api/dashboard/workbench ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/role-todos ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/task-status ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+
+==[3/7] Login via API to obtain session cookie ==
+NOTE: Please set LOGIN_USER / LOGIN_PASS env vars before running if defaults don't work.
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 44
+Connection: close
+
+{"detail":{},"error":"invalid_credentials"}
+
+[INFO] cookie file:
+-rw-r--r-- 1 x1560 x1560 131 Mar  3 15:33 /tmp/xinyi_cookie.txt
+
+==[4/7] APIs after login (should be 200/403, but not 401) ==
+--- /api/dashboard/workbench ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/role-todos ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/task-status ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+
+==[5/7] Optional: Logout (if endpoint exists) ==
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+
+==[6/7] APIs after logout (should return 401 again) ==
+--- /api/dashboard/workbench ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/role-todos ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/task-status ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:33:17 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+
+==[7/7] Git baseline ==
+BRANCH: main
+HEAD:   6c99cde
+
+== DONE ==

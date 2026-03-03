@@ -1,0 +1,185 @@
+== P1-UX-LAYOUT-01 Lock Desktop Layout ==
+TIME: 20260303_182246
+BRANCH: main
+HEAD:   9674710
+
+==[1/7] Locate responsive breakpoints that change sidebar/layout ==
+templates/main_layout.html:43:    .shell-sidebar {
+templates/main_layout.html:54:    .shell-sidebar-header {
+templates/main_layout.html:112:    .shell-group.collapsed .shell-group-arrow {
+templates/main_layout.html:126:    .shell-group.collapsed .shell-links {
+templates/main_layout.html:167:      min-width: 0;
+templates/main_layout.html:227:      min-width: 0;
+templates/main_layout.html:294:      border-collapse: collapse;
+templates/main_layout.html:325:    @media (max-width: 1024px) {
+templates/main_layout.html:329:      .shell-sidebar {
+templates/main_layout.html:335:      .shell-sidebar-header {
+templates/main_layout.html:348:<!-- P1-UX-STYLE-01D-SIDEBAR -->
+templates/main_layout.html:350:  /* P1-UX-STYLE-01D-SIDEBAR: parent >= child */
+templates/main_layout.html:351:  #sidebar .nav-group-title,
+templates/main_layout.html:352:  #sidebar .group-title,
+templates/main_layout.html:353:  #sidebar .nav-section-title,
+templates/main_layout.html:354:  #sidebar .nav-group > .title,
+templates/main_layout.html:355:  #sidebar button,
+templates/main_layout.html:356:  #sidebar .accordion-button {
+templates/main_layout.html:361:  #sidebar a,
+templates/main_layout.html:362:  #sidebar .nav-item a,
+templates/main_layout.html:363:  #sidebar .menu-item a,
+templates/main_layout.html:364:  #sidebar .nav-link {
+templates/main_layout.html:369:<!-- /P1-UX-STYLE-01D-SIDEBAR -->
+templates/main_layout.html:375:    <aside id="sidebar" class="shell-sidebar sidebar">
+templates/main_layout.html:376:      <div class="shell-sidebar-header">
+templates/main_layout.html:381:      <section class="shell-group {% if not group['active'] %}collapsed{% endif %}" data-group-key="{{ group['key'] }}">
+templates/main_layout.html:482:          g.classList.toggle("collapsed", !shouldExpand);
+templates/main_layout.html:497:          if (!initialKey && !g.classList.contains("collapsed")) {
+app.py:743:        top_nav_groups, sidebar_group = _build_shell_nav(nav_groups, request.path)
+app.py:766:            "sidebar_group": sidebar_group,
+templates/subject_aux_config.html:46:    border-collapse: collapse;
+templates/subject_aux_config.html:62:  @media (max-width: 1024px) {
+templates/voucher_import.html:16:  @media (max-width:900px){ .grid{grid-template-columns:1fr;} }
+templates/main_layout.html:43:    .shell-sidebar {
+templates/main_layout.html:54:    .shell-sidebar-header {
+templates/main_layout.html:112:    .shell-group.collapsed .shell-group-arrow {
+templates/main_layout.html:126:    .shell-group.collapsed .shell-links {
+templates/main_layout.html:167:      min-width: 0;
+templates/main_layout.html:227:      min-width: 0;
+templates/main_layout.html:294:      border-collapse: collapse;
+templates/main_layout.html:325:    @media (max-width: 1024px) {
+templates/main_layout.html:329:      .shell-sidebar {
+templates/main_layout.html:335:      .shell-sidebar-header {
+templates/main_layout.html:348:<!-- P1-UX-STYLE-01D-SIDEBAR -->
+templates/main_layout.html:350:  /* P1-UX-STYLE-01D-SIDEBAR: parent >= child */
+templates/main_layout.html:351:  #sidebar .nav-group-title,
+templates/main_layout.html:352:  #sidebar .group-title,
+templates/main_layout.html:353:  #sidebar .nav-section-title,
+templates/main_layout.html:354:  #sidebar .nav-group > .title,
+templates/main_layout.html:355:  #sidebar button,
+templates/main_layout.html:356:  #sidebar .accordion-button {
+templates/main_layout.html:361:  #sidebar a,
+templates/main_layout.html:362:  #sidebar .nav-item a,
+templates/main_layout.html:363:  #sidebar .menu-item a,
+templates/main_layout.html:364:  #sidebar .nav-link {
+templates/main_layout.html:369:<!-- /P1-UX-STYLE-01D-SIDEBAR -->
+templates/main_layout.html:375:    <aside id="sidebar" class="shell-sidebar sidebar">
+templates/main_layout.html:376:      <div class="shell-sidebar-header">
+templates/main_layout.html:381:      <section class="shell-group {% if not group['active'] %}collapsed{% endif %}" data-group-key="{{ group['key'] }}">
+templates/main_layout.html:482:          g.classList.toggle("collapsed", !shouldExpand);
+templates/main_layout.html:497:          if (!initialKey && !g.classList.contains("collapsed")) {
+templates/user_home.html:142:  @media (max-width: 980px) {
+templates/master_data.html:46:    border-collapse: collapse;
+templates/master_data.html:68:  @media (max-width: 1024px) {
+templates/payroll.html:15:  @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+templates/system_init.html:16:  @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+templates/system_book_init.html:84:  @media (max-width: 900px) {
+static/css/assets.css:18:  max-width: 1100px;
+static/css/assets.css:86:  border-collapse: collapse;
+static/css/assets.css:111:@media (max-width: 960px) {
+static/css/tax.css:18:  max-width: 1100px;
+static/css/tax.css:87:  border-collapse: collapse;
+static/css/tax.css:132:@media (max-width: 960px) {
+static/css/trial_balance.css:18:  max-width: 1000px;
+static/css/trial_balance.css:84:  border-collapse: collapse;
+static/css/trial_balance.css:137:@media (max-width: 820px) {
+static/css/payments.css:18:  max-width: 1100px;
+static/css/payments.css:97:  border-collapse: collapse;
+static/css/payments.css:128:@media (max-width: 960px) {
+static/css/system_consolidation.css:108:  border-collapse: collapse;
+static/css/asset_depreciation.css:21:  max-width: 1100px;
+static/css/asset_depreciation.css:126:  border-collapse: collapse;
+static/css/asset_depreciation.css:141:@media (max-width: 960px) {
+static/css/autocomplete.css:19:  max-width: 720px;
+static/css/reimbursements.css:18:  max-width: 1100px;
+static/css/reimbursements.css:99:  border-collapse: collapse;
+static/css/reimbursements.css:134:@media (max-width: 960px) {
+static/css/bank_reconcile.css:18:  max-width: 1200px;
+static/css/bank_reconcile.css:91:  border-collapse: collapse;
+static/css/bank_reconcile.css:134:@media (max-width: 960px) {
+static/css/assets_cards.css:20:  max-width: 1100px;
+static/css/assets_cards.css:107:  border-collapse: collapse;
+static/css/assets_cards.css:112:  border-collapse: collapse;
+static/css/assets_cards.css:136:  border-collapse: collapse;
+static/css/assets_cards.css:182:@media (max-width: 960px) {
+static/css/ar_ap.css:20:  max-width: 1100px;
+static/css/ar_ap.css:127:  border-collapse: collapse;
+static/css/ar_ap.css:166:@media (max-width: 960px) {
+static/css/bank_import.css:18:  max-width: 1100px;
+static/css/bank_import.css:83:  border-collapse: collapse;
+static/css/bank_import.css:120:@media (max-width: 960px) {
+static/css/voucher_entry.css:19:  max-width: 1200px;
+static/css/voucher_entry.css:111:  border-collapse: collapse;
+static/css/voucher_entry.css:179:  max-width: 220px;
+static/css/voucher_entry.css:211:@media (max-width: 960px) {
+static/css/subject_ledger.css:18:  max-width: 1100px;
+static/css/subject_ledger.css:97:  border-collapse: collapse;
+static/css/subject_ledger.css:143:@media (max-width: 900px) {
+static/css/dashboard.css:18:  max-width: 1100px;
+static/css/dashboard.css:132:@media (max-width: 960px) {
+static/css/aux_reports.css:18:  max-width: 1200px;
+static/css/aux_reports.css:117:  border-collapse: collapse;
+static/css/aux_reports.css:156:@media (max-width: 960px) {
+
+==[2/7] Identify the main layout template and its sidebar/container selectors ==
+5:  <meta name="viewport" content="width=device-width, initial-scale=1" />
+83:      content: "";
+101:      justify-content: space-between;
+144:      content: "";
+179:      justify-content: space-between;
+226:    .shell-content {
+230:    .shell-content [class$="-header"] {
+237:    .shell-content [class$="-header"] h1 {
+242:    .shell-content [class$="-header"] p {
+247:    .shell-content [class$="-card"],
+248:    .shell-content .card {
+256:    .shell-content .field-input,
+257:    .shell-content input[type="text"],
+258:    .shell-content input[type="number"],
+259:    .shell-content input[type="date"],
+260:    .shell-content input[type="file"],
+261:    .shell-content select,
+262:    .shell-content textarea {
+269:    .shell-content .field-input:focus,
+270:    .shell-content input:focus,
+271:    .shell-content select:focus,
+272:    .shell-content textarea:focus {
+277:    .shell-content .btn,
+278:    .shell-content button {
+287:    .shell-content .btn.secondary {
+292:    .shell-content table {
+297:    .shell-content th,
+298:    .shell-content td {
+305:    .shell-content th {
+310:    .shell-content .filter-grid,
+311:    .shell-content .tb-filter-grid,
+312:    .shell-content .voucher-meta-grid,
+313:    .shell-content .voucher-head-grid {
+316:    .shell-content .filter-actions {
+322:    .shell-content .hidden {
+375:    <aside id="sidebar" class="shell-sidebar sidebar">
+380:      {% for group in nav_groups %}
+421:      <section class="shell-content">
+422:        {% block content %}{% endblock %}
+
+==[3/7] Patch main_layout.html: add force-desktop marker and min-width to prevent reflow ==
+
+==[4/7] If there is a main css file, add safe overrides there too (optional) ==
+MAIN_CSS_CANDIDATE=
+
+==[5/7] Restart and verify key pages are 200 ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+000000  /system/books  
+000000  /dashboard  
+000000  /  
+
+==[6/7] Evidence instructions (manual zoom check) ==
+MANUAL CHECK (Chrome/Edge):
+1) Open http://localhost:5000/system/books
+2) Zoom to 90% / 100% / 110% / 125%
+3) Expected:
+   - Sidebar stays left (not converted to top list/accordion)
+   - Content remains right; no layout mode switch
+   - If needed, horizontal scrollbar is acceptable
+
+==[7/7] Commit and baseline record ==

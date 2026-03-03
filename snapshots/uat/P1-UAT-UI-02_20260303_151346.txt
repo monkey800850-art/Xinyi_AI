@@ -1,0 +1,9 @@
+== P1-UAT-UI-02 Auth Smoke Report ==
+TIME: 20260303_151346
+
+==[1/7] Ensure server running ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+ERROR: 5000 not listening

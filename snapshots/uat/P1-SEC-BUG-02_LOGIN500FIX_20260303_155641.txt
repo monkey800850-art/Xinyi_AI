@@ -1,0 +1,330 @@
+== BASELINE ==
+main
+6c99cde
+ M app.py
+ M app/routes/core_pages.py
+ M app/services/system_auth_service.py
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+ M templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+ M tests/test_sec02_system_auth_service.py
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/uat/
+?? templates/master_data.html
+?? templates/subject_aux_config.html
+?? templates/system_book_init.html
+?? templates/system_books.html
+?? templates/user_home.html
+== START SERVER ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+[5/6] Starting server...
+Port 5000 already in use - assume server running.
+[6/6] Verify...
+Server OK: http://localhost:5000/dashboard
+LISTEN 0      128           0.0.0.0:5000      0.0.0.0:*    users:(("python3",pid=91405,fd=4))
+== REPRODUCE ==
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:56:41 GMT
+Content-Type: application/json
+Content-Length: 44
+Connection: close
+
+{"detail":{},"error":"invalid_credentials"}
+== TAIL LOG ==
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:45:00] "[35m[1mGET /api/masters/bank_accounts?book_id=1&q=&include_hidden=0 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:45:38] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:45:39] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:45:39] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:45:39] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:45:39] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+[2026-03-03 15:45:39,638] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:45:39] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:45:49] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:45:49] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:45:49] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:45:49] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:45:49] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:45:49] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:46:01] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:46:02] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:02] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:02] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:02] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+[2026-03-03 15:46:02,648] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:46:02] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:46:03] "GET /system/rules HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:46:04] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:04] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:04] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:04] "[36mGET /static/js/system_rules.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:04] "[31m[1mGET /api/system/rules HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:46:05] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:46:05] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:05] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:05] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:05] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:46:05,337] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:46:05] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:46:16] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:46:16] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:16] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:16] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:16] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:16] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:46:22] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:46:22] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:22] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:22] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:46:22] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:46:22] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:48:09] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:48:09] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:09] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:09] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:09] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:09] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:48:11] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:48:11] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:11] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:11] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:11] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:48:12,185] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:48:12] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:48:45] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:48:46] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:46] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:46] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:46] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:48:46,393] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:48:46] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:48:51] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:48:51] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:51] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:51] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:51] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:48:52,219] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:48:52] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:48:55] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:48:56] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:56] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:56] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:48:56] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:48:56] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:49:01] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:49:01] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:49:01] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:49:01] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:49:01] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:49:02,210] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:49:02] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:50:38] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:50:38] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:50:38] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:50:38] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:50:38] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:50:38,822] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:50:38] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:50:43] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:50:43] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:50:43] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:50:43] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:50:43] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:50:43] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:51:09] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:10] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:10] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:10] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:10] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:10] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:51:10] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "GET /system/users HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[36mGET /static/js/system_users.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:11] "[31m[1mGET /api/system/users HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:51:12] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:13] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:13] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:13] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:13] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:51:13,417] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:51:13] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:51:13] "GET /system/roles HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:13] "[36mGET /static/css/assets_cards.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:14] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:14] "[36mGET /static/js/system_roles.js HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:14] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:14] "[31m[1mGET /api/system/roles HTTP/1.1[0m" 401 -
+127.0.0.1 - - [03/Mar/2026 15:51:15] "GET /system/book-init HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:14] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:14] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:17] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:17] "[36mGET /static/css/dashboard.css HTTP/1.1[0m" 304 -
+127.0.0.1 - - [03/Mar/2026 15:51:17] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:17] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:17] "[36mGET /static/js/dashboard.js HTTP/1.1[0m" 304 -
+[2026-03-03 15:51:18,175] ERROR in app: api_unexpected_error path=/api/dashboard/workbench
+Traceback (most recent call last):
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "/home/x1560/Xinyi_AI/app.py", line 855, in _bind_route_context
+    session["subject_ctx"] = {
+  File "/home/x1560/Xinyi_AI/venv/lib/python3.10/site-packages/flask/sessions.py", line 90, in _fail
+    raise RuntimeError(
+RuntimeError: The session is unavailable because no secret key was set.  Set the secret_key on the application to something unique and secret.
+127.0.0.1 - - [03/Mar/2026 15:51:18] "[35m[1mGET /api/dashboard/workbench?book_id=1 HTTP/1.1[0m" 500 -
+127.0.0.1 - - [03/Mar/2026 15:51:23] "GET /system/books HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:23] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:23] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:25] "GET /system/books HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 15:51:25] "[33mGET /static/js/request_context.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:51:25] "[33mGET /static/js/navigation_rules.js HTTP/1.1[0m" 404 -
+127.0.0.1 - - [03/Mar/2026 15:56:41] "[31m[1mPOST /api/auth/login HTTP/1.1[0m" 401 -
+== LOCATE CODE ==
+app.py:583:    exempt_auth_paths = {"/api/auth/login"}
+app.py:3789:    @app.post("/api/auth/login")
+app.py:3790:    def api_auth_login():

@@ -7,25 +7,579 @@
   <style>
     :root {
       color-scheme: light;
+      --shell-bg: #f3f6fa;
+      --shell-card: #ffffff;
+      --shell-text: #1f2d3d;
+      --shell-muted: #6b7f95;
+      --shell-line: #d8e2ee;
+      --shell-brand: #0c4f9e;
+      --shell-brand-dark: #073d7a;
+      --shell-brand-soft: #eaf2fc;
+      --ui-scale: 1;
     }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f7fa;
-      color: #1f2937;
+      font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: var(--shell-bg);
+      color: var(--shell-text);
     }
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
+    .shell-app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+    .shell-scale {
+      min-height: 100vh;
+      zoom: var(--ui-scale);
+    }
+    @supports not (zoom: 1) {
+      .shell-scale {
+        transform: scale(var(--ui-scale));
+        transform-origin: top left;
+        width: calc(100% / var(--ui-scale));
+        min-height: calc(100vh / var(--ui-scale));
+      }
+    }
+    .shell-sidebar {
+      --sb-parent-size: 16px;
+      --sb-child-size: 15px;
+      border-right: 1px solid var(--shell-line);
+      background: #fff;
+      padding: 0 0 16px;
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow: auto;
+    }
+    .shell-sidebar-header {
+      background: linear-gradient(135deg, var(--shell-brand-dark), var(--shell-brand));
+      color: #fff;
+      padding: 16px 14px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .shell-brand {
+      display: block;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.3px;
+      padding: 0;
+    }
+    .shell-brand-sub {
+      margin-top: 6px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    .shell-group {
+      margin: 10px 10px 0;
+    }
+    .shell-group-title {
+      margin: 0;
+      padding: 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .shell-group-title::after {
+      content: "";
+      display: block;
+      height: 1px;
+      background: #e5e7eb;
+      margin-top: 8px;
+    }
+    .shell-group-toggle {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: #111827;
+      font-size: var(--sb-parent-size);
+      font-weight: 700;
+      padding: 10px 10px 8px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      letter-spacing: 0.2px;
+    }
+    .shell-group-toggle:hover {
+      background: #f6f9fd;
+    }
+    .shell-group-arrow {
+      transition: transform 0.2s ease;
+      color: #56779b;
+      font-size: 12px;
+    }
+    .shell-group.collapsed .shell-group-arrow {
+      transform: rotate(-90deg);
+    }
+    .shell-links {
+      list-style: none;
+      margin: 7px 0 0;
+      padding: 0 0 0 8px;
+      display: grid;
+      gap: 6px;
+      overflow: hidden;
+      max-height: var(--links-max-height, 1200px);
+      opacity: 1;
+      transition: max-height 0.24s ease, opacity 0.2s ease, margin-top 0.2s ease;
+    }
+    .shell-group.collapsed .shell-links {
+      max-height: 0;
+      opacity: 0;
+      margin-top: 0;
+    }
+    .shell-links a {
+      display: block;
+      text-decoration: none;
+      color: #374151;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: var(--sb-child-size);
+      font-weight: 600;
+      border: 1px solid #e5edf6;
+      background: #fbfdff;
+      position: relative;
+    }
+    .shell-links a::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #8ca5bf;
+      position: absolute;
+      left: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    .shell-links a:hover {
+      background: #f3f4f6;
+      border-color: #cbddf1;
+      color: #111827;
+    }
+    .shell-links a.active {
+      color: #111827;
+      background: #e5effe;
+      border-color: #b8d0ec;
+      font-weight: 700;
+      box-shadow: inset 3px 0 0 #2563eb;
+    }
+    .shell-main {
+      min-width: 0;
+      padding: 0;
+    }
+    .shell-topbar {
+      background: linear-gradient(90deg, var(--shell-brand-dark) 0%, var(--shell-brand) 75%);
+      color: #fff;
+      padding: 12px 18px;
+      border-bottom: 1px solid #2e66a6;
+    }
+    .shell-topbar-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .shell-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .shell-meta {
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .shell-home-link {
+      text-decoration: none;
+      color: #eaf2fc;
+      border: 1px solid rgba(234, 242, 252, 0.5);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .shell-home-link:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+    .shell-scale-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .shell-scale-control label {
+      color: #eaf2fc;
+      font-weight: 600;
+    }
+    .shell-scale-control select {
+      border: 1px solid rgba(234, 242, 252, 0.5);
+      background: rgba(7, 61, 122, 0.5);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+    .shell-scale-control select:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(234, 242, 252, 0.35);
+    }
+    .shell-content {
+      min-width: 0;
       padding: 16px;
+    }
+    .shell-content [class$="-header"] {
+      border: 1px solid var(--shell-line);
+      background: var(--shell-card);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .shell-content [class$="-header"] h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #153f70;
+    }
+    .shell-content [class$="-header"] p {
+      margin: 6px 0 0;
+      color: var(--shell-muted);
+      font-size: 13px;
+    }
+    .shell-content [class$="-card"],
+    .shell-content .card {
+      border: 1px solid var(--shell-line);
+      background: var(--shell-card);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 0 rgba(12, 79, 158, 0.03);
+    }
+    .shell-content .field-input,
+    .shell-content input[type="text"],
+    .shell-content input[type="number"],
+    .shell-content input[type="date"],
+    .shell-content input[type="file"],
+    .shell-content select,
+    .shell-content textarea {
+      border: 1px solid #c8d7e9;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .shell-content .field-input:focus,
+    .shell-content input:focus,
+    .shell-content select:focus,
+    .shell-content textarea:focus {
+      outline: 0;
+      border-color: #7aa6d4;
+      box-shadow: 0 0 0 3px rgba(12, 79, 158, 0.12);
+    }
+    .shell-content .btn,
+    .shell-content button {
+      border: 1px solid #b7cee8;
+      background: #eaf2fc;
+      color: #144a81;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .shell-content .btn.secondary {
+      background: #f6f9fd;
+      color: #2f4f70;
+      border-color: #ccd9e8;
+    }
+    .shell-content table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    .shell-content th,
+    .shell-content td {
+      border-bottom: 1px solid #e4ecf5;
+      padding: 8px 6px;
+      font-size: 13px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .shell-content th {
+      background: #f3f8fe;
+      color: #355577;
+      font-weight: 700;
+    }
+    .shell-content .filter-grid,
+    .shell-content .tb-filter-grid,
+    .shell-content .voucher-meta-grid,
+    .shell-content .voucher-head-grid {
+      gap: 10px;
+    }
+    .shell-content .filter-actions {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .shell-content .hidden {
+      display: none !important;
+    }
+    @media (max-width: 1024px) {
+      .shell-app {
+        grid-template-columns: 1fr;
+      }
+      .shell-sidebar {
+        position: static;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--shell-line);
+      }
+      .shell-sidebar-header {
+        border-radius: 0;
+      }
+      .shell-meta {
+        white-space: normal;
+      }
+      .shell-topbar {
+        padding-top: 10px;
+      }
     }
   </style>
   {% block extra_css %}{% endblock %}
+
+<!-- P1-UX-STYLE-01D-SIDEBAR -->
+<style>
+  /* P1-UX-STYLE-01D-SIDEBAR: parent >= child */
+  #sidebar .nav-group-title,
+  #sidebar .group-title,
+  #sidebar .nav-section-title,
+  #sidebar .nav-group > .title,
+  #sidebar button,
+  #sidebar .accordion-button {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  #sidebar a,
+  #sidebar .nav-item a,
+  #sidebar .menu-item a,
+  #sidebar .nav-link {
+    font-size: 15px;
+    font-weight: 600;
+  }
+</style>
+<!-- /P1-UX-STYLE-01D-SIDEBAR -->
+
+
+<!-- P1-UX-LAYOUT-01-FORCE-DESKTOP -->
+<style>
+  /* P1-UX-LAYOUT-01-FORCE-DESKTOP
+     Goal: prevent zoom from triggering responsive layout switches.
+     Strategy:
+     1) lock desktop grid as default on desktop
+     2) set a desktop min-width so browser zoom won't collapse into mobile layout
+     3) override any mobile collapse/offcanvas rules when .force-desktop is present
+  */
+
+  /* Allow horizontal scroll instead of reflow */
+  .force-desktop .app-shell,
+  .force-desktop .layout,
+  .force-desktop .main-layout,
+  .force-desktop #app,
+  .force-desktop body {
+    min-width: 1200px;
+  }
+
+  /* Keep sidebar as sidebar (never become top accordion/list) */
+  .force-desktop #sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: auto;
+    flex: 0 0 280px;
+    width: 280px;
+    max-width: 280px;
+  }
+
+  /* Keep main content next to sidebar */
+  .force-desktop .layout-root,
+  .force-desktop .layout-container,
+  .force-desktop .main-container,
+  .force-desktop .app-container {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .force-desktop .content,
+  .force-desktop .main-content,
+  .force-desktop #content {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Override common mobile patterns if present */
+  .force-desktop .offcanvas,
+  .force-desktop .drawer,
+  .force-desktop .mobile-nav,
+  .force-desktop .accordion-nav {
+    display: none !important;
+  }
+
+  /* If there are collapsible groups, keep them expanded in desktop */
+  .force-desktop .collapse {
+    display: block !important;
+    height: auto !important;
+    visibility: visible !important;
+  }
+</style>
+<!-- /P1-UX-LAYOUT-01-FORCE-DESKTOP -->
+
 </head>
-<body>
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+<body {% block body_attrs %}{% endblock %} class="force-desktop">
+  <div class="shell-scale" id="shell-scale-root">
+  <div class="shell-app">
+    <aside id="sidebar" class="shell-sidebar sidebar">
+      <div class="shell-sidebar-header">
+        <a class="shell-brand" href="/">Xinyi AI 财务平台</a>
+        <div class="shell-brand-sub">统一业务服务大厅</div>
+      </div>
+      {% for group in nav_groups %}
+      <section class="shell-group {% if not group['active'] %}collapsed{% endif %}" data-group-key="{{ group['key'] }}">
+        <h3 class="shell-group-title nav-group-title">
+          <button type="button" class="shell-group-toggle" data-group-toggle>
+            <span>{{ group["label"] }}</span>
+            <span class="shell-group-arrow">▾</span>
+          </button>
+        </h3>
+        <ul class="shell-links nav-group">
+          {% for item in group["items"] %}
+          <li class="nav-item"><a href="{{ item["url"] }}" class="nav-link {% if item["active"] %}active{% endif %}">{{ item["label"] }}</a></li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endfor %}
+    </aside>
+    <main class="shell-main">
+      <header class="shell-topbar">
+        <div class="shell-topbar-main">
+          <h1 class="shell-title">{{ current_nav_title or "首页" }}</h1>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="shell-meta">
+              用户：{{ current_user_name or "未指定" }} | 角色：{{ current_user_role or "未指定" }} | 账套：{{ current_book_id or "未指定" }}
+            </div>
+            <div class="shell-scale-control">
+              <label for="ui-scale-select">缩放</label>
+              <select id="ui-scale-select" aria-label="界面缩放">
+                <option value="0.85">85%</option>
+                <option value="0.9">90%</option>
+                <option value="0.95">95%</option>
+                <option value="1" selected>100%</option>
+                <option value="1.05">105%</option>
+                <option value="1.1">110%</option>
+                <option value="1.15">115%</option>
+                <option value="1.2">120%</option>
+              </select>
+            </div>
+            <a class="shell-home-link" href="/">返回主页</a>
+          </div>
+        </div>
+      </header>
+      <section class="shell-content">
+        {% block content %}{% endblock %}
+      </section>
+    </main>
+  </div>
+  </div>
+  <script>
+    (function () {
+      var SCALE_KEY = "xinyi_ui_scale_v1";
+      var SCALE_DEFAULT = "1";
+      var scaleSelect = document.getElementById("ui-scale-select");
+
+      function applyScale(value) {
+        var n = Number(value);
+        if (!isFinite(n)) n = 1;
+        if (n < 0.85) n = 0.85;
+        if (n > 1.2) n = 1.2;
+        document.documentElement.style.setProperty("--ui-scale", String(n));
+        return String(n);
+      }
+
+      var savedScale = SCALE_DEFAULT;
+      try {
+        savedScale = String(localStorage.getItem(SCALE_KEY) || SCALE_DEFAULT);
+      } catch (e) {
+        savedScale = SCALE_DEFAULT;
+      }
+      var appliedScale = applyScale(savedScale);
+      if (scaleSelect) {
+        scaleSelect.value = appliedScale;
+        scaleSelect.addEventListener("change", function () {
+          var next = applyScale(scaleSelect.value || SCALE_DEFAULT);
+          scaleSelect.value = next;
+          try { localStorage.setItem(SCALE_KEY, next); } catch (e) {}
+        });
+      }
+
+      var groups = document.querySelectorAll(".shell-group[data-group-key]");
+      if (!groups.length) return;
+      var KEY = "xinyi_nav_group_state_single_v1";
+      var savedKey = "";
+      try {
+        savedKey = String(localStorage.getItem(KEY) || "");
+      } catch (e) {
+        savedKey = "";
+      }
+
+      function applyHeights() {
+        groups.forEach(function (g) {
+          var links = g.querySelector(".shell-links");
+          if (links) {
+            links.style.setProperty("--links-max-height", links.scrollHeight + "px");
+          }
+        });
+      }
+
+      function expandOnly(targetKey) {
+        groups.forEach(function (g) {
+          var key = g.getAttribute("data-group-key") || "";
+          var toggle = g.querySelector("[data-group-toggle]");
+          var shouldExpand = key === targetKey;
+          g.classList.toggle("collapsed", !shouldExpand);
+          if (toggle) {
+            toggle.setAttribute("aria-expanded", shouldExpand ? "true" : "false");
+          }
+        });
+        try { localStorage.setItem(KEY, targetKey || ""); } catch (e) {}
+      }
+
+      applyHeights();
+
+      var initialKey = "";
+      if (savedKey) {
+        initialKey = savedKey;
+      } else {
+        groups.forEach(function (g) {
+          if (!initialKey && !g.classList.contains("collapsed")) {
+            initialKey = g.getAttribute("data-group-key") || "";
+          }
+        });
+      }
+      if (!initialKey) {
+        initialKey = groups[0].getAttribute("data-group-key") || "";
+      }
+      expandOnly(initialKey);
+
+      groups.forEach(function (group) {
+        var key = group.getAttribute("data-group-key") || "";
+        var toggle = group.querySelector("[data-group-toggle]");
+        if (!toggle || !key) return;
+        toggle.addEventListener("click", function () {
+          applyHeights();
+          expandOnly(key);
+        });
+      });
+    })();
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

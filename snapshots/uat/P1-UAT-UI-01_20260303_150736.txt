@@ -1,0 +1,12 @@
+== P1-UAT-UI-01 UAT Smoke Report ==
+TIME: 20260303_150736
+PWD: /home/x1560/Xinyi_AI
+
+==[1/8] Start server via start_dev.sh ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+
+==[2/8] Verify port 5000 listen ==
+ERROR: 5000 not listening

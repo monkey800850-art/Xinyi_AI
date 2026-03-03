@@ -1,0 +1,116 @@
+== P1-UAT-UI-01 UAT Smoke Report ==
+TIME: 20260303_151043
+PWD: /home/x1560/Xinyi_AI
+
+==[1/8] Start server via start_dev.sh ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+[5/6] Starting server...
+[6/6] Verify...
+Server OK: http://localhost:5000/dashboard
+
+==[2/8] Verify port 5000 listen ==
+LISTEN 0      128           0.0.0.0:5000      0.0.0.0:*    users:(("python3",pid=63108,fd=4))
+
+==[3/8] Key pages status + title ==
+200  /  <title>首页</title>
+200  /dashboard  <title>工作台</title>
+200  /dashboard/boss  <title>老板看板</title>
+200  /system/consolidation  <title>账套关系与合并管理</title>
+200  /system/users  <title>用户管理</title>
+200  /system/roles  <title>角色权限</title>
+200  /system/rules  <title>全局规则</title>
+200  /system/books  <title>账套管理</title>
+200  /system/book-init  <title>建账初始化</title>
+200  /system/audit  <title>审计日志</title>
+200  /healthz  
+
+==[4/8] Dashboard APIs probe (no auth assumed) ==
+--- /api/dashboard/workbench ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:10:44 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/role-todos ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:10:44 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+--- /api/dashboard/task-status ---
+HTTP/1.1 401 UNAUTHORIZED
+Server: Werkzeug/3.1.6 Python/3.10.12
+Date: Tue, 03 Mar 2026 07:10:44 GMT
+Content-Type: application/json
+Content-Length: 25
+Connection: close
+
+{"error":"unauthorized"}
+
+==[5/8] Static asset sanity (sample) ==
+404  /static/app.js
+404  /static/main.js
+404  /static/style.css
+404  /static/main.css
+
+==[6/8] If any 500, tail logs/dev.log ==
+No 500 detected in key pages probe.
+
+==[7/8] Save git baseline info ==
+BRANCH: main
+HEAD: 6c99cde
+ M app.py
+ M app/routes/core_pages.py
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+ M templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/uat/
+?? templates/system_book_init.html
+?? templates/system_books.html
+?? templates/user_home.html
+
+==[8/8] Next step hints ==
+1) Open browser: http://localhost:5000/  (首页/统一壳子)
+2) Press F12: report first Console red error (if any) + first Network 404 (if any)
+3) If /system/* pages are 500, we will fix by reading traceback in logs/dev.log
+
+== DONE ==

@@ -1,0 +1,65 @@
+== BASELINE ==
+main
+6c99cde
+ M app.py
+ M app/routes/core_pages.py
+ M templates/ar_ap_aging.html
+ M templates/asset_categories.html
+ M templates/asset_changes.html
+ M templates/asset_depreciation.html
+ M templates/asset_depreciation_reports.html
+ M templates/asset_ledger.html
+ M templates/assets_detail.html
+ M templates/assets_list.html
+ M templates/audit_logs.html
+ M templates/autocomplete_filters.html
+ M templates/aux_reports.html
+ M templates/bank_import.html
+ M templates/bank_reconcile.html
+ M templates/boss_dashboard.html
+ M templates/dashboard.html
+ M templates/demo_autocomplete.html
+ M templates/main_layout.html
+ M templates/payments_detail.html
+ M templates/payments_list.html
+ M templates/reimbursements_detail.html
+ M templates/reimbursements_list.html
+ M templates/subject_ledger.html
+ M templates/system_roles.html
+ M templates/system_rules.html
+ M templates/system_users.html
+ M templates/tax_invoices.html
+ M templates/tax_rules.html
+ M templates/tax_summary.html
+ M templates/trial_balance.html
+ M templates/voucher_entry.html
+?? scripts/ops/start_win11.bat
+?? scripts/ops/start_wsl_ui.sh
+?? scripts/ops/start_xinyi_ui_win11.bat
+?? snapshots/uat/
+?? templates/master_data.html
+?? templates/subject_aux_config.html
+?? templates/system_book_init.html
+?? templates/system_books.html
+?? templates/user_home.html
+== START SERVER ==
+== Xinyi AI Dev Startup ==
+[2/6] Activating venv...
+[3/6] Dependencies OK
+[4/6] Running migration...
+== REPRODUCE ==
+== TAIL LOG ==
+Database connection ok: host=127.0.0.1, port=3306, db_name=xinyi_ai
+== Starting server on http://0.0.0.0:5000 ==
+ * Serving Flask app 'appfile'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://198.18.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [03/Mar/2026 15:27:38] "GET / HTTP/1.1" 200 -
+== LOCATE CODE ==
+app.py:548:    exempt_auth_paths = {"/api/auth/login"}
+app.py:3751:    @app.post("/api/auth/login")
+app.py:3752:    def api_auth_login():
