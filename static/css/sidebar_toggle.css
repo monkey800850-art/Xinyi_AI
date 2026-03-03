@@ -1,0 +1,37 @@
+/* P1-UX-SIDEBAR-TOGGLE-01 */
+
+/* 默认布局不改，只在 collapsed 时覆盖 */
+.sidebar-collapsed #sidebar,
+.sidebar-collapsed .shell-sidebar {
+  display: none !important;
+}
+
+/* 内容区占满 */
+.sidebar-collapsed .shell,
+.sidebar-collapsed .layout-root,
+.sidebar-collapsed .layout-container,
+.sidebar-collapsed .app-container,
+.sidebar-collapsed .main-container {
+  display: block !important; /* 或 flex 也可，但要确保 main 占满 */
+}
+
+.sidebar-collapsed .shell-main,
+.sidebar-collapsed #content,
+.sidebar-collapsed .main-content,
+.sidebar-collapsed .content {
+  width: 100% !important;
+}
+
+/* 给顶部按钮一点样式（不依赖框架） */
+#sidebarToggleBtn {
+  border: 1px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+#sidebarToggleBtn:hover {
+  background: rgba(255,255,255,0.2);
+}

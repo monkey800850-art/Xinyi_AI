@@ -464,6 +464,7 @@
 
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/force_desktop.css') }}?v=95a48e8" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar_toggle.css') }}?v=P1-UX-SIDEBAR-TOGGLE-01">
 </head>
 <body {% block body_attrs %}{% endblock %} class="force-desktop">
   <div class="shell-scale" id="shell-scale-root">
@@ -510,7 +511,9 @@
                 <option value="1.2">120%</option>
               </select>
             </div>
-            <a class="shell-home-link" href="/">返回主页</a>
+            <a class="shell-home-link" href="/">返回主页
+        <button id="sidebarToggleBtn" type="button" style="margin-left:12px">收起侧边栏</button>
+</a>
           </div>
         </div>
       </header>
@@ -619,15 +622,18 @@
       try {
         var ua = navigator.userAgent || "";
         var isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
-        var hasTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
-        // 真移动端：移除强制桌面布局；桌面缩放：保持 force-desktop
-        if (isMobileUA || hasTouch) {
+        var isSmallViewport = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+        // 仅在移动端 UA + 小屏时移除；触屏笔记本/桌面浏览器必须保留侧栏布局
+        if (isMobileUA && isSmallViewport) {
           document.body.classList.remove("force-desktop");
+        } else {
+          document.body.classList.add("force-desktop");
         }
       } catch (e) {}
     })();
   </script>
   <!-- /P1-UX-LAYOUT-03 -->
 
+  <script src="{{ url_for('static', filename='js/sidebar_toggle.js') }}?v=P1-UX-SIDEBAR-TOGGLE-01"></script>
 </body>
 </html>

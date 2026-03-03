@@ -4,3 +4,9 @@
 - Files: templates/main_layout.html, static/css/force_desktop.css
 - Evidence: snapshots/uat/P1-UX-LAYOUT-03_20260303_185326.txt
 - DoD: /system/books HTML includes force_desktop.css?v=... and force-desktop class; manual zoom check checklist recorded.
+
+## P1-UX-SIDEBAR-TOGGLE-01 (20260303_191251)
+- Goal: sidebar collapsible toggle + remember state via localStorage.
+- Files: templates/main_layout.html, static/js/sidebar_toggle.js, static/css/sidebar_toggle.css
+- Evidence: snapshots/uat/P1-UX-SIDEBAR-TOGGLE-01_20260303_191251.txt
+- DoD: button visible; click toggles sidebar; refresh keeps state.

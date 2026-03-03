@@ -1,0 +1,23 @@
+== P1-UX-SIDEBAR-TOGGLE-01 START ==
+TIME: 20260303_191251
+HEAD: 3ad50f4
+
+==[1/7] Create sidebar toggle JS ==
+OK: static/js/sidebar_toggle.js
+
+==[2/7] Create sidebar toggle CSS ==
+OK: static/css/sidebar_toggle.css
+
+==[3/7] Patch templates/main_layout.html (inject button + link css/js) ==
+
+==[4/7] Evidence: confirm template references ==
+467:  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar_toggle.css') }}?v=P1-UX-SIDEBAR-TOGGLE-01">
+515:        <button id="sidebarToggleBtn" type="button" style="margin-left:12px">收起侧边栏</button>
+637:  <script src="{{ url_for('static', filename='js/sidebar_toggle.js') }}?v=P1-UX-SIDEBAR-TOGGLE-01"></script>
+
+==[5/7] Probe rendered HTML (if server running) ==
+HTTP 000000
+
+==[6/7] Update baseline archive ==
+
+==[7/7] Git commit ==
