@@ -1,4 +1,5 @@
 #!/bin/bash
+export PYTHONPATH=. ${PYTHONPATH:+:$PYTHONPATH}
 set -euo pipefail
 
 echo "== RELEASE GATE START =="
