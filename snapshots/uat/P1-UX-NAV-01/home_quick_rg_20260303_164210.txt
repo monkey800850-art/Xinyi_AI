@@ -1,0 +1,8 @@
+494:          <li class="nav-item"><a href="/system/consolidation" class="nav-link ">账套关系与合并管理</a></li>
+538:          <li class="nav-item"><a href="/voucher/entry" class="nav-link ">凭证录入</a></li>
+554:          <li class="nav-item"><a href="/reports/trial_balance" class="nav-link ">发生余额表</a></li>
+713:  <a href="/dashboard">待办工作台</a>
+714:  <a href="/reports/trial_balance">发生余额表</a>
+715:  <a href="/reports/trial_balance?subject_type=virtual">合并单位选择</a>
+716:  <a href="/voucher/entry">凭证录入</a>
+717:  <a href="/system/consolidation">账套关系与合并管理</a>

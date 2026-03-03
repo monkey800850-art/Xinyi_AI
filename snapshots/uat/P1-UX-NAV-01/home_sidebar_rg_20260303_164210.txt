@@ -1,0 +1,5 @@
+494:          <li class="nav-item"><a href="/system/consolidation" class="nav-link ">账套关系与合并管理</a></li>
+496:          <li class="nav-item"><a href="/system/book-init" class="nav-link ">建账初始化</a></li>
+554:          <li class="nav-item"><a href="/reports/trial_balance" class="nav-link ">发生余额表</a></li>
+714:  <a href="/reports/trial_balance">发生余额表</a>
+717:  <a href="/system/consolidation">账套关系与合并管理</a>

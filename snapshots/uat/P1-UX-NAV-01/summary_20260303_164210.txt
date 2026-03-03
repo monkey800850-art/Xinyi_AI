@@ -1,0 +1,7 @@
+P1-UX-NAV-01 summary
+- url_map route evidence: snapshots/uat/P1-UX-NAV-01/url_map_20260303_164210.txt
+- nav_groups grep evidence: snapshots/uat/P1-UX-NAV-01/nav_groups_rg_20260303_164210.txt
+- homepage quick entry evidence: snapshots/uat/P1-UX-NAV-01/home_quick_rg_20260303_164210.txt
+- homepage sidebar entry evidence: snapshots/uat/P1-UX-NAV-01/home_sidebar_rg_20260303_164210.txt
+- rendered homepage: snapshots/uat/P1-UX-NAV-01/home_20260303_164210.html
+- rendered trial balance page: snapshots/uat/P1-UX-NAV-01/trial_balance_20260303_164210.html
