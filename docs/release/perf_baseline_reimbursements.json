@@ -1,0 +1,23 @@
+{
+  "url": "http://127.0.0.1:5000/api/reimbursements?book_id=1",
+  "total_requests": 600,
+  "concurrency": 10,
+  "duration_seconds": 6.4335,
+  "throughput_rps": 93.2615,
+  "success_count": 499,
+  "error_count": 101,
+  "success_rate": 0.831667,
+  "latency_ms": {
+    "min": 26.2524,
+    "avg": 105.707,
+    "p50": 93.8734,
+    "p95": 215.0444,
+    "p99": 351.1985,
+    "max": 528.6462
+  },
+  "status_distribution": {
+    "200": 499,
+    "500": 101
+  },
+  "generated_at_epoch": 1772514916
+}

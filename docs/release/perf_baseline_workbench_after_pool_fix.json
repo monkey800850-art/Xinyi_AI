@@ -1,0 +1,22 @@
+{
+  "url": "http://127.0.0.1:5000/api/dashboard/workbench?book_id=1",
+  "total_requests": 600,
+  "concurrency": 10,
+  "duration_seconds": 2.6138,
+  "throughput_rps": 229.5468,
+  "success_count": 600,
+  "error_count": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "min": 18.5306,
+    "avg": 42.9712,
+    "p50": 40.3728,
+    "p95": 68.2935,
+    "p99": 81.7471,
+    "max": 96.7485
+  },
+  "status_distribution": {
+    "200": 600
+  },
+  "generated_at_epoch": 1772515008
+}

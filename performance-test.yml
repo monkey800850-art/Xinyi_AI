@@ -1,0 +1,16 @@
+config:
+  target: "http://127.0.0.1:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+  defaults:
+    headers:
+      X-User: "perf_runner"
+      X-Role: "admin"
+scenarios:
+  - name: "core-workbench-and-reimbursements"
+    flow:
+      - get:
+          url: "/api/dashboard/workbench?book_id=1"
+      - get:
+          url: "/api/reimbursements?book_id=1"
