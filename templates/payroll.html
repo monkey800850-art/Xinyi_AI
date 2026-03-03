@@ -1,105 +1,178 @@
 {% extends "main_layout.html" %}
 {% block page_title %}工资管理{% endblock %}
 {% block extra_css %}
-<style>
-  .payroll-page { display:grid; gap:12px; }
-  .card { background:#fff; border:1px solid #d7e0ea; border-radius:12px; padding:14px; }
-  .grid { display:grid; gap:10px; grid-template-columns: repeat(4,minmax(150px,1fr)); }
-  .field { display:grid; gap:6px; }
-  .field label { font-size:13px; color:#456; font-weight:600; }
-  .field input, .field select { border:1px solid #c8d7e9; border-radius:8px; padding:8px 10px; }
-  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-  .btn { border:1px solid #b8d1ea; background:#e7f1fb; color:#0b5cab; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; }
-  .msg { font-size:13px; color:#345; }
-  .result { background:#081426; color:#d9e7ff; border:1px solid #1f3c62; border-radius:10px; padding:10px; font-size:12px; max-height:440px; overflow:auto; white-space:pre-wrap; }
-  @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/payroll.css') }}">
 {% endblock %}
 {% block content %}
 <div class="payroll-page">
-  <section class="card">
-    <h2>工资管理</h2>
-    <p>最小闭环：查询工资期间与工资单。无权限会明确提示，不空转。</p>
-    <div class="grid">
-      <div class="field">
+  <section class="payroll-card">
+    <h2>工资管理（编制 / 计税 / 发放 / 凭证）</h2>
+    <div class="payroll-grid">
+      <div class="payroll-field">
         <label>账套ID</label>
         <input id="book-id" type="number" value="1" />
       </div>
-      <div class="field">
-        <label>发薪期间（YYYY-MM）</label>
+      <div class="payroll-field">
+        <label>期间（YYYY-MM）</label>
         <input id="period" type="month" />
       </div>
-      <div class="field">
-        <label>操作人</label>
+      <div class="payroll-field">
+        <label>操作人（X-User）</label>
         <input id="operator" value="uat_admin" />
       </div>
-      <div class="field">
-        <label>角色</label>
+      <div class="payroll-field">
+        <label>角色（X-Role）</label>
         <select id="role">
           <option value="payroll">payroll</option>
           <option value="hr">hr</option>
+          <option value="cashier">cashier</option>
           <option value="admin">admin</option>
           <option value="auditor">auditor</option>
+          <option value="employee">employee</option>
+        </select>
+      </div>
+      <div class="payroll-field">
+        <label>操作人ID（可选）</label>
+        <input id="operator-id" type="number" placeholder="如 1001" />
+      </div>
+      <div class="payroll-field">
+        <label>期间ID（封账/反封）</label>
+        <input id="period-id" type="number" placeholder="查询期间后填入" />
+      </div>
+      <div class="payroll-field">
+        <label>工资单ID（计税/发放/凭证）</label>
+        <input id="slip-id" type="number" placeholder="查询工资单后填入" />
+      </div>
+      <div class="payroll-field">
+        <label>批次ID（导出银行文件）</label>
+        <input id="batch-id" type="number" placeholder="查询批次后填入" />
+      </div>
+    </div>
+  </section>
+
+  <section class="payroll-card">
+    <h3>1) 工资期间</h3>
+    <div class="payroll-grid">
+      <div class="payroll-field">
+        <label>期间状态</label>
+        <select id="period-status">
+          <option value="open">open</option>
+          <option value="closed">closed</option>
         </select>
       </div>
     </div>
-    <div class="actions">
-      <button id="load-periods" class="btn" type="button">查询工资期间</button>
-      <button id="load-slips" class="btn" type="button">查询工资单</button>
+    <div class="payroll-actions">
+      <button id="btn-period-upsert" class="payroll-btn" type="button">保存期间</button>
+      <button id="btn-period-list" class="payroll-btn" type="button">查询期间</button>
+      <button id="btn-period-close" class="payroll-btn" type="button">封账</button>
+      <button id="btn-period-reopen" class="payroll-btn" type="button">反封账</button>
     </div>
-    <div id="msg" class="msg">状态：待操作</div>
   </section>
-  <section class="card">
-    <h3>结果</h3>
-    <pre id="result" class="result">{}</pre>
+
+  <section class="payroll-card">
+    <h3>2) 编制工资单</h3>
+    <div class="payroll-grid">
+      <div class="payroll-field">
+        <label>员工ID</label>
+        <input id="employee-id" type="number" value="1001" />
+      </div>
+      <div class="payroll-field">
+        <label>员工姓名</label>
+        <input id="employee-name" value="测试员工" />
+      </div>
+      <div class="payroll-field">
+        <label>部门</label>
+        <input id="department" value="财务部" />
+      </div>
+      <div class="payroll-field">
+        <label>城市</label>
+        <input id="city" value="上海" />
+      </div>
+      <div class="payroll-field">
+        <label>银行卡号</label>
+        <input id="bank-account" value="6222020000001001" />
+      </div>
+      <div class="payroll-field">
+        <label>考勤引用</label>
+        <input id="attendance-ref" placeholder="可选" />
+      </div>
+      <div class="payroll-field">
+        <label>出勤天数</label>
+        <input id="attendance-days" type="number" value="21" />
+      </div>
+      <div class="payroll-field">
+        <label>缺勤天数</label>
+        <input id="absent-days" type="number" value="0" />
+      </div>
+      <div class="payroll-field">
+        <label>基本工资</label>
+        <input id="gross-amount" type="number" step="0.01" value="15000" />
+      </div>
+      <div class="payroll-field">
+        <label>奖金</label>
+        <input id="bonus-amount" type="number" step="0.01" value="0" />
+      </div>
+      <div class="payroll-field">
+        <label>加班费</label>
+        <input id="overtime-amount" type="number" step="0.01" value="0" />
+      </div>
+      <div class="payroll-field">
+        <label>其他扣款</label>
+        <input id="deduction-amount" type="number" step="0.01" value="0" />
+      </div>
+      <div class="payroll-field">
+        <label>社保（0=按政策自动）</label>
+        <input id="social-insurance" type="number" step="0.01" value="0" />
+      </div>
+      <div class="payroll-field">
+        <label>公积金（0=按政策自动）</label>
+        <input id="housing-fund" type="number" step="0.01" value="0" />
+      </div>
+      <div class="payroll-field">
+        <label>计税方式</label>
+        <select id="tax-method">
+          <option value="cumulative">cumulative</option>
+          <option value="monthly">monthly</option>
+        </select>
+      </div>
+    </div>
+    <div class="payroll-actions">
+      <button id="btn-slip-upsert" class="payroll-btn primary" type="button">编制/更新工资单</button>
+      <button id="btn-slip-list" class="payroll-btn" type="button">查询工资单</button>
+      <button id="btn-slip-confirm" class="payroll-btn" type="button">计税确认</button>
+    </div>
+  </section>
+
+  <section class="payroll-card">
+    <h3>3) 发放与凭证</h3>
+    <div class="payroll-grid">
+      <div class="payroll-field">
+        <label>批次工资单ID列表（可选，逗号分隔）</label>
+        <input id="batch-slip-ids" placeholder="例如：101,102,103" />
+      </div>
+      <div class="payroll-field">
+        <label>凭证号（自动凭证可选）</label>
+        <input id="voucher-no" placeholder="可不填" />
+      </div>
+    </div>
+    <div class="payroll-actions">
+      <button id="btn-payment-create" class="payroll-btn" type="button">创建发放申请</button>
+      <button id="btn-payment-status" class="payroll-btn" type="button">查询发放状态</button>
+      <button id="btn-batch-create" class="payroll-btn" type="button">生成发放批次</button>
+      <button id="btn-batch-list" class="payroll-btn" type="button">查询发放批次</button>
+      <button id="btn-bank-export" class="payroll-btn" type="button">导出银行文件</button>
+      <button id="btn-voucher-suggest" class="payroll-btn" type="button">工资凭证建议</button>
+      <button id="btn-voucher-create" class="payroll-btn primary" type="button">自动生成工资凭证</button>
+    </div>
+    <p class="payroll-msg" id="payroll-msg">状态：待操作</p>
+  </section>
+
+  <section class="payroll-card">
+    <h3>接口结果</h3>
+    <pre id="payroll-result" class="payroll-result">{"ok": true, "message": "ready"}</pre>
   </section>
 </div>
 {% endblock %}
 {% block extra_js %}
-<script>
-(function(){
-  var msg = document.getElementById("msg");
-  var out = document.getElementById("result");
-  function show(data){ out.textContent = JSON.stringify(data, null, 2); }
-  function authMessage(code){
-    if (code === 401) return "请登录后再操作（401 unauthorized）";
-    if (code === 403) return "无权限访问工资模块（403 forbidden）";
-    return "";
-  }
-  function headers(){
-    return {
-      "X-User": document.getElementById("operator").value,
-      "X-Role": document.getElementById("role").value
-    };
-  }
-  function request(url, label){
-    msg.textContent = "状态：" + label + "中...";
-    fetch(url, { headers: headers() })
-      .then(function(resp){
-        return resp.json().then(function(data){
-          if (!resp.ok){ data = data || {}; data.status_code = resp.status; throw data; }
-          return data;
-        });
-      })
-      .then(function(data){ msg.textContent = "状态：" + label + "成功"; show(data); })
-      .catch(function(err){
-        var code = Number(err && err.status_code || 0);
-        var auth = authMessage(code);
-        msg.textContent = auth ? ("状态：失败（" + auth + "）") : ("状态：" + label + "失败");
-        show({ ok:false, status_code:code, error:err && err.error ? err.error : String(err || "unknown_error"), message:auth });
-      });
-  }
-  document.getElementById("load-periods").addEventListener("click", function(){
-    var bookId = document.getElementById("book-id").value;
-    request("/api/payroll/periods?book_id=" + encodeURIComponent(bookId), "查询工资期间");
-  });
-  document.getElementById("load-slips").addEventListener("click", function(){
-    var bookId = document.getElementById("book-id").value;
-    var period = document.getElementById("period").value;
-    var qs = "book_id=" + encodeURIComponent(bookId);
-    if (period) qs += "&period=" + encodeURIComponent(period);
-    request("/api/payroll/slips?" + qs, "查询工资单");
-  });
-})();
-</script>
+<script src="{{ url_for('static', filename='js/payroll.js') }}"></script>
 {% endblock %}
