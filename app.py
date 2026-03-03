@@ -6,7 +6,7 @@ import json
 import re
 import sys
 from argparse import Namespace
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from flask import Flask, jsonify, render_template, request, send_file, session
 from sqlalchemy import text
@@ -178,6 +178,7 @@ from app.services.asset_reports_service import (
 )
 from app.services.export_service import ExportError, export_report
 from app.services.audit_service import log_audit
+from app.services.system_auth_service import AuthError, authenticate_user
 from app.services.system_service import (
     SystemError,
     create_or_update_role,
@@ -454,6 +455,22 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY")
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+    app.config["SESSION_COOKIE_SECURE"] = (
+        str(os.getenv("SESSION_COOKIE_SECURE", "0")).strip().lower() in ("1", "true", "yes", "on")
+    )
+
+    def _as_positive_int(raw: str, fallback: int) -> int:
+        try:
+            value = int(str(raw or "").strip())
+            return value if value > 0 else fallback
+        except Exception:
+            return fallback
+
+    auth_session_timeout_minutes = _as_positive_int(os.getenv("AUTH_SESSION_TIMEOUT_MINUTES", "30"), 30)
+    auth_max_failed_attempts = _as_positive_int(os.getenv("AUTH_MAX_FAILED_ATTEMPTS", "5"), 5)
+    auth_lock_minutes = _as_positive_int(os.getenv("AUTH_LOCK_MINUTES", "15"), 15)
 
     @app.context_processor
     def _inject_main_nav():
@@ -527,13 +544,36 @@ def create_app() -> Flask:
     def _bind_route_context():
         tenant_id, book_id = _extract_route_context()
         set_request_route_context(tenant_id=tenant_id, book_id=book_id)
+        auth_ctx = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
+        expires_raw = str(session.get("auth_expires_at") or "").strip()
+        if auth_ctx and expires_raw:
+            try:
+                expires_at = datetime.fromisoformat(expires_raw)
+            except Exception:
+                expires_at = None
+            now_utc = datetime.now(timezone.utc)
+            if expires_at is not None and expires_at <= now_utc:
+                session.pop("auth_ctx", None)
+                session.pop("auth_expires_at", None)
+            elif expires_at is not None:
+                session.permanent = True
+                session["auth_expires_at"] = (
+                    now_utc + timedelta(minutes=auth_session_timeout_minutes)
+                ).isoformat()
+
         operator, role = _get_operator_from_headers()
+        has_auth_headers = bool(
+            str(request.headers.get("X-User") or "").strip() or str(request.headers.get("X-Role") or "").strip()
+        )
         if operator or role:
             current = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
-            session["auth_ctx"] = {
-                "username": operator or str(current.get("username") or ""),
-                "role": role or str(current.get("role") or ""),
-            }
+            # Avoid treating arbitrary payload fields as login; only persist when session already exists
+            # or when upstream auth headers are explicitly present.
+            if current or has_auth_headers:
+                session["auth_ctx"] = {
+                    "username": operator or str(current.get("username") or ""),
+                    "role": role or str(current.get("role") or ""),
+                }
         payload = request.get_json(silent=True)
         subject_type = (
             request.headers.get("X-Subject-Type")
@@ -3415,12 +3455,58 @@ def create_app() -> Flask:
     @app.post("/api/auth/login")
     def api_auth_login():
         payload = request.get_json(silent=True) or {}
-        username = payload.get("username") or ""
-        operator = (payload.get("operator") or username or "").strip()
-        role = (payload.get("role") or "").strip()
-        session["auth_ctx"] = {"username": operator, "role": role}
-        log_audit("auth", "login", "user", None, operator, role, {"username": username})
-        return jsonify({"status": "ok"}), 200
+        username = str(payload.get("username") or "").strip()
+        password = str(payload.get("password") or "")
+        if not username or not password:
+            return jsonify({"error": "validation_error", "detail": {"field": "username/password"}}), 400
+        try:
+            auth = authenticate_user(
+                username=username,
+                password=password,
+                max_failed_attempts=auth_max_failed_attempts,
+                lock_minutes=auth_lock_minutes,
+            )
+        except AuthError as err:
+            status = 401
+            if str(err) == "account_locked":
+                status = 423
+            elif str(err) == "auth_schema_not_ready":
+                status = 503
+            log_audit("auth", "login_failed", "user", None, username, "", {"username": username, **(err.detail or {})})
+            return jsonify({"error": str(err), "detail": err.detail}), status
+
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=auth_session_timeout_minutes)
+        session.permanent = True
+        session["auth_ctx"] = {
+            "user_id": int(auth["id"]),
+            "username": str(auth["username"] or ""),
+            "role": str(auth["role"] or ""),
+        }
+        session["auth_expires_at"] = expires_at.isoformat()
+        log_audit(
+            "auth",
+            "login",
+            "user",
+            int(auth["id"]),
+            str(auth["username"] or ""),
+            str(auth["role"] or ""),
+            {"username": str(auth["username"] or ""), "expires_at": expires_at.isoformat()},
+        )
+        return (
+            jsonify(
+                {
+                    "status": "ok",
+                    "user": {
+                        "id": int(auth["id"]),
+                        "username": str(auth["username"] or ""),
+                        "display_name": str(auth["display_name"] or ""),
+                        "role": str(auth["role"] or ""),
+                    },
+                    "expires_at": expires_at.isoformat(),
+                }
+            ),
+            200,
+        )
 
     @app.post("/api/auth/logout")
     def api_auth_logout():
@@ -3429,6 +3515,7 @@ def create_app() -> Flask:
         operator = (payload.get("operator") or username or "").strip()
         role = (payload.get("role") or "").strip()
         session.pop("auth_ctx", None)
+        session.pop("auth_expires_at", None)
         log_audit("auth", "logout", "user", None, operator, role, {"username": username})
         return jsonify({"status": "ok"}), 200
 

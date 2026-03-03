@@ -3,6 +3,7 @@ from datetime import date
 from typing import Dict, List
 
 from sqlalchemy import text
+from werkzeug.security import generate_password_hash
 
 from app.db import get_engine
 from app.db_router import get_connection_provider
@@ -20,13 +21,38 @@ def _require(cond: bool, errors: List[Dict[str, object]], field: str, msg: str):
         errors.append({"field": field, "message": msg})
 
 
-def list_users(params: Dict[str, str]) -> Dict[str, object]:
-    engine = get_engine()
-    with engine.connect() as conn:
+def _get_table_columns(conn, table_name: str) -> set[str]:
+    try:
         rows = conn.execute(
             text(
                 """
-                SELECT u.id, u.username, u.display_name, u.is_enabled
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = :table_name
+                """
+            ),
+            {"table_name": table_name},
+        ).fetchall()
+        return {str(r.column_name).lower() for r in rows}
+    except Exception:
+        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+        return {str(r.name).lower() for r in rows}
+
+
+def list_users(params: Dict[str, str]) -> Dict[str, object]:
+    engine = get_engine()
+    with engine.connect() as conn:
+        cols = _get_table_columns(conn, "sys_users")
+        pwd_col = "u.password_hash" if "password_hash" in cols else "NULL AS password_hash"
+        failed_col = "u.failed_attempts" if "failed_attempts" in cols else "0 AS failed_attempts"
+        locked_col = "u.locked_until" if "locked_until" in cols else "NULL AS locked_until"
+        last_login_col = "u.last_login_at" if "last_login_at" in cols else "NULL AS last_login_at"
+        rows = conn.execute(
+            text(
+                f"""
+                SELECT u.id, u.username, u.display_name, u.is_enabled,
+                       {pwd_col}, {failed_col}, {locked_col}, {last_login_col}
                 FROM sys_users u
                 ORDER BY u.id DESC
                 """
@@ -57,6 +83,10 @@ def list_users(params: Dict[str, str]) -> Dict[str, object]:
                 "username": r.username,
                 "display_name": r.display_name or "",
                 "is_enabled": int(r.is_enabled),
+                "password_set": 1 if (str(r.password_hash or "").strip()) else 0,
+                "failed_attempts": int(r.failed_attempts or 0),
+                "locked_until": str(r.locked_until or ""),
+                "last_login_at": str(r.last_login_at or ""),
                 "roles": role_map.get(r.id, []),
             }
         )
@@ -69,6 +99,7 @@ def create_or_update_user(payload: Dict[str, object], operator: str, role: str) 
     uid = payload.get("id")
     username = (payload.get("username") or "").strip()
     display_name = (payload.get("display_name") or "").strip()
+    password = str(payload.get("password") or "").strip()
     is_enabled = payload.get("is_enabled", 1)
 
     _require(username, errors, "username", "必填")
@@ -82,38 +113,72 @@ def create_or_update_user(payload: Dict[str, object], operator: str, role: str) 
 
     engine = get_engine()
     with engine.begin() as conn:
+        cols = _get_table_columns(conn, "sys_users")
+        has_pwd = "password_hash" in cols
+        has_failed = "failed_attempts" in cols
+        has_locked = "locked_until" in cols
         if uid:
+            set_parts = [
+                "username=:username",
+                "display_name=:display_name",
+                "is_enabled=:is_enabled",
+                "updated_at=NOW()",
+            ]
+            params = {
+                "id": uid,
+                "username": username,
+                "display_name": display_name,
+                "is_enabled": is_enabled,
+            }
+            if has_pwd and password:
+                set_parts.append("password_hash=:password_hash")
+                params["password_hash"] = generate_password_hash(password)
+            if has_failed and password:
+                set_parts.append("failed_attempts=0")
+            if has_locked and password:
+                set_parts.append("locked_until=NULL")
+
             conn.execute(
                 text(
-                    """
+                    f"""
                     UPDATE sys_users
-                    SET username=:username, display_name=:display_name,
-                        is_enabled=:is_enabled, updated_at=NOW()
+                    SET {", ".join(set_parts)}
                     WHERE id=:id
                     """
                 ),
-                {
-                    "id": uid,
-                    "username": username,
-                    "display_name": display_name,
-                    "is_enabled": is_enabled,
-                },
+                params,
             )
             user_id = uid
             action = "update"
         else:
+            insert_cols = ["username", "display_name", "is_enabled"]
+            insert_vals = [":username", ":display_name", ":is_enabled"]
+            params = {
+                "username": username,
+                "display_name": display_name,
+                "is_enabled": is_enabled,
+            }
+            if has_pwd:
+                insert_cols.append("password_hash")
+                insert_vals.append(":password_hash")
+                params["password_hash"] = generate_password_hash(password) if password else None
+            if has_failed:
+                insert_cols.append("failed_attempts")
+                insert_vals.append(":failed_attempts")
+                params["failed_attempts"] = 0
+            if has_locked:
+                insert_cols.append("locked_until")
+                insert_vals.append(":locked_until")
+                params["locked_until"] = None
+
             result = conn.execute(
                 text(
-                    """
-                    INSERT INTO sys_users (username, display_name, is_enabled)
-                    VALUES (:username, :display_name, :is_enabled)
+                    f"""
+                    INSERT INTO sys_users ({", ".join(insert_cols)})
+                    VALUES ({", ".join(insert_vals)})
                     """
                 ),
-                {
-                    "username": username,
-                    "display_name": display_name,
-                    "is_enabled": is_enabled,
-                },
+                params,
             )
             user_id = result.lastrowid
             action = "create"
