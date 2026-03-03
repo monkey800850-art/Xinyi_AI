@@ -28,6 +28,24 @@ class ExportError(RuntimeError):
         super().__init__(message)
 
 
+def _parse_date(value: str, field_name: str):
+    try:
+        return datetime.strptime(str(value or "").strip(), "%Y-%m-%d").date()
+    except Exception as err:
+        raise ExportError(f"invalid_{field_name}") from err
+
+
+def _format_date(value) -> str:
+    if value is None:
+        return ""
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except Exception:
+            return str(value)
+    return str(value)
+
+
 def _format_amount(value) -> str:
     try:
         return f"{float(value):.2f}"
@@ -87,6 +105,106 @@ def _audit_export(report_key: str, book_id, filters: Dict[str, object], file_nam
 def _build_workbook(report_key: str, params: Dict[str, str]) -> Tuple[Workbook, Dict[str, object]]:
     wb = Workbook()
     ws = wb.active
+
+    if report_key == "voucher_journal":
+        book_id_raw = (params.get("book_id") or "").strip()
+        if not book_id_raw:
+            raise ExportError("book_id required")
+        try:
+            book_id = int(book_id_raw)
+        except Exception as err:
+            raise ExportError("book_id must be integer") from err
+        if book_id <= 0:
+            raise ExportError("book_id must be positive")
+
+        start_date = _parse_date(params.get("start_date"), "start_date")
+        end_date = _parse_date(params.get("end_date"), "end_date")
+        if start_date > end_date:
+            raise ExportError("start_date_after_end_date")
+
+        status = (params.get("status") or "").strip().lower() or "posted"
+        if status not in ("draft", "reviewed", "posted"):
+            raise ExportError("invalid_status")
+        subject_code = (params.get("subject_code") or "").strip()
+        voucher_no = (params.get("voucher_no") or "").strip()
+        summary_kw = (params.get("summary") or "").strip()
+        direction = (params.get("direction") or "").strip().upper()
+        if direction and direction not in ("DEBIT", "CREDIT"):
+            raise ExportError("direction must be DEBIT or CREDIT")
+
+        sql = """
+            SELECT v.voucher_date,
+                   COALESCE(v.voucher_word, '') AS voucher_word,
+                   COALESCE(v.voucher_no, '') AS voucher_no,
+                   v.status,
+                   vl.line_no,
+                   COALESCE(vl.summary, '') AS summary,
+                   COALESCE(vl.subject_code, '') AS subject_code,
+                   COALESCE(vl.subject_name, '') AS subject_name,
+                   COALESCE(vl.aux_display, '') AS aux_display,
+                   vl.debit,
+                   vl.credit,
+                   COALESCE(vl.note, '') AS note
+            FROM voucher_lines vl
+            JOIN vouchers v ON v.id = vl.voucher_id
+            WHERE v.book_id = :book_id
+              AND v.voucher_date BETWEEN :start_date AND :end_date
+              AND v.status = :status
+        """
+        query_params = {
+            "book_id": book_id,
+            "start_date": start_date,
+            "end_date": end_date,
+            "status": status,
+        }
+        if subject_code:
+            sql += " AND vl.subject_code = :subject_code"
+            query_params["subject_code"] = subject_code
+        if voucher_no:
+            sql += " AND v.voucher_no = :voucher_no"
+            query_params["voucher_no"] = voucher_no
+        if summary_kw:
+            sql += " AND vl.summary LIKE :summary"
+            query_params["summary"] = f"%{summary_kw}%"
+        if direction == "DEBIT":
+            sql += " AND vl.debit > 0"
+        elif direction == "CREDIT":
+            sql += " AND vl.credit > 0"
+
+        sql += " ORDER BY v.voucher_date ASC, v.id ASC, vl.line_no ASC"
+        engine = get_engine()
+        with engine.connect() as conn:
+            rows = conn.execute(text(sql), query_params).fetchall()
+
+        filters = {
+            "book_id": book_id,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "status": status,
+            "subject_code": subject_code,
+            "voucher_no": voucher_no,
+            "summary": summary_kw,
+            "direction": direction,
+        }
+        headers = ["日期", "凭证号", "状态", "行号", "摘要", "科目编码", "科目名称", "辅助核算", "借方", "贷方", "备注"]
+        rows_data = [
+            [
+                _format_date(item.voucher_date),
+                f"{item.voucher_word}{item.voucher_no}",
+                item.status,
+                item.line_no,
+                item.summary,
+                item.subject_code,
+                item.subject_name,
+                item.aux_display,
+                _format_amount(item.debit),
+                _format_amount(item.credit),
+                item.note,
+            ]
+            for item in rows
+        ]
+        _write_sheet(ws, "序时账（会计分录流水）", filters, headers, rows_data)
+        return wb, filters
 
     if report_key == "trial_balance":
         data = get_trial_balance(params)
