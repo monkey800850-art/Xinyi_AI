@@ -1,0 +1,218 @@
+{% extends "main_layout.html" %}
+{% block page_title %}建账初始化{% endblock %}
+{% block extra_css %}
+<style>
+  .init-wrap {
+    display: grid;
+    gap: 12px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #d7e0ea;
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .card h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+  .card p {
+    margin: 0;
+    color: #5f738d;
+  }
+  .form-grid {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+  label {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    color: #456;
+    font-weight: 600;
+  }
+  input,
+  select {
+    border: 1px solid #c7d7e8;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 14px;
+    background: #fff;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .btn {
+    border: 1px solid #b8d1ea;
+    background: #e7f1fb;
+    color: #0b5cab;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn.primary {
+    border-color: #0b5cab;
+    background: #0b5cab;
+    color: #fff;
+  }
+  .result-meta {
+    margin: 12px 0 8px;
+    color: #345;
+    font-size: 14px;
+  }
+  .json-box {
+    margin: 0;
+    background: #091322;
+    color: #d7e7ff;
+    border-radius: 12px;
+    border: 1px solid #1f3a64;
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 520px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  @media (max-width: 900px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="init-wrap">
+  <section class="card">
+    <h2>建账初始化闭环执行</h2>
+    <p>执行建账、科目初始化、会计期间初始化、完整性校验、备份快照校验，并返回 JSON 结果。</p>
+
+    <form id="book-init-form">
+      <div class="form-grid">
+        <label>
+          账套名称
+          <input id="book-name" name="name" required maxlength="128" placeholder="例如：P1-BOOKINIT-01-UAT" />
+        </label>
+        <label>
+          会计准则
+          <select id="accounting-standard" name="accounting_standard" required>
+            <option value="enterprise">enterprise</option>
+            <option value="small_enterprise">small_enterprise</option>
+          </select>
+        </label>
+      </div>
+      <div class="actions">
+        <button id="run-btn" class="btn primary" type="submit">运行建账初始化</button>
+        <a class="btn" href="/system/books">返回账套管理</a>
+      </div>
+    </form>
+
+    <div class="result-meta" id="result-meta">状态：待执行</div>
+    <pre class="json-box" id="result-json">{}</pre>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  var form = document.getElementById("book-init-form");
+  var runBtn = document.getElementById("run-btn");
+  var meta = document.getElementById("result-meta");
+  var resultBox = document.getElementById("result-json");
+  var nameInput = document.getElementById("book-name");
+
+  nameInput.value = "P1-BOOKINIT-01-" + Date.now();
+
+  function showJson(data) {
+    resultBox.textContent = JSON.stringify(data, null, 2);
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var payload = {
+      name: (nameInput.value || "").trim(),
+      accounting_standard: document.getElementById("accounting-standard").value,
+    };
+    if (!payload.name) {
+      meta.textContent = "状态：失败（账套名称不能为空）";
+      return;
+    }
+
+    runBtn.disabled = true;
+    meta.textContent = "状态：执行中...";
+
+    fetch("/books", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function (resp) {
+        return resp.json().then(function (data) {
+          if (!resp.ok) throw data || { error: "book_create_failed" };
+          return data;
+        });
+      })
+      .then(function (createResult) {
+        var bookId = Number(createResult.book_id || 0);
+        if (!bookId) throw { error: "book_id_missing" };
+        return fetch("/api/books/" + encodeURIComponent(bookId) + "/init-integrity")
+          .then(function (resp) {
+            return resp.json().then(function (data) {
+              if (!resp.ok) throw data || { error: "init_integrity_failed" };
+              return { createResult: createResult, integrityResult: data, bookId: bookId };
+            });
+          });
+      })
+      .then(function (ctx) {
+        return fetch("/api/books/" + encodeURIComponent(ctx.bookId) + "/backup-snapshot")
+          .then(function (resp) {
+            return resp.json().then(function (snapshot) {
+              if (!resp.ok) throw snapshot || { error: "backup_snapshot_failed" };
+              ctx.snapshot = snapshot;
+              return ctx;
+            });
+          });
+      })
+      .then(function (ctx) {
+        return fetch("/api/books/backup-restore-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ snapshot: ctx.snapshot }),
+        }).then(function (resp) {
+          return resp.json().then(function (verifyResult) {
+            if (!resp.ok) throw verifyResult || { error: "backup_restore_verify_failed" };
+            return {
+              ok: Boolean((ctx.integrityResult.init_integrity || {}).ok) && Boolean(verifyResult.ok),
+              book_id: ctx.bookId,
+              book_name: ctx.integrityResult.book_name || "",
+              accounting_standard: ctx.integrityResult.accounting_standard || "",
+              create_result: ctx.createResult,
+              integrity_result: ctx.integrityResult,
+              backup_snapshot_stats: (ctx.snapshot && ctx.snapshot.stats) || {},
+              backup_restore_verify_result: verifyResult,
+            };
+          });
+        });
+      })
+      .then(function (finalResult) {
+        meta.textContent = "状态：成功（book_id=" + (finalResult.book_id || "") + ")";
+        showJson(finalResult);
+      })
+      .catch(function (err) {
+        meta.textContent = "状态：失败";
+        showJson({ ok: false, error: err && err.error ? err.error : String(err || "unknown_error") });
+      })
+      .finally(function () {
+        runBtn.disabled = false;
+      });
+  });
+})();
+</script>
+{% endblock %}

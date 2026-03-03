@@ -1,0 +1,1 @@
+{"accounting_standard":"enterprise","book_id":1638,"book_name":"P1-BOOKINIT-01-UAT-20260303_162931","init_integrity":{"checks":{"basic_params_minimal":true,"duplicate_init_guard":true,"periods_initialized":true,"subjects_initialized":true},"ok":true,"period_count":36,"subject_count":421},"is_enabled":1}

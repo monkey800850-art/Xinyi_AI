@@ -1,0 +1,67 @@
+{
+  "ok": true,
+  "book_id": 1638,
+  "book_name": "P1-BOOKINIT-01-UAT-20260303_162931",
+  "accounting_standard": "enterprise",
+  "create_result": {
+    "accounting_standard": "enterprise",
+    "book_id": 1638,
+    "init_integrity": {
+      "checks": {
+        "basic_params_minimal": true,
+        "duplicate_init_guard": true,
+        "periods_initialized": true,
+        "subjects_initialized": true
+      },
+      "ok": true,
+      "period_count": 36,
+      "subject_count": 421
+    },
+    "period_init_result": {
+      "existing_total": 36,
+      "inserted_or_existing": 36,
+      "target_total": 36
+    },
+    "subject_init_result": {
+      "book_id": 1638,
+      "category_validation": {
+        "mismatch_count": 48,
+        "mode": "warn_only",
+        "ok": false,
+        "rule": "subject_code_prefix_vs_category_text"
+      },
+      "errors": [],
+      "failed": 0,
+      "inserted": 421,
+      "skipped": 6,
+      "standard": "enterprise",
+      "total": 427
+    }
+  },
+  "integrity_result": {
+    "accounting_standard": "enterprise",
+    "book_id": 1638,
+    "book_name": "P1-BOOKINIT-01-UAT-20260303_162931",
+    "init_integrity": {
+      "checks": {
+        "basic_params_minimal": true,
+        "duplicate_init_guard": true,
+        "periods_initialized": true,
+        "subjects_initialized": true
+      },
+      "ok": true,
+      "period_count": 36,
+      "subject_count": 421
+    },
+    "is_enabled": 1
+  },
+  "backup_snapshot_stats": {
+    "period_count": 36,
+    "subject_count": 421
+  },
+  "backup_restore_verify_result": {
+    "errors": [],
+    "ok": true,
+    "warnings": []
+  }
+}
