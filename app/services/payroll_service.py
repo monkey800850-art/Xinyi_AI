@@ -283,47 +283,63 @@ def upsert_payroll_slip(payload: Dict[str, object]) -> Dict[str, object]:
 def list_payroll_slips(params: Dict[str, str]) -> Dict[str, object]:
     book_id = _as_int(params.get("book_id"), "book_id")
     period = str(params.get("period") or "").strip()
-    sql = """
+    args = {"book_id": book_id}
+    if period:
+        args["period"] = period
+    engine = get_engine()
+    with engine.connect() as conn:
+        cols = _table_columns(conn, "payroll_slips")
+        optional_select_cols = []
+        if "payment_status" in cols:
+            optional_select_cols.append("payment_status")
+        if "payment_request_id" in cols:
+            optional_select_cols.append("payment_request_id")
+        if "paid_at" in cols:
+            optional_select_cols.append("paid_at")
+        optional_sql = f", {', '.join(optional_select_cols)}" if optional_select_cols else ""
+        sql = f"""
         SELECT id, book_id, period, employee_id, employee_name, department,
                attendance_ref, attendance_days, absent_days,
                gross_amount, deduction_amount, social_insurance, housing_fund,
                taxable_base, tax_amount, net_amount, status, bonus_amount, overtime_amount
+               {optional_sql}
         FROM payroll_slips
         WHERE book_id=:book_id
-    """
-    args = {"book_id": book_id}
-    if period:
-        sql += " AND period=:period"
-        args["period"] = period
-    sql += " ORDER BY id DESC"
-    engine = get_engine()
-    with engine.connect() as conn:
+        """
+        if period:
+            sql += " AND period=:period"
+        sql += " ORDER BY id DESC"
         rows = conn.execute(text(sql), args).fetchall()
     items = []
     for r in rows:
-        items.append(
-            {
-                "id": int(r.id),
-                "book_id": int(r.book_id),
-                "period": str(r.period),
-                "employee_id": int(r.employee_id),
-                "employee_name": str(r.employee_name or ""),
-                "department": str(r.department or ""),
-                "attendance_ref": str(r.attendance_ref or ""),
-                "attendance_days": int(r.attendance_days or 0),
-                "absent_days": int(r.absent_days or 0),
-                "gross_amount": float(r.gross_amount or 0),
-                "deduction_amount": float(r.deduction_amount or 0),
-                "social_insurance": float(r.social_insurance or 0),
-                "housing_fund": float(r.housing_fund or 0),
-                "taxable_base": float(r.taxable_base or 0),
-                "tax_amount": float(r.tax_amount or 0),
-                "net_amount": float(r.net_amount or 0),
-                "status": str(r.status or ""),
-                "bonus_amount": float(r.bonus_amount or 0),
-                "overtime_amount": float(r.overtime_amount or 0),
-            }
-        )
+        item = {
+            "id": int(r.id),
+            "book_id": int(r.book_id),
+            "period": str(r.period),
+            "employee_id": int(r.employee_id),
+            "employee_name": str(r.employee_name or ""),
+            "department": str(r.department or ""),
+            "attendance_ref": str(r.attendance_ref or ""),
+            "attendance_days": int(r.attendance_days or 0),
+            "absent_days": int(r.absent_days or 0),
+            "gross_amount": float(r.gross_amount or 0),
+            "deduction_amount": float(r.deduction_amount or 0),
+            "social_insurance": float(r.social_insurance or 0),
+            "housing_fund": float(r.housing_fund or 0),
+            "taxable_base": float(r.taxable_base or 0),
+            "tax_amount": float(r.tax_amount or 0),
+            "net_amount": float(r.net_amount or 0),
+            "status": str(r.status or ""),
+            "bonus_amount": float(r.bonus_amount or 0),
+            "overtime_amount": float(r.overtime_amount or 0),
+        }
+        if hasattr(r, "payment_status"):
+            item["payment_status"] = str(r.payment_status or "")
+        if hasattr(r, "payment_request_id"):
+            item["payment_request_id"] = int(r.payment_request_id or 0) if r.payment_request_id is not None else None
+        if hasattr(r, "paid_at"):
+            item["paid_at"] = str(r.paid_at or "")
+        items.append(item)
     return {"items": items}
 
 
@@ -442,6 +458,11 @@ def create_payroll_payment_request(slip_id: int, operator: str, role: str) -> Di
         if str(slip.status or "").lower() != "confirmed":
             raise PayrollError("slip_not_confirmed")
 
+        slip_cols = _table_columns(conn, "payroll_slips")
+        has_payment_status = "payment_status" in slip_cols
+        has_payment_request_id = "payment_request_id" in slip_cols
+        has_paid_at = "paid_at" in slip_cols
+
         existing = conn.execute(
             text(
                 """
@@ -456,6 +477,18 @@ def create_payroll_payment_request(slip_id: int, operator: str, role: str) -> Di
             {"sid": sid},
         ).fetchone()
         if existing:
+            if has_payment_status or has_payment_request_id or has_paid_at:
+                sets = []
+                params = {"id": sid}
+                if has_payment_status:
+                    sets.append("payment_status='pending'")
+                if has_payment_request_id:
+                    sets.append("payment_request_id=:payment_request_id")
+                    params["payment_request_id"] = int(existing.id)
+                if has_paid_at:
+                    sets.append("paid_at=NULL")
+                if sets:
+                    conn.execute(text(f"UPDATE payroll_slips SET {', '.join(sets)}, updated_at=:updated_at WHERE id=:id"), _db_params({**params, "updated_at": now}))
             return {"payment_id": int(existing.id), "status": str(existing.status), "already_exists": True}
 
         result = conn.execute(
@@ -486,6 +519,19 @@ def create_payroll_payment_request(slip_id: int, operator: str, role: str) -> Di
         )
         payment_id = int(result.lastrowid)
 
+        if has_payment_status or has_payment_request_id:
+            sets = []
+            params = {"id": sid, "updated_at": now}
+            if has_payment_status:
+                sets.append("payment_status='pending'")
+            if has_payment_request_id:
+                sets.append("payment_request_id=:payment_request_id")
+                params["payment_request_id"] = payment_id
+            if has_paid_at:
+                sets.append("paid_at=NULL")
+            if sets:
+                conn.execute(text(f"UPDATE payroll_slips SET {', '.join(sets)}, updated_at=:updated_at WHERE id=:id"), _db_params(params))
+
         cols = _table_columns(conn, "payroll_tax_ledger")
         if "snapshot_json" in cols:
             conn.execute(
@@ -514,6 +560,50 @@ def create_payroll_payment_request(slip_id: int, operator: str, role: str) -> Di
             )
 
     return {"payment_id": payment_id, "status": "pending", "related_type": "payroll", "related_id": sid}
+
+
+def get_payroll_payment_status(slip_id: int) -> Dict[str, object]:
+    sid = int(slip_id)
+    engine = get_engine()
+    with engine.connect() as conn:
+        cols = _table_columns(conn, "payroll_slips")
+        optional = []
+        if "payment_status" in cols:
+            optional.append("payment_status")
+        if "payment_request_id" in cols:
+            optional.append("payment_request_id")
+        if "paid_at" in cols:
+            optional.append("paid_at")
+        optional_sql = f", {', '.join(optional)}" if optional else ""
+        slip = conn.execute(text(f"SELECT id, book_id, period, employee_id, status, net_amount {optional_sql} FROM payroll_slips WHERE id=:id"), {"id": sid}).fetchone()
+        if not slip:
+            raise PayrollError("not_found")
+
+        payment = conn.execute(
+            text(
+                """
+                SELECT id, status, pay_at
+                FROM payment_requests
+                WHERE related_type='payroll' AND related_id=:sid
+                ORDER BY id DESC
+                LIMIT 1
+                """
+            ),
+            {"sid": sid},
+        ).fetchone()
+
+    return {
+        "slip_id": sid,
+        "book_id": int(slip.book_id),
+        "period": str(slip.period),
+        "employee_id": int(slip.employee_id),
+        "slip_status": str(slip.status or ""),
+        "net_amount": float(slip.net_amount or 0),
+        "payment_status": str(getattr(slip, "payment_status", "") or (payment.status if payment else "unpaid")),
+        "payment_request_id": int(getattr(slip, "payment_request_id", 0) or (payment.id if payment else 0)) or None,
+        "paid_at": str(getattr(slip, "paid_at", "") or (payment.pay_at if payment else "")),
+        "payment_request_status": str(payment.status or "") if payment else "",
+    }
 
 
 def confirm_payroll_slip(slip_id: int, operator: str, role: str) -> Dict[str, object]:

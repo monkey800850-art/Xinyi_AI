@@ -50,6 +50,25 @@ def _log_action(conn, pid: int, action: str, from_status: str, to_status: str, o
     )
 
 
+def _table_columns(conn, table_name: str) -> set[str]:
+    try:
+        rows = conn.execute(
+            text(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = :table_name
+                """
+            ),
+            {"table_name": table_name},
+        ).fetchall()
+        return {str(r.column_name or "").strip().lower() for r in rows}
+    except Exception:
+        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+        return {str(getattr(r, "name", r[1]) or "").strip().lower() for r in rows}
+
+
 def create_or_update_payment(payload: Dict[str, object]) -> Dict[str, object]:
     errors: List[Dict[str, object]] = []
 
@@ -235,9 +254,10 @@ def execute_payment(payment_id: int, operator: str, role: str) -> Dict[str, obje
         raise PaymentError("permission_denied")
 
     engine = get_engine()
+    now = datetime.now()
     with engine.begin() as conn:
         row = conn.execute(
-            text("SELECT id, status FROM payment_requests WHERE id=:id"),
+            text("SELECT id, status, related_type, related_id FROM payment_requests WHERE id=:id"),
             {"id": payment_id},
         ).fetchone()
         if not row:
@@ -245,10 +265,31 @@ def execute_payment(payment_id: int, operator: str, role: str) -> Dict[str, obje
         if row.status != "approved":
             raise PaymentError("invalid_status_transition")
 
-        conn.execute(
-            text("UPDATE payment_requests SET status='paid', pay_at=NOW() WHERE id=:id"),
-            {"id": payment_id},
-        )
+        pay_cols = _table_columns(conn, "payment_requests")
+        updates = ["status='paid'"]
+        params = {"id": payment_id, "now": now}
+        if "pay_at" in pay_cols:
+            updates.append("pay_at=:now")
+        if "updated_at" in pay_cols:
+            updates.append("updated_at=:now")
+        conn.execute(text(f"UPDATE payment_requests SET {', '.join(updates)} WHERE id=:id"), params)
+
+        if str(row.related_type or "").lower() == "payroll" and row.related_id is not None:
+            slip_cols = _table_columns(conn, "payroll_slips")
+            if slip_cols:
+                slip_updates = []
+                slip_params = {"id": int(row.related_id), "now": now, "payment_id": payment_id}
+                if "payment_status" in slip_cols:
+                    slip_updates.append("payment_status='paid'")
+                if "paid_at" in slip_cols:
+                    slip_updates.append("paid_at=:now")
+                if "payment_request_id" in slip_cols:
+                    slip_updates.append("payment_request_id=:payment_id")
+                if "updated_at" in slip_cols:
+                    slip_updates.append("updated_at=:now")
+                if slip_updates:
+                    conn.execute(text(f"UPDATE payroll_slips SET {', '.join(slip_updates)} WHERE id=:id"), slip_params)
+
         _log_action(conn, payment_id, "execute", row.status, "paid", operator, role)
 
     return {"id": payment_id, "status": "paid"}

@@ -10,6 +10,7 @@ from sqlalchemy import create_engine, text
 from app.services.payroll_service import (
     confirm_payroll_slip,
     create_payroll_payment_request,
+    get_payroll_payment_status,
     get_payroll_voucher_suggestion,
     list_payroll_periods,
     list_payroll_slips,
@@ -18,6 +19,7 @@ from app.services.payroll_service import (
     upsert_payroll_period,
     upsert_payroll_slip,
 )
+from app.services.payment_service import execute_payment
 
 
 class PayrollMvpUnitTest(unittest.TestCase):
@@ -67,6 +69,9 @@ class PayrollMvpUnitTest(unittest.TestCase):
                         tax_amount NUMERIC NOT NULL DEFAULT 0,
                         net_amount NUMERIC NOT NULL DEFAULT 0,
                         status TEXT NOT NULL DEFAULT 'draft',
+                        payment_status TEXT NOT NULL DEFAULT 'unpaid',
+                        payment_request_id INTEGER NULL,
+                        paid_at DATETIME NULL,
                         created_at DATETIME NULL,
                         updated_at DATETIME NULL
                     )
@@ -106,8 +111,26 @@ class PayrollMvpUnitTest(unittest.TestCase):
                         related_type TEXT NULL,
                         related_id INTEGER NULL,
                         reimbursement_id INTEGER NULL,
+                        pay_at DATETIME NULL,
                         created_at DATETIME NULL,
                         updated_at DATETIME NULL
+                    )
+                    """
+                )
+            )
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS payment_request_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        payment_request_id INTEGER NOT NULL,
+                        action TEXT NOT NULL,
+                        from_status TEXT NOT NULL,
+                        to_status TEXT NOT NULL,
+                        operator TEXT NULL,
+                        operator_role TEXT NULL,
+                        comment TEXT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     )
                     """
                 )
@@ -123,6 +146,7 @@ class PayrollMvpUnitTest(unittest.TestCase):
 
     def setUp(self):
         with self.engine.begin() as conn:
+            conn.execute(text("DELETE FROM payment_request_logs"))
             conn.execute(text("DELETE FROM payment_requests"))
             conn.execute(text("DELETE FROM payroll_tax_ledger"))
             conn.execute(text("DELETE FROM payroll_slips"))
@@ -169,12 +193,24 @@ class PayrollMvpUnitTest(unittest.TestCase):
 
             pay_req = create_payroll_payment_request(int(slip["id"]), "cashier_a", "cashier")
             self.assertEqual(pay_req["status"], "pending")
+            self.assertEqual(pay_req["related_type"], "payroll")
 
             with self.engine.connect() as conn:
                 row = conn.execute(text("SELECT COUNT(*) AS c FROM payroll_tax_ledger")).fetchone()
                 self.assertEqual(int(row.c), 2)
                 pay_row = conn.execute(text("SELECT COUNT(*) AS c FROM payment_requests")).fetchone()
                 self.assertEqual(int(pay_row.c), 1)
+            with self.engine.begin() as conn:
+                conn.execute(text("UPDATE payment_requests SET status='approved' WHERE id=:id"), {"id": int(pay_req["payment_id"])})
+
+            with patch("app.services.payment_service.get_engine", return_value=self.engine):
+                paid = execute_payment(int(pay_req["payment_id"]), "cashier_a", "cashier")
+                self.assertEqual(paid["status"], "paid")
+
+            payment_status = get_payroll_payment_status(int(slip["id"]))
+            self.assertEqual(payment_status["payment_status"], "paid")
+            self.assertEqual(payment_status["payment_request_status"], "paid")
+            self.assertEqual(int(payment_status["payment_request_id"]), int(pay_req["payment_id"]))
 
             closed = set_payroll_period_status(int(p["id"]), "close", operator_id=1)
             self.assertEqual(closed["status"], "closed")

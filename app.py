@@ -220,6 +220,7 @@ from app.services.payroll_service import (
     PayrollError,
     confirm_payroll_slip,
     create_payroll_payment_request,
+    get_payroll_payment_status,
     get_payroll_voucher_suggestion,
     list_payroll_periods,
     list_payroll_slips,
@@ -4005,6 +4006,17 @@ def create_app() -> Flask:
         try:
             result = create_payroll_payment_request(slip_id, operator, role)
             log_audit("payroll", "create_payment_request", "payroll_slip", slip_id, operator, role, result)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/payroll/slips/<int:slip_id>/payment-status")
+    def api_payroll_payment_status(slip_id: int):
+        _, role = _get_operator_from_headers()
+        if role not in ("payroll", "cashier", "hr", "admin", "auditor"):
+            return jsonify({"error": "forbidden"}), 403
+        try:
+            result = get_payroll_payment_status(slip_id)
             return jsonify(result), 200
         except PayrollError as err:
             return jsonify({"error": str(err), "errors": err.errors}), 400
