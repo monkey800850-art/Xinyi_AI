@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>报销单列表</title>
-    <link rel="stylesheet" href="/static/css/reimbursements.css" />
-  </head>
-  <body>
-    <div class="reim-page">
+{% extends "main_layout.html" %}
+{% block page_title %}报销单列表{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/reimbursements.css" />
+{% endblock %}
+{% block content %}
+<div class="reim-page">
       <header class="reim-header">
         <div>
           <h1>报销单列表</h1>
@@ -91,7 +88,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/reimbursements.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/reimbursements.js"></script>
+{% endblock %}

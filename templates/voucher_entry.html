@@ -1,14 +1,12 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>凭证录入</title>
-    <link rel="stylesheet" href="/static/css/voucher_entry.css" />
-    <link rel="stylesheet" href="/static/css/autocomplete.css" />
-  </head>
-  <body data-book-id="1">
-    <div class="voucher-page">
+{% extends "main_layout.html" %}
+{% block page_title %}凭证录入{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/voucher_entry.css" />
+<link rel="stylesheet" href="/static/css/autocomplete.css" />
+{% endblock %}
+{% block body_attrs %} data-book-id="1"{% endblock %}
+{% block content %}
+<div class="voucher-page">
       <header class="voucher-header">
         <div>
           <h1>凭证录入</h1>
@@ -166,8 +164,8 @@
         </div>
       </section>
     </div>
-
-    <script src="/static/js/autocomplete.js"></script>
-    <script src="/static/js/voucher_entry.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/autocomplete.js"></script>
+<script src="/static/js/voucher_entry.js"></script>
+{% endblock %}

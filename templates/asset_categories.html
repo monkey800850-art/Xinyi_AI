@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>资产类别管理</title>
-    <link rel="stylesheet" href="/static/css/assets.css" />
-  </head>
-  <body>
-    <div class="asset-page">
+{% extends "main_layout.html" %}
+{% block page_title %}资产类别管理{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/assets.css" />
+{% endblock %}
+{% block content %}
+<div class="asset-page">
       <header class="asset-header">
         <div>
           <h1>资产类别管理</h1>
@@ -81,7 +78,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/assets.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/assets.js"></script>
+{% endblock %}

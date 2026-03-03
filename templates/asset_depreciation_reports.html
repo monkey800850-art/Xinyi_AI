@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>固定资产折旧报表</title>
-    <link rel="stylesheet" href="/static/css/assets_cards.css" />
-  </head>
-  <body>
-    <div class="asset-page">
+{% extends "main_layout.html" %}
+{% block page_title %}固定资产折旧报表{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/assets_cards.css" />
+{% endblock %}
+{% block content %}
+<div class="asset-page">
       <header class="asset-header">
         <div>
           <h1>折旧报表</h1>
@@ -94,7 +91,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/asset_depreciation_reports.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/asset_depreciation_reports.js"></script>
+{% endblock %}

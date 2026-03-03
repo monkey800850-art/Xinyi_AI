@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Autocomplete Demo</title>
-    <link rel="stylesheet" href="/static/css/autocomplete.css" />
-  </head>
-  <body>
-    <div class="demo-page">
+{% extends "main_layout.html" %}
+{% block page_title %}Autocomplete Demo{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/autocomplete.css" />
+{% endblock %}
+{% block content %}
+<div class="demo-page">
       <header class="demo-header">
         <h1>全局联想组件演示</h1>
         <p>示例：科目（type=subject）</p>
@@ -31,9 +28,7 @@
         <p>接口：/api/autocomplete</p>
       </footer>
     </div>
-
-    <script src="/static/js/autocomplete.js"></script>
-    <script>
+<script>
       (function () {
         var input = document.getElementById("ac-subject");
         var root = document.getElementById("ac-subject-root");
@@ -55,5 +50,7 @@
         });
       })();
     </script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/autocomplete.js"></script>
+{% endblock %}

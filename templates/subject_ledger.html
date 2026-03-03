@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>科目明细账</title>
-    <link rel="stylesheet" href="/static/css/subject_ledger.css" />
-  </head>
-  <body>
-    <div class="ledger-page">
+{% extends "main_layout.html" %}
+{% block page_title %}科目明细账{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/subject_ledger.css" />
+{% endblock %}
+{% block content %}
+<div class="ledger-page">
       <nav class="breadcrumb">发生余额表 &gt; 明细账 &gt; 凭证详情</nav>
 
       <header class="ledger-header">
@@ -95,7 +92,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/subject_ledger.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/subject_ledger.js"></script>
+{% endblock %}

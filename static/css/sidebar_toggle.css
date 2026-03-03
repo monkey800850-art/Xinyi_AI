@@ -1,24 +1,38 @@
 /* P1-UX-SIDEBAR-TOGGLE-01 */
 
-/* 默认布局不改，只在 collapsed 时覆盖 */
-.sidebar-collapsed #sidebar,
-.sidebar-collapsed .shell-sidebar {
-  display: none !important;
+/* 左侧栏向左折叠/展开（带动画） */
+.shell-app {
+  transition: grid-template-columns 0.22s ease;
 }
 
-/* 内容区占满 */
-.sidebar-collapsed .shell,
-.sidebar-collapsed .layout-root,
-.sidebar-collapsed .layout-container,
-.sidebar-collapsed .app-container,
-.sidebar-collapsed .main-container {
-  display: block !important; /* 或 flex 也可，但要确保 main 占满 */
+#sidebar,
+.shell-sidebar {
+  transition: transform 0.22s ease, opacity 0.18s ease, width 0.22s ease, min-width 0.22s ease, max-width 0.22s ease;
+  transform: translateX(0);
+  opacity: 1;
 }
 
-.sidebar-collapsed .shell-main,
-.sidebar-collapsed #content,
-.sidebar-collapsed .main-content,
-.sidebar-collapsed .content {
+html.sidebar-collapsed .shell-app {
+  grid-template-columns: 0 minmax(0, 1fr) !important;
+}
+
+html.sidebar-collapsed #sidebar,
+html.sidebar-collapsed .shell-sidebar {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-right: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+html.sidebar-collapsed .shell-main,
+html.sidebar-collapsed #content,
+html.sidebar-collapsed .main-content,
+html.sidebar-collapsed .content {
   width: 100% !important;
 }
 

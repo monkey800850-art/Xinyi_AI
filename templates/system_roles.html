@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>角色权限</title>
-    <link rel="stylesheet" href="/static/css/assets_cards.css" />
-  </head>
-  <body>
-    <div class="asset-page">
+{% extends "main_layout.html" %}
+{% block page_title %}角色权限{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/assets_cards.css" />
+{% endblock %}
+{% block content %}
+<div class="asset-page">
       <header class="asset-header">
         <div>
           <h1>角色权限</h1>
@@ -72,7 +69,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/system_roles.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/system_roles.js"></script>
+{% endblock %}

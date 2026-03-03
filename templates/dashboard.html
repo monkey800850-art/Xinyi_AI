@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>工作台</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css" />
-  </head>
-  <body>
-    <div class="dash-page">
+{% extends "main_layout.html" %}
+{% block page_title %}工作台{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/dashboard.css" />
+{% endblock %}
+{% block content %}
+<div class="dash-page">
       <header class="dash-header">
         <div>
           <h1>工作台</h1>
@@ -47,7 +44,7 @@
         <div class="shortcut-grid" id="shortcut-grid"></div>
       </section>
     </div>
-
-    <script src="/static/js/dashboard.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

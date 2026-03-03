@@ -23,6 +23,11 @@ class _Row:
             setattr(self, key, value)
 
 
+class _MappingRow:
+    def __init__(self, data):
+        self._mapping = dict(data)
+
+
 class _FakeConn:
     def __init__(self, user_row=None, role_code="admin"):
         self.user_row = user_row
@@ -54,6 +59,26 @@ class _FakeConn:
                 return _Result([_Row(code=self.role_code)])
             return _Result([])
         return _Result([])
+
+
+class _FakeConnUppercaseInfoSchema(_FakeConn):
+    def __init__(self, user_row=None, role_code="admin"):
+        super().__init__(user_row=user_row, role_code=role_code)
+        self.pragma_called = False
+
+    def execute(self, stmt, params=None):
+        sql = str(stmt).lower()
+        if "information_schema.columns" in sql:
+            return _Result(
+                [
+                    _MappingRow({"COLUMN_NAME": "password_hash"}),
+                    _MappingRow({"COLUMN_NAME": "failed_attempts"}),
+                    _MappingRow({"COLUMN_NAME": "locked_until"}),
+                ]
+            )
+        if "pragma table_info" in sql:
+            self.pragma_called = True
+        return super().execute(stmt, params)
 
 
 class _FakeEngine:
@@ -123,6 +148,22 @@ class SystemAuthServiceUnitTest(unittest.TestCase):
         self.assertEqual(str(ctx.exception), "account_locked")
         self.assertEqual(len(conn.failed_updates), 1)
         self.assertEqual(int(conn.failed_updates[0]["failed_attempts"]), 5)
+
+    def test_login_success_with_uppercase_information_schema_rows(self):
+        user_row = _Row(
+            id=13,
+            username="u4",
+            display_name="User 4",
+            is_enabled=1,
+            password_hash=generate_password_hash("ok-pass"),
+            failed_attempts=0,
+            locked_until=None,
+        )
+        conn = _FakeConnUppercaseInfoSchema(user_row=user_row, role_code="admin")
+        with patch("app.services.system_auth_service.get_engine", return_value=_FakeEngine(conn)):
+            result = authenticate_user("u4", "ok-pass", max_failed_attempts=5, lock_minutes=15)
+        self.assertEqual(result["id"], 13)
+        self.assertFalse(conn.pragma_called)
 
 
 if __name__ == "__main__":

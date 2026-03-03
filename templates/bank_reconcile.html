@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>银行对账</title>
-    <link rel="stylesheet" href="/static/css/bank_reconcile.css" />
-  </head>
-  <body>
-    <div class="rec-page">
+{% extends "main_layout.html" %}
+{% block page_title %}银行对账{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/bank_reconcile.css" />
+{% endblock %}
+{% block content %}
+<div class="rec-page">
       <header class="rec-header">
         <div>
           <h1>银行对账</h1>
@@ -83,7 +80,7 @@
         </div>
       </section>
     </div>
-
-    <script src="/static/js/bank_reconcile.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/bank_reconcile.js"></script>
+{% endblock %}

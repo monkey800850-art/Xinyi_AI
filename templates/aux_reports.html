@@ -1,14 +1,12 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>辅助余额与明细</title>
-    <link rel="stylesheet" href="/static/css/aux_reports.css" />
-    <link rel="stylesheet" href="/static/css/autocomplete.css" />
-  </head>
-  <body data-book-id="1">
-    <div class="aux-page">
+{% extends "main_layout.html" %}
+{% block page_title %}辅助余额与明细{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/aux_reports.css" />
+<link rel="stylesheet" href="/static/css/autocomplete.css" />
+{% endblock %}
+{% block body_attrs %} data-book-id="1"{% endblock %}
+{% block content %}
+<div class="aux-page">
       <nav class="breadcrumb">发生余额表 &gt; 明细账 &gt; 辅助余额</nav>
 
       <header class="aux-header">
@@ -131,8 +129,8 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/autocomplete.js"></script>
-    <script src="/static/js/aux_reports.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/autocomplete.js"></script>
+<script src="/static/js/aux_reports.js"></script>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends "main_layout.html" %}
+{% block page_title %}科目辅助挂接{% endblock %}
+{% block extra_css %}
+<style>
+  .card {
+    border: 1px solid #d9e3ef;
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: #627a93;
+  }
+  .field input {
+    width: 100%;
+    border: 1px solid #cfdced;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+  }
+  .actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    border: 1px solid #bdd2ea;
+    background: #eaf3fd;
+    color: #174f88;
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border-bottom: 1px solid #e3ebf4;
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 13px;
+    vertical-align: top;
+  }
+  th {
+    background: #f5f9fe;
+    color: #3a5575;
+  }
+  .warn { color: #b54708; }
+  .ok { color: #027a48; }
+  .error { color: #b42318; }
+  @media (max-width: 1024px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>科目辅助挂接</h2>
+  <div class="grid">
+    <div class="field">
+      <label>账套ID</label>
+      <input id="book-id" type="number" value="{{ current_book_id or 1 }}" min="1" />
+    </div>
+    <div class="field">
+      <label>关键词</label>
+      <input id="q" type="text" placeholder="科目编码或名称" />
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="btn" id="query-btn">查询</button>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>编辑配置</h3>
+  <div class="grid">
+    <div class="field">
+      <label>科目编码</label>
+      <input id="f-code" type="text" readonly />
+    </div>
+    <div class="field">
+      <label>辅助维度（逗号分隔）</label>
+      <input id="f-aux-types" type="text" placeholder="department,person,entity,project,bank_account" />
+    </div>
+    <div class="field">
+      <label>启用辅助核算（1/0）</label>
+      <input id="f-requires-aux" type="number" min="0" max="1" value="0" />
+    </div>
+    <div class="field">
+      <label>启用银行账户辅助（1/0）</label>
+      <input id="f-bank-aux" type="number" min="0" max="1" value="0" />
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="save-btn">保存挂接</button>
+  </div>
+  <div id="save-msg"></div>
+</section>
+
+<section class="card">
+  <h3>科目配置列表</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>科目</th>
+        <th>名称</th>
+        <th>辅助维度</th>
+        <th>生效维度</th>
+        <th>一致性</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="rows">
+      <tr><td colspan="6">点击“查询”加载</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  (function () {
+    const rowsEl = document.getElementById("rows");
+    const msgEl = document.getElementById("save-msg");
+    let cache = [];
+
+    function val(id) { return document.getElementById(id).value.trim(); }
+    function setv(id, v) { document.getElementById(id).value = v || ""; }
+    function show(text, ok) {
+      msgEl.className = ok ? "ok" : "error";
+      msgEl.textContent = text || "";
+    }
+
+    async function query() {
+      const bookId = val("book-id") || "1";
+      const q = encodeURIComponent(val("q"));
+      const res = await fetch(`/api/subjects/aux?book_id=${encodeURIComponent(bookId)}&q=${q}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "query_failed");
+      cache = data.items || [];
+      render(cache);
+    }
+
+    function render(items) {
+      if (!items.length) {
+        rowsEl.innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
+        return;
+      }
+      rowsEl.innerHTML = items.map((x) => {
+        const cls = x.consistency === "ok" ? "ok" : "warn";
+        const text = x.consistency === "ok" ? "一致" : (x.consistency_message || "不一致");
+        return `
+          <tr>
+            <td>${x.code || ""}</td>
+            <td>${x.name || ""}</td>
+            <td>${x.aux_types_text || "-"}</td>
+            <td>${x.effective_aux_types_text || "-"}</td>
+            <td class="${cls}">${text}</td>
+            <td><button class="btn pick-btn" data-code="${x.code}">编辑</button></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function fill(item) {
+      setv("f-code", item.code);
+      setv("f-aux-types", item.aux_types_text || "");
+      setv("f-requires-aux", String(item.requires_auxiliary || 0));
+      setv("f-bank-aux", String(item.requires_bank_account_aux || 0));
+    }
+
+    async function save() {
+      const subjectCode = val("f-code");
+      if (!subjectCode) throw new Error("请先在列表中选择科目");
+      const payload = {
+        book_id: val("book-id") || "1",
+        subject_code: subjectCode,
+        aux_types: val("f-aux-types"),
+        requires_auxiliary: val("f-requires-aux") || "0",
+        requires_bank_account_aux: val("f-bank-aux") || "0"
+      };
+      const res = await fetch("/api/subjects/aux", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "save_failed");
+      show("保存成功", true);
+      await query();
+    }
+
+    document.getElementById("query-btn").addEventListener("click", async () => {
+      try { await query(); show("", true); } catch (e) { show(String(e.message || e), false); }
+    });
+    document.getElementById("save-btn").addEventListener("click", async () => {
+      try { await save(); } catch (e) { show(String(e.message || e), false); }
+    });
+    rowsEl.addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".pick-btn");
+      if (!btn) return;
+      const code = btn.getAttribute("data-code");
+      const hit = cache.find((x) => String(x.code) === String(code));
+      if (hit) fill(hit);
+    });
+
+    query().catch((e) => show(String(e.message || e), false));
+  })();
+</script>
+{% endblock %}

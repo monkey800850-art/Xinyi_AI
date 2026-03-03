@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>银行流水导入</title>
-    <link rel="stylesheet" href="/static/css/bank_import.css" />
-  </head>
-  <body>
-    <div class="bank-page">
+{% extends "main_layout.html" %}
+{% block page_title %}银行流水导入{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/bank_import.css" />
+{% endblock %}
+{% block content %}
+<div class="bank-page">
       <header class="bank-header">
         <div>
           <h1>银行流水导入</h1>
@@ -57,7 +54,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/bank_import.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/bank_import.js"></script>
+{% endblock %}

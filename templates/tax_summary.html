@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>税务汇总与预警</title>
-    <link rel="stylesheet" href="/static/css/tax.css" />
-  </head>
-  <body>
-    <div class="tax-page">
+{% extends "main_layout.html" %}
+{% block page_title %}税务汇总与预警{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/tax.css" />
+{% endblock %}
+{% block content %}
+<div class="tax-page">
       <header class="tax-header">
         <div>
           <h1>税务汇总与预警</h1>
@@ -73,7 +70,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/tax_summary.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/tax_summary.js"></script>
+{% endblock %}

@@ -1,13 +1,10 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>到期预警与账龄分析</title>
-    <link rel="stylesheet" href="/static/css/ar_ap.css" />
-  </head>
-  <body>
-    <div class="ar-page">
+{% extends "main_layout.html" %}
+{% block page_title %}到期预警与账龄分析{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/ar_ap.css" />
+{% endblock %}
+{% block content %}
+<div class="ar-page">
       <header class="ar-header">
         <div>
           <h1>应收应付预警与账龄分析</h1>
@@ -94,7 +91,7 @@
         </table>
       </section>
     </div>
-
-    <script src="/static/js/ar_ap.js"></script>
-  </body>
-</html>
+{% endblock %}
+{% block extra_js %}
+<script src="/static/js/ar_ap.js"></script>
+{% endblock %}

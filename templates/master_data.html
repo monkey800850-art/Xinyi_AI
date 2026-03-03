@@ -1,0 +1,293 @@
+{% extends "main_layout.html" %}
+{% block page_title %}{{ master_label }}管理{% endblock %}
+{% block extra_css %}
+<style>
+  .card {
+    border: 1px solid #d9e3ef;
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: #627a93;
+  }
+  .field input, .field select {
+    width: 100%;
+    border: 1px solid #cfdced;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 14px;
+  }
+  .actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    border: 1px solid #bdd2ea;
+    background: #eaf3fd;
+    color: #174f88;
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border-bottom: 1px solid #e3ebf4;
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 13px;
+  }
+  th {
+    background: #f5f9fe;
+    color: #3a5575;
+  }
+  .error {
+    color: #b42318;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .ok {
+    color: #027a48;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  @media (max-width: 1024px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>{{ master_label }}管理</h2>
+  <div class="grid">
+    <div class="field">
+      <label>账套ID</label>
+      <input id="book-id" type="number" value="{{ current_book_id or 1 }}" min="1" />
+    </div>
+    <div class="field">
+      <label>关键词</label>
+      <input id="q" type="text" placeholder="编码或名称" />
+    </div>
+    <div class="field">
+      <label>包含隐藏</label>
+      <select id="include-hidden">
+        <option value="0">否</option>
+        <option value="1">是</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>&nbsp;</label>
+      <button class="btn" id="query-btn">查询</button>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h3>新增 / 编辑</h3>
+  <div class="grid">
+    <div class="field">
+      <label>ID（编辑时可填）</label>
+      <input id="f-id" type="number" min="1" />
+    </div>
+    <div class="field">
+      <label>编码</label>
+      <input id="f-code" type="text" />
+    </div>
+    <div class="field">
+      <label>名称</label>
+      <input id="f-name" type="text" />
+    </div>
+    <div class="field">
+      <label>启用</label>
+      <select id="f-enabled">
+        <option value="1">是</option>
+        <option value="0">否</option>
+      </select>
+    </div>
+  </div>
+  <div class="grid" style="margin-top: 10px;">
+    <div class="field"><label>上级编码</label><input id="f-parent-code" type="text" /></div>
+    <div class="field"><label>独立核算</label><select id="f-independent"><option value="0">否</option><option value="1">是</option></select></div>
+    <div class="field"><label>所属部门编码</label><input id="f-department-code" type="text" /></div>
+    <div class="field"><label>身份证号</label><input id="f-id-no" type="text" /></div>
+  </div>
+  <div class="grid" style="margin-top: 10px;">
+    <div class="field"><label>单位类型</label><select id="f-entity-type"><option value="">空</option><option value="customer">customer</option><option value="supplier">supplier</option><option value="other">other</option></select></div>
+    <div class="field"><label>统一社会信用代码</label><input id="f-credit-code" type="text" /></div>
+    <div class="field"><label>联系人</label><input id="f-contact-name" type="text" /></div>
+    <div class="field"><label>联系电话</label><input id="f-contact-phone" type="text" /></div>
+  </div>
+  <div class="grid" style="margin-top: 10px;">
+    <div class="field"><label>地址</label><input id="f-address" type="text" /></div>
+    <div class="field"><label>开始日期</label><input id="f-start-date" type="date" /></div>
+    <div class="field"><label>结束日期</label><input id="f-end-date" type="date" /></div>
+    <div class="field"><label>开户行</label><input id="f-bank-name" type="text" /></div>
+  </div>
+  <div class="grid" style="margin-top: 10px;">
+    <div class="field"><label>银行账号</label><input id="f-account-no" type="text" /></div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="save-btn">保存</button>
+    <button class="btn" id="clear-btn">清空表单</button>
+  </div>
+  <div id="save-msg"></div>
+</section>
+
+<section class="card">
+  <h3>列表</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>编码</th>
+        <th>名称</th>
+        <th>启用</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="rows">
+      <tr><td colspan="5">点击“查询”加载</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+  (function () {
+    const kind = "{{ master_kind }}";
+    const rowsEl = document.getElementById("rows");
+    const msgEl = document.getElementById("save-msg");
+    let cache = [];
+
+    function val(id) { return document.getElementById(id).value.trim(); }
+    function setv(id, v) { document.getElementById(id).value = v || ""; }
+    function showMsg(text, ok) {
+      msgEl.className = ok ? "ok" : "error";
+      msgEl.textContent = text || "";
+    }
+
+    async function query() {
+      const bookId = val("book-id") || "1";
+      const q = encodeURIComponent(val("q"));
+      const includeHidden = val("include-hidden") || "0";
+      const url = `/api/masters/${kind}?book_id=${encodeURIComponent(bookId)}&q=${q}&include_hidden=${includeHidden}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "query_failed");
+      cache = data.items || [];
+      renderRows(cache);
+    }
+
+    function renderRows(items) {
+      if (!items.length) {
+        rowsEl.innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
+        return;
+      }
+      rowsEl.innerHTML = items.map((x) => `
+        <tr>
+          <td>${x.id || ""}</td>
+          <td>${x.code || ""}</td>
+          <td>${x.name || ""}</td>
+          <td>${Number(x.is_enabled || 0) === 1 ? "是" : "否"}</td>
+          <td><button class="btn pick-btn" data-id="${x.id}">编辑</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function fill(item) {
+      setv("f-id", item.id);
+      setv("f-code", item.code);
+      setv("f-name", item.name);
+      setv("f-enabled", String(item.is_enabled || 0));
+      setv("f-parent-code", item.parent_code);
+      setv("f-independent", String(item.is_independent_accounting || 0));
+      setv("f-department-code", item.department_code);
+      setv("f-id-no", item.id_no);
+      setv("f-entity-type", item.entity_type);
+      setv("f-credit-code", item.unified_social_credit_code);
+      setv("f-contact-name", item.contact_name);
+      setv("f-contact-phone", item.contact_phone);
+      setv("f-address", item.address);
+      setv("f-start-date", item.start_date);
+      setv("f-end-date", item.end_date);
+      setv("f-bank-name", item.bank_name);
+      setv("f-account-no", item.account_no || item.bank_no);
+    }
+
+    async function save() {
+      const payload = {
+        id: val("f-id") || undefined,
+        book_id: val("book-id") || "1",
+        code: val("f-code"),
+        name: val("f-name"),
+        is_enabled: val("f-enabled"),
+        parent_code: val("f-parent-code"),
+        is_independent_accounting: val("f-independent"),
+        department_code: val("f-department-code"),
+        id_no: val("f-id-no"),
+        entity_type: val("f-entity-type"),
+        unified_social_credit_code: val("f-credit-code"),
+        contact_name: val("f-contact-name"),
+        contact_phone: val("f-contact-phone"),
+        address: val("f-address"),
+        start_date: val("f-start-date"),
+        end_date: val("f-end-date"),
+        bank_name: val("f-bank-name"),
+        account_no: val("f-account-no")
+      };
+      const res = await fetch(`/api/masters/${kind}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "save_failed");
+      showMsg("保存成功", true);
+      await query();
+      const hit = cache.find((x) => String(x.id) === String(data.id));
+      if (hit) fill(hit);
+    }
+
+    function clearForm() {
+      ["f-id","f-code","f-name","f-parent-code","f-department-code","f-id-no","f-credit-code","f-contact-name","f-contact-phone","f-address","f-start-date","f-end-date","f-bank-name","f-account-no"].forEach((id) => setv(id, ""));
+      setv("f-enabled", "1");
+      setv("f-independent", "0");
+      setv("f-entity-type", "");
+      showMsg("", true);
+    }
+
+    document.getElementById("query-btn").addEventListener("click", async () => {
+      try { await query(); showMsg("", true); } catch (e) { showMsg(String(e.message || e), false); }
+    });
+    document.getElementById("save-btn").addEventListener("click", async () => {
+      try { await save(); } catch (e) { showMsg(String(e.message || e), false); }
+    });
+    document.getElementById("clear-btn").addEventListener("click", clearForm);
+    rowsEl.addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".pick-btn");
+      if (!btn) return;
+      const id = btn.getAttribute("data-id");
+      const hit = cache.find((x) => String(x.id) === String(id));
+      if (hit) fill(hit);
+    });
+
+    query().catch((e) => showMsg(String(e.message || e), false));
+  })();
+</script>
+{% endblock %}

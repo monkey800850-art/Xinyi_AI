@@ -29,7 +29,8 @@
     const updateText = () => {
       const collapsed = document.documentElement.classList.contains("sidebar-collapsed");
       btn.setAttribute("aria-pressed", collapsed ? "true" : "false");
-      btn.textContent = collapsed ? "展开侧边栏" : "收起侧边栏";
+      btn.textContent = collapsed ? "展开侧边栏 ▶" : "◀ 收起侧边栏";
+      btn.setAttribute("title", collapsed ? "展开左侧栏" : "向左折叠侧边栏");
     };
 
     btn.addEventListener("click", function () {

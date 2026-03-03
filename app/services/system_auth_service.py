@@ -13,6 +13,23 @@ class AuthError(RuntimeError):
         self.detail = detail or {}
 
 
+def _extract_column_value(row) -> str:
+    mapping = getattr(row, "_mapping", None)
+    if mapping is None and isinstance(row, dict):
+        mapping = row
+    if mapping is not None:
+        for k, v in dict(mapping).items():
+            key = str(k or "").strip().lower()
+            if key in ("column_name", "name", "field"):
+                return str(v or "").strip().lower()
+    for attr in ("column_name", "COLUMN_NAME", "name", "Name", "field", "Field"):
+        if hasattr(row, attr):
+            return str(getattr(row, attr) or "").strip().lower()
+    if isinstance(row, (tuple, list)) and row:
+        return str(row[0] or "").strip().lower()
+    return ""
+
+
 def _get_table_columns(conn, table_name: str) -> set[str]:
     try:
         rows = conn.execute(
@@ -26,10 +43,23 @@ def _get_table_columns(conn, table_name: str) -> set[str]:
             ),
             {"table_name": table_name},
         ).fetchall()
-        return {str(r.column_name).lower() for r in rows}
+        cols = {_extract_column_value(r) for r in rows}
+        cols = {c for c in cols if c}
+        if cols:
+            return cols
     except Exception:
-        rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
-        return {str(r.name).lower() for r in rows}
+        pass
+    try:
+        rows = conn.execute(text(f"SHOW COLUMNS FROM {table_name}")).fetchall()
+        cols = {_extract_column_value(r) for r in rows}
+        cols = {c for c in cols if c}
+        if cols:
+            return cols
+    except Exception:
+        pass
+    rows = conn.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+    cols = {_extract_column_value(r) for r in rows}
+    return {c for c in cols if c}
 
 
 def authenticate_user(
