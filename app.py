@@ -120,6 +120,10 @@ from app.services.consolidation_final_check_approval_service import (
     ConsolidationFinalCheckApprovalError,
     run_final_check_and_approval_flow,
 )
+from app.services.consolidation_disclosure_audit_package_service import (
+    ConsolidationDisclosureAuditPackageError,
+    generate_disclosure_and_audit_package,
+)
 from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
@@ -2295,6 +2299,63 @@ def create_app() -> Flask:
             app.logger.exception("task_cons_29_unexpected_error")
             return jsonify({"status": "failed", "error": "internal_error"}), 500
 
+    @app.post("/api/consolidation/disclosure-audit-package/generate")
+    def api_consolidation_disclosure_audit_package_generate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            result = generate_disclosure_and_audit_package(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="cons30_disclosure_audit_package_generate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"package_id={result.get('package_id', 0)}",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except (TypeError, ValueError, ConsolidationDisclosureAuditPackageError) as err:
+            _safe_log_consolidation_audit(
+                action="cons30_disclosure_audit_package_generate",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_disclosure_audit_package_generate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="cons30_disclosure_audit_package_generate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/task/cons-30")
+    def api_task_cons_30():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        try:
+            result = generate_disclosure_and_audit_package(payload, operator_id=operator_id)
+            return jsonify({"status": "success", "message": "报表披露与审计包生成完成", **result}), 200
+        except (TypeError, ValueError, ConsolidationDisclosureAuditPackageError) as err:
+            return jsonify({"status": "failed", "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("task_cons_30_unexpected_error")
+            return jsonify({"status": "failed", "error": "internal_error"}), 500
+
     @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
     def api_consolidation_inventory_up_reversal_generate():
         payload = request.get_json(silent=True) or {}
@@ -4342,6 +4403,21 @@ def _run_cli_task() -> int | None:
             ok = bool(result.get("final_check_passed"))
             print(json.dumps({"ok": ok, **result}, ensure_ascii=False))
             return 0 if ok else 1
+        except Exception as err:
+            print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
+            return 1
+
+    if task == "CONS-30" and action == "generate_disclosure_and_audit_package":
+        payload = {
+            "consolidation_group_id": args.group_id,
+            "period": args.period,
+            "as_of": args.as_of,
+            "operator_id": args.operator_id,
+        }
+        try:
+            result = generate_disclosure_and_audit_package(payload, operator_id=args.operator_id)
+            print(json.dumps({"ok": True, **result}, ensure_ascii=False))
+            return 0
         except Exception as err:
             print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
             return 1
