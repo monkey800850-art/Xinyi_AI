@@ -4,7 +4,15 @@
 Add generated-draft metadata fields for consolidation_adjustments.
 """
 
+from typing import Sequence, Union
+
+from alembic import op
 from sqlalchemy import text
+
+revision: str = "20260302_000031"
+down_revision: Union[str, None] = "20260302_000030"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def _has_column(conn, table_name: str, column_name: str) -> bool:
@@ -23,7 +31,8 @@ def _has_column(conn, table_name: str, column_name: str) -> bool:
     return int(row.cnt or 0) > 0
 
 
-def upgrade(conn):
+def upgrade() -> None:
+    conn = op.get_bind()
     if not _has_column(conn, "consolidation_adjustments", "source"):
         conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN source VARCHAR(32) NULL"))
     if not _has_column(conn, "consolidation_adjustments", "rule_code"):
@@ -36,7 +45,8 @@ def upgrade(conn):
         conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN tag VARCHAR(64) NULL"))
 
 
-def downgrade(conn):
+def downgrade() -> None:
+    conn = op.get_bind()
     if _has_column(conn, "consolidation_adjustments", "tag"):
         conn.execute(text("ALTER TABLE consolidation_adjustments DROP COLUMN tag"))
     if _has_column(conn, "consolidation_adjustments", "batch_id"):

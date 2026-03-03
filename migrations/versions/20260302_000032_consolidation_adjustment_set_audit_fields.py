@@ -4,7 +4,15 @@
 Add set-level audit fields for adjustment_set workflow on consolidation_adjustments.
 """
 
+from typing import Sequence, Union
+
+from alembic import op
 from sqlalchemy import text
+
+revision: str = "20260302_000032"
+down_revision: Union[str, None] = "20260302_000031"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def _has_column(conn, table_name: str, column_name: str) -> bool:
@@ -23,7 +31,8 @@ def _has_column(conn, table_name: str, column_name: str) -> bool:
     return int(row.cnt or 0) > 0
 
 
-def upgrade(conn):
+def upgrade() -> None:
+    conn = op.get_bind()
     if not _has_column(conn, "consolidation_adjustments", "reviewed_by"):
         conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN reviewed_by BIGINT NULL"))
     if not _has_column(conn, "consolidation_adjustments", "reviewed_at"):
@@ -36,7 +45,8 @@ def upgrade(conn):
         conn.execute(text("ALTER TABLE consolidation_adjustments ADD COLUMN note VARCHAR(255) NULL"))
 
 
-def downgrade(conn):
+def downgrade() -> None:
+    conn = op.get_bind()
     if _has_column(conn, "consolidation_adjustments", "note"):
         conn.execute(text("ALTER TABLE consolidation_adjustments DROP COLUMN note"))
     if _has_column(conn, "consolidation_adjustments", "locked_at"):

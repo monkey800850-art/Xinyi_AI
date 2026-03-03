@@ -4,7 +4,15 @@
 Add generic UP balance and tax tracking fields on consolidation_adjustments.
 """
 
+from typing import Sequence, Union
+
+from alembic import op
 from sqlalchemy import text
+
+revision: str = "20260303_000038"
+down_revision: Union[str, None] = "20260303_000037"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def _has_column(conn, table_name: str, column_name: str) -> bool:
@@ -23,7 +31,8 @@ def _has_column(conn, table_name: str, column_name: str) -> bool:
     return int(row.cnt or 0) > 0
 
 
-def upgrade(conn):
+def upgrade() -> None:
+    conn = op.get_bind()
     alter_list = [
         ("original_amount", "DECIMAL(18,2) NULL"),
         ("remaining_amount", "DECIMAL(18,2) NULL"),
@@ -38,7 +47,8 @@ def upgrade(conn):
             conn.execute(text(f"ALTER TABLE consolidation_adjustments ADD COLUMN {col} {ddl}"))
 
 
-def downgrade(conn):
+def downgrade() -> None:
+    conn = op.get_bind()
     for col in [
         "tax_rate_snapshot",
         "remaining_tax_amount",

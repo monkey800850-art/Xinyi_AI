@@ -4,7 +4,15 @@
 Create consolidation_group_types table for consolidation type contract.
 """
 
+from typing import Sequence, Union
+
+from alembic import op
 from sqlalchemy import text
+
+revision: str = "20260302_000033"
+down_revision: Union[str, None] = "20260302_000032"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def _index_exists(conn, table_name: str, index_name: str) -> bool:
@@ -23,7 +31,8 @@ def _index_exists(conn, table_name: str, index_name: str) -> bool:
     return int(row.cnt or 0) > 0
 
 
-def upgrade(conn):
+def upgrade() -> None:
+    conn = op.get_bind()
     conn.execute(
         text(
             """
@@ -52,7 +61,8 @@ def upgrade(conn):
         )
 
 
-def downgrade(conn):
+def downgrade() -> None:
+    conn = op.get_bind()
     if _index_exists(conn, "consolidation_group_types", "ix_conso_group_types_type"):
         conn.execute(text("DROP INDEX ix_conso_group_types_type ON consolidation_group_types"))
     conn.execute(text("DROP TABLE IF EXISTS consolidation_group_types"))

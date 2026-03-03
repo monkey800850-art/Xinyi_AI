@@ -4,7 +4,15 @@
 Create consolidation_ic_inventory_txn for inventory unrealized profit elimination engine.
 """
 
+from typing import Sequence, Union
+
+from alembic import op
 from sqlalchemy import text
+
+revision: str = "20260303_000035"
+down_revision: Union[str, None] = "20260303_000034"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def _index_exists(conn, table_name: str, index_name: str) -> bool:
@@ -23,7 +31,8 @@ def _index_exists(conn, table_name: str, index_name: str) -> bool:
     return int(row.cnt or 0) > 0
 
 
-def upgrade(conn):
+def upgrade() -> None:
+    conn = op.get_bind()
     conn.execute(
         text(
             """
@@ -66,7 +75,8 @@ def upgrade(conn):
         )
 
 
-def downgrade(conn):
+def downgrade() -> None:
+    conn = op.get_bind()
     if _index_exists(conn, "consolidation_ic_inventory_txn", "ix_conso_ic_inv_doc"):
         conn.execute(text("DROP INDEX ix_conso_ic_inv_doc ON consolidation_ic_inventory_txn"))
     if _index_exists(conn, "consolidation_ic_inventory_txn", "ix_conso_ic_inv_group_date"):
