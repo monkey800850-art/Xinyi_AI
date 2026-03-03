@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  pytest:
+  gate:
     runs-on: ubuntu-latest
     env:
       APP_ENV: test
@@ -26,6 +26,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Ensure gate scripts executable
+        run: |
+          chmod +x scripts/ops/gate_consolidation.sh
+          chmod +x scripts/ops/gate_release.sh
+
+      - name: Run gate_consolidation.sh
+        run: ./scripts/ops/gate_consolidation.sh
+
+      - name: Run gate_release.sh
+        run: ./scripts/ops/gate_release.sh
 
       - name: Test collect
         run: pytest -q --collect-only
