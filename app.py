@@ -9,12 +9,13 @@ import sys
 from argparse import Namespace
 from datetime import date, datetime, timedelta, timezone
 
-from flask import Flask, jsonify, render_template, request, send_file, session
+from flask import Flask, jsonify, request, send_file, session
 from sqlalchemy import text
 
 from app.config import DatabaseConfigError, load_env
 from app.db import test_db_connection
 from app.db_router import clear_request_route_context, get_connection_provider, set_request_route_context
+from app.routes import consolidation_bp, core_pages_bp
 from app.services.ar_ap_service import ArApError, get_aging_report, get_due_warnings, get_warning_summary
 from app.services.asset_service import (
     AssetError,
@@ -538,6 +539,9 @@ def create_app() -> Flask:
                 return True
         return False
 
+    app.register_blueprint(core_pages_bp)
+    app.register_blueprint(consolidation_bp)
+
     @app.context_processor
     def _inject_main_nav():
         nav_groups, current_title = _build_main_nav(request.path)
@@ -753,186 +757,6 @@ def create_app() -> Flask:
         except Exception:
             return response
         return response
-
-    @app.get("/")
-    def health():
-        return {"status": "ok"}
-
-    @app.get("/dashboard")
-    def dashboard_page():
-        return render_template("dashboard.html")
-
-    @app.get("/dashboard/boss")
-    def boss_dashboard_page():
-        return render_template("boss_dashboard.html")
-
-    @app.get("/demo/autocomplete")
-    def demo_autocomplete():
-        return render_template("demo_autocomplete.html")
-
-    @app.get("/demo/filters")
-    def demo_filters():
-        return render_template("autocomplete_filters.html")
-
-    @app.get("/voucher/entry")
-    def voucher_entry():
-        return render_template("voucher_entry.html")
-
-    @app.get("/voucher/import")
-    def voucher_import_page():
-        return render_template("voucher_import.html")
-
-    @app.get("/reports/trial_balance")
-    def trial_balance_page():
-        return render_template("trial_balance.html")
-
-    @app.get("/reports/subject_ledger")
-    def subject_ledger_page():
-        return render_template("subject_ledger.html")
-
-    @app.get("/reports/aux_reports")
-    def aux_reports_page():
-        return render_template("aux_reports.html")
-
-    @app.get("/reports/ar_ap")
-    def ar_ap_page():
-        return render_template("ar_ap_aging.html")
-
-    @app.get("/reimbursements")
-    def reimbursements_list_page():
-        return render_template("reimbursements_list.html")
-
-    @app.get("/reimbursements/new")
-    def reimbursements_new_page():
-        return render_template("reimbursements_detail.html", reimbursement_id="")
-
-    @app.get("/reimbursements/<int:reimbursement_id>")
-    def reimbursements_detail_page(reimbursement_id: int):
-        return render_template(
-            "reimbursements_detail.html", reimbursement_id=reimbursement_id
-        )
-
-    @app.get("/payments")
-    def payments_list_page():
-        return render_template("payments_list.html")
-
-    @app.get("/payments/new")
-    def payments_new_page():
-        return render_template("payments_detail.html", payment_id="")
-
-    @app.get("/payments/<int:payment_id>")
-    def payments_detail_page(payment_id: int):
-        return render_template("payments_detail.html", payment_id=payment_id)
-
-    @app.get("/banks/import")
-    def bank_import_page():
-        return render_template("bank_import.html")
-
-    @app.get("/banks/reconcile")
-    def bank_reconcile_page():
-        return render_template("bank_reconcile.html")
-
-    @app.get("/masters/departments")
-    def master_departments_page():
-        return render_template("master_data.html", master_kind="departments", master_label="部门")
-
-    @app.get("/masters/persons")
-    def master_persons_page():
-        return render_template("master_data.html", master_kind="persons", master_label="个人")
-
-    @app.get("/masters/entities")
-    def master_entities_page():
-        return render_template("master_data.html", master_kind="entities", master_label="单位")
-
-    @app.get("/masters/projects")
-    def master_projects_page():
-        return render_template("master_data.html", master_kind="projects", master_label="项目")
-
-    @app.get("/masters/bank_accounts")
-    def master_bank_accounts_page():
-        return render_template(
-            "master_data.html", master_kind="bank_accounts", master_label="银行账户"
-        )
-
-    @app.get("/masters/subjects/aux")
-    def subject_aux_config_page():
-        return render_template("subject_aux_config.html")
-
-    @app.get("/tax/rules")
-    def tax_rules_page():
-        return render_template("tax_rules.html")
-
-    @app.get("/tax/invoices")
-    def tax_invoices_page():
-        return render_template("tax_invoices.html")
-
-    @app.get("/tax/summary")
-    def tax_summary_page():
-        return render_template("tax_summary.html")
-
-    @app.get("/assets/categories")
-    def asset_categories_page():
-        return render_template("asset_categories.html")
-
-    @app.get("/assets/depreciation")
-    def asset_depreciation_page():
-        return render_template("asset_depreciation.html")
-
-    @app.get("/assets/changes")
-    def asset_changes_page():
-        return render_template("asset_changes.html")
-
-    @app.get("/assets/reports/ledger")
-    def asset_ledger_page():
-        return render_template("asset_ledger.html")
-
-    @app.get("/assets/reports/depreciation")
-    def asset_depreciation_report_page():
-        return render_template("asset_depreciation_reports.html")
-
-    @app.get("/system/users")
-    def system_users_page():
-        return render_template("system_users.html")
-
-    @app.get("/system/roles")
-    def system_roles_page():
-        return render_template("system_roles.html")
-
-    @app.get("/system/rules")
-    def system_rules_page():
-        return render_template("system_rules.html")
-
-    @app.get("/system/books")
-    def system_books_page():
-        return render_template("system_books.html")
-
-    @app.get("/system/consolidation")
-    def system_consolidation_page():
-        return render_template("system_consolidation.html")
-
-    @app.get("/system/book-init")
-    def system_book_init_page():
-        return render_template("system_book_init.html")
-
-    @app.get("/system/audit")
-    def system_audit_page():
-        return render_template("audit_logs.html")
-
-    @app.get("/system/init")
-    def system_init_page():
-        return render_template("system_init.html")
-
-    @app.get("/assets")
-    def assets_list_page():
-        return render_template("assets_list.html")
-
-    @app.get("/assets/new")
-    def assets_new_page():
-        return render_template("assets_detail.html", asset_id="")
-
-    @app.get("/assets/<int:asset_id>")
-    def assets_detail_page(asset_id: int):
-        return render_template("assets_detail.html", asset_id=asset_id)
 
     @app.post("/books")
     def create_book():
