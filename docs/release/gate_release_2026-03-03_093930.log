@@ -1,0 +1,72 @@
+== RELEASE GATE START ==
+[1] gate_consolidation
+[gate] 1/3 smoke
+[smoke] start
+[smoke] db=127.0.0.1:3306/xinyi_ai user=root
+[smoke] db probe ok: pymysql
+.............                                                            [100%]
+13 passed in 2.38s
+.............                                                            [100%]
+13 passed in 2.38s
+[smoke] summary: PASS elapsed=3s log=_health/test_smoke_last.txt
+[smoke] PASS (non-root)
+[gate] 2/3 unit test
+.....                                                                    [100%]
+5 passed in 0.09s
+....                                                                     [100%]
+4 passed in 0.31s
+..                                                                       [100%]
+2 passed in 0.54s
+.                                                                        [100%]
+1 passed in 0.82s
+.                                                                        [100%]
+1 passed in 0.84s
+.                                                                        [100%]
+1 passed in 0.81s
+.                                                                        [100%]
+1 passed in 0.30s
+..                                                                       [100%]
+2 passed in 0.33s
+.                                                                        [100%]
+1 passed in 0.31s
+.                                                                        [100%]
+1 passed in 0.81s
+.                                                                        [100%]
+1 passed in 0.98s
+.                                                                        [100%]
+1 passed in 0.32s
+.                                                                        [100%]
+1 passed in 0.44s
+.                                                                        [100%]
+1 passed in 0.80s
+.                                                                        [100%]
+1 passed in 0.80s
+.                                                                        [100%]
+1 passed in 0.79s
+.                                                                        [100%]
+1 passed in 0.89s
+.                                                                        [100%]
+1 passed in 0.27s
+[gate] 3/3 app endpoints
+LISTEN 0      128         127.0.0.1:5000      0.0.0.0:*    users:(("python3",pid=1011121,fd=4))
+[gate] /system/consolidation -> 200
+[gate] /api/consolidation/parameters -> 200
+summary: PASS
+[2] smoke
+[smoke] start
+[smoke] db=127.0.0.1:3306/xinyi_ai user=root
+[smoke] db probe ok: pymysql
+.............                                                            [100%]
+13 passed in 2.29s
+.............                                                            [100%]
+13 passed in 2.29s
+[smoke] summary: PASS elapsed=2s log=_health/test_smoke_last.txt
+[smoke] PASS (non-root)
+[3] pytest
+....................................................................     [100%]
+68 passed in 13.01s
+[4] schema drift check
+Schema baseline exists.
+[5] route drift check
+Route baseline exists.
+== RELEASE GATE PASS ==
