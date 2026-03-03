@@ -112,6 +112,10 @@ from app.services.consolidation_scope_criteria_service import (
     ConsolidationScopeCriteriaError,
     configure_merger_scope_and_criteria,
 )
+from app.services.consolidation_report_automation_service import (
+    ConsolidationReportAutomationError,
+    automate_report_generation_and_adjustment,
+)
 from app.services.consolidation_onboarding_ic_match_service import (
     ConsolidationOnboardingIcMatchError,
     run_onboarding_ic_match,
@@ -2162,6 +2166,63 @@ def create_app() -> Flask:
             app.logger.exception("task_cons_27_unexpected_error")
             return jsonify({"status": "failed", "error": "internal_error"}), 500
 
+    @app.post("/api/consolidation/reports/automate")
+    def api_consolidation_reports_automate():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        group_id = None
+        try:
+            group_id = int(payload.get("consolidation_group_id") or payload.get("group_id"))
+            if group_id <= 0:
+                raise ValueError("consolidation_group_id_invalid")
+            result = automate_report_generation_and_adjustment(payload, operator_id=operator_id)
+            _safe_log_consolidation_audit(
+                action="cons28_reports_automate",
+                group_id=group_id,
+                status="success",
+                code=200,
+                operator_id=operator_id,
+                payload=payload,
+                note=f"delta={result.get('delta_after_adjustment', 0)}",
+            )
+            return jsonify({"ok": True, **result}), 200
+        except (TypeError, ValueError, ConsolidationReportAutomationError) as err:
+            _safe_log_consolidation_audit(
+                action="cons28_reports_automate",
+                group_id=group_id,
+                status="failed",
+                code=400,
+                operator_id=operator_id,
+                payload=payload,
+                note=str(err),
+            )
+            return jsonify({"ok": False, "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("consolidation_reports_automate_unexpected_error")
+            _safe_log_consolidation_audit(
+                action="cons28_reports_automate",
+                group_id=group_id,
+                status="failed",
+                code=500,
+                operator_id=operator_id,
+                payload=payload,
+                note="internal_error",
+            )
+            return jsonify({"ok": False, "error": "internal_error"}), 500
+
+    @app.post("/task/cons-28")
+    def api_task_cons_28():
+        payload = request.get_json(silent=True) or {}
+        operator_id = _get_operator_id(payload) or 1
+        try:
+            result = automate_report_generation_and_adjustment(payload, operator_id=operator_id)
+            return jsonify({"status": "success", "message": "合并报表自动化生成与调节完成", **result}), 200
+        except (TypeError, ValueError, ConsolidationReportAutomationError) as err:
+            return jsonify({"status": "failed", "error": str(err)}), 400
+        except Exception:
+            app.logger.exception("task_cons_28_unexpected_error")
+            return jsonify({"status": "failed", "error": "internal_error"}), 500
+
     @app.post("/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate")
     def api_consolidation_inventory_up_reversal_generate():
         payload = request.get_json(silent=True) or {}
@@ -4174,6 +4235,21 @@ def _run_cli_task() -> int | None:
         }
         try:
             result = configure_merger_scope_and_criteria(payload, operator_id=args.operator_id)
+            print(json.dumps({"ok": True, **result}, ensure_ascii=False))
+            return 0
+        except Exception as err:
+            print(json.dumps({"ok": False, "error": str(err)}, ensure_ascii=False))
+            return 1
+
+    if task == "CONS-28" and action == "automate_report_generation_and_adjustment":
+        payload = {
+            "consolidation_group_id": args.group_id,
+            "period": args.period,
+            "as_of": args.as_of,
+            "operator_id": args.operator_id,
+        }
+        try:
+            result = automate_report_generation_and_adjustment(payload, operator_id=args.operator_id)
             print(json.dumps({"ok": True, **result}, ensure_ascii=False))
             return 0
         except Exception as err:
