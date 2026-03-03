@@ -3,6 +3,7 @@ import os
 import calendar
 import argparse
 import json
+from fnmatch import fnmatch
 import re
 import sys
 from argparse import Namespace
@@ -473,6 +474,69 @@ def create_app() -> Flask:
     auth_session_timeout_minutes = _as_positive_int(os.getenv("AUTH_SESSION_TIMEOUT_MINUTES", "30"), 30)
     auth_max_failed_attempts = _as_positive_int(os.getenv("AUTH_MAX_FAILED_ATTEMPTS", "5"), 5)
     auth_lock_minutes = _as_positive_int(os.getenv("AUTH_LOCK_MINUTES", "15"), 15)
+    auth_enable_rbac = str(os.getenv("AUTH_ENABLE_RBAC", "1")).strip().lower() in ("1", "true", "yes", "on")
+    exempt_auth_paths = {"/api/auth/login"}
+
+    def _is_protected_path(path: str) -> bool:
+        path = str(path or "")
+        return path.startswith("/api/") or path.startswith("/task/")
+
+    def _load_role_permissions(role_code: str, tenant_id: str | None = None, book_id: str | None = None) -> set[str]:
+        role_code = str(role_code or "").strip()
+        if not role_code:
+            return set()
+        provider = get_connection_provider()
+        with provider.connect(tenant_id=tenant_id, book_id=book_id) as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT p.perm_key
+                    FROM sys_roles r
+                    LEFT JOIN sys_role_permissions p ON p.role_id = r.id
+                    WHERE r.code=:code
+                      AND r.is_enabled=1
+                    """
+                ),
+                {"code": role_code},
+            ).fetchall()
+        return {str(r.perm_key or "").strip() for r in rows if str(r.perm_key or "").strip()}
+
+    def _rbac_allows(path: str, method: str, role_code: str, perms: set[str]) -> bool:
+        role_code = str(role_code or "").strip().lower()
+        if role_code in ("admin", "tester"):
+            return True
+
+        path = str(path or "").rstrip("/") or "/"
+        method = str(method or "GET").upper()
+        if not perms:
+            return False
+
+        family = "api" if path.startswith("/api/") else "task"
+        token = f"{method}:{path}"
+        direct_candidates = {
+            "*",
+            f"{family}:*",
+            f"{method}:*",
+            f"{method}:{family}:*",
+            token,
+            path,
+        }
+        if any(c in perms for c in direct_candidates):
+            return True
+
+        for perm in perms:
+            p = str(perm or "").strip()
+            if not p:
+                continue
+            if "*" in p and (fnmatch(token, p) or fnmatch(path, p)):
+                return True
+            if p.endswith(":") and token.startswith(p):
+                return True
+            if p.endswith("/") and path.startswith(p):
+                return True
+            if p.startswith("/") and path.startswith(p):
+                return True
+        return False
 
     @app.context_processor
     def _inject_main_nav():
@@ -544,6 +608,7 @@ def create_app() -> Flask:
 
     @app.before_request
     def _bind_route_context():
+        path = request.path or "/"
         tenant_id, book_id = _extract_route_context()
         set_request_route_context(tenant_id=tenant_id, book_id=book_id)
         auth_ctx = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
@@ -576,6 +641,8 @@ def create_app() -> Flask:
                     "username": operator or str(current.get("username") or ""),
                     "role": role or str(current.get("role") or ""),
                 }
+                if current.get("user_id"):
+                    session["auth_ctx"]["user_id"] = int(current.get("user_id"))
         payload = request.get_json(silent=True)
         subject_type = (
             request.headers.get("X-Subject-Type")
@@ -602,6 +669,60 @@ def create_app() -> Flask:
 
         if book_id and str(subject_type or "book") == "book":
             session["book_ctx"] = {"book_id": str(book_id)}
+
+        if auth_enable_rbac and _is_protected_path(path) and path not in exempt_auth_paths:
+            current_auth = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
+            username = str(current_auth.get("username") or "").strip()
+            role_code = str(current_auth.get("role") or "").strip()
+            if not username:
+                return jsonify({"error": "unauthorized"}), 401
+            if not role_code:
+                try:
+                    log_audit(
+                        "auth",
+                        "forbidden",
+                        "request",
+                        None,
+                        username,
+                        role_code,
+                        {"path": path, "method": request.method, "reason": "role_missing"},
+                    )
+                except Exception:
+                    app.logger.exception("rbac_audit_log_failed role_missing path=%s", path)
+                return jsonify({"error": "forbidden"}), 403
+            if str(role_code).strip().lower() in ("admin", "tester"):
+                return None
+            try:
+                perms = _load_role_permissions(role_code, tenant_id=tenant_id, book_id=book_id)
+            except Exception:
+                app.logger.exception("rbac_permission_load_failed role=%s path=%s", role_code, path)
+                try:
+                    log_audit(
+                        "auth",
+                        "forbidden",
+                        "request",
+                        None,
+                        username,
+                        role_code,
+                        {"path": path, "method": request.method, "reason": "permission_load_failed"},
+                    )
+                except Exception:
+                    app.logger.exception("rbac_audit_log_failed permission_load_failed path=%s", path)
+                return jsonify({"error": "forbidden"}), 403
+            if not _rbac_allows(path=path, method=request.method, role_code=role_code, perms=perms):
+                try:
+                    log_audit(
+                        "auth",
+                        "forbidden",
+                        "request",
+                        None,
+                        username,
+                        role_code,
+                        {"path": path, "method": request.method, "reason": "permission_denied"},
+                    )
+                except Exception:
+                    app.logger.exception("rbac_audit_log_failed permission_denied path=%s", path)
+                return jsonify({"error": "forbidden"}), 403
 
     @app.teardown_request
     def _clear_route_context(_err):
