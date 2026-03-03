@@ -216,6 +216,15 @@ from app.services.payment_service import (
     submit_payment,
     void_payment,
 )
+from app.services.payroll_service import (
+    PayrollError,
+    confirm_payroll_slip,
+    list_payroll_periods,
+    list_payroll_slips,
+    sync_attendance_interface,
+    upsert_payroll_period,
+    upsert_payroll_slip,
+)
 from app.services.reimbursement_service import (
     ReimbursementError,
     approve_reimbursement,
@@ -3888,6 +3897,73 @@ def create_app() -> Flask:
             return jsonify(result), 200
         except PaymentError as err:
             return jsonify({"error": str(err)}), 400
+
+    @app.post("/api/payroll/periods")
+    def api_payroll_upsert_period():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = upsert_payroll_period(payload)
+            log_audit("payroll", "period_upsert", "payroll_period", result.get("id"), operator, role, payload)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/payroll/periods")
+    def api_payroll_list_periods():
+        try:
+            result = list_payroll_periods(request.args)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/slips")
+    def api_payroll_upsert_slip():
+        operator, role = _get_operator_from_headers()
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = upsert_payroll_slip(payload)
+            log_audit("payroll", "slip_upsert", "payroll_slip", result.get("id"), operator, role, payload)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.get("/api/payroll/slips")
+    def api_payroll_list_slips():
+        try:
+            result = list_payroll_slips(request.args)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/slips/<int:slip_id>/confirm")
+    def api_payroll_confirm_slip(slip_id: int):
+        operator, role = _get_operator_from_headers()
+        try:
+            result = confirm_payroll_slip(slip_id, operator, role)
+            log_audit("payroll", "slip_confirm", "payroll_slip", slip_id, operator, role, result)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    @app.post("/api/payroll/attendance/sync")
+    def api_payroll_attendance_sync():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = sync_attendance_interface(payload)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
+
+    # Keep attendance interface compatible for external systems.
+    @app.post("/api/attendance/sync")
+    def api_attendance_sync():
+        payload = request.get_json(silent=True) or {}
+        try:
+            result = sync_attendance_interface(payload)
+            return jsonify(result), 200
+        except PayrollError as err:
+            return jsonify({"error": str(err), "errors": err.errors}), 400
 
     @app.post("/api/bank_transactions/import")
     def api_bank_import():
