@@ -1,3 +1,16 @@
+{% extends "layout.html" %}
+{% block title %} Sidebar{% endblock %}
+{% block head_extra %}
+<style>
+/* UI-UNIFY-LAYOUT-01: defensive hide for legacy sidebar/toggle remnants (page-local) */
+button.toggle, button.sidebar-toggle, button.menu-toggle, button.nav-toggle,
+a.toggle, a.sidebar-toggle, a.menu-toggle, a.nav-toggle {
+  display: none !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
 {# Sidebar: driven by injected `catalog` (modules_catalog.json). #}
 <div class="nav">
   <div class="nav-group" data-recent-block="1" style="display:none;">
@@ -56,3 +69,4 @@
     {% endfor %}
   {% endif %}
 </div>
+{% endblock %}

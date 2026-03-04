@@ -1,18 +1,17 @@
-<!doctype html>
-<html lang="zh"><head><meta charset="utf-8"><title>工资凭证草稿</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "layout.html" %}
+{% block title %}Sys Payroll Vouchers{% endblock %}
+{% block head_extra %}
 <style>
-body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; margin:18px;}
-.pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:inherit; margin-right:8px;}
-.card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
-.muted{opacity:.7;}
-table{border-collapse:collapse; width:100%; margin-top:12px;}
-th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
-th{background:#fafafa;}
-.kv{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px;}
-</style></head>
-<body>
-  <div>
+/* UI-UNIFY-LAYOUT-01: defensive hide for legacy sidebar/toggle remnants (page-local) */
+button.toggle, button.sidebar-toggle, button.menu-toggle, button.nav-toggle,
+a.toggle, a.sidebar-toggle, a.menu-toggle, a.nav-toggle {
+  display: none !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div>
     <a class="pill" href="/sys/payroll/runs">返回 批次列表</a>
     <a class="pill" href="/sys/payroll/runs/{{ run_id }}/vouchers/generate">生成草稿</a>
     <a class="pill" href="/sys/module">系统管理</a>
@@ -100,5 +99,4 @@ th{background:#fafafa;}
   });
 })();
 </script>
-
-</body></html>
+{% endblock %}

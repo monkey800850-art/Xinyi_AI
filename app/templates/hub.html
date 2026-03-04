@@ -1,4 +1,11 @@
 {% extends "layout.html" %}
+{% block head_extra %}
+<style>
+/* UI-UNIFY-LAYOUT-01: defensive hide for legacy sidebar/toggle remnants (page-local) */
+button.toggle, button.sidebar-toggle, button.menu-toggle, button.nav-toggle,
+a.toggle, a.sidebar-toggle, a.menu-toggle, a.nav-toggle { display:none !important; }
+</style>
+{% endblock %}
 {% block title %}Hub
 <script>
 /* UI-LAYOUT-02 hub align */
