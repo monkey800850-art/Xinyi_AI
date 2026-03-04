@@ -666,7 +666,16 @@ def create_app() -> Flask:
 
     @app.route("/hub")
     def hub():
-        return render_template("hub.html")
+        return """
+    <h1>Xinyi 功能导航</h1>
+    <ul>
+        <li><a href="/dashboard">工作台</a></li>
+        <li><a href="/reports/trial_balance">试算平衡表</a></li>
+        <li><a href="/tax/summary">税务汇总</a></li>
+        <li><a href="/assets">资产</a></li>
+        <li><a href="/expense">费用报销</a></li>
+    </ul>
+    """
 
     @app.route("/m/<name>")
     def module_page(name):
