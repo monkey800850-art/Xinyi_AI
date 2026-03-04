@@ -103,22 +103,14 @@ fi
 
 if is_listening "${PORT}" >/dev/null 2>&1; then
   echo "[WARN] port :${PORT} already listening; checking ownership
-  if port_owned_by_this_app "${PORT}"; then
-    echo "[OK] port ${PORT} seems owned by this app; will not restart"
-  else
-    echo "[FAIL] port ${PORT} is occupied by another process; stop it first." >&2
-    port_owner "${PORT}" >&2 || true
-    exit 1
-  fi"
-  if command -v ss >/dev/null 2>&1; then
-    ss -ltnp 2>/dev/null | rg ":${PORT}\\b" || true
-  fi
-  echo "unknown" > "$PID_FILE"
-  code="$(http_code "${BASE_URL}/")"
-  echo "GET / -> ${code}"
-  [[ "$code" =~ ^(200|302|401|403)$ ]] || { echo "[FAIL] unexpected root status ${code}"; exit 1; }
-  echo "[OK] start_app completed."
-  exit 0
+if port_owned_by_this_app "${PORT}"; then
+  echo "[OK] port ${PORT} seems owned by this app; will not restart"
+else
+  echo "[FAIL] port ${PORT} is occupied by another process; stop it first." >&2
+  port_owner "${PORT}" >&2 || true
+  exit 1
+fi
+
 fi
 
 export FLASK_RUN_HOST="${HOST}"

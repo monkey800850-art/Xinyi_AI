@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+require_cmd() {
+  local c="$1"
+  if ! command -v "$c" >/dev/null 2>&1; then
+    echo "[FAIL] missing command: $c"
+    echo "Hint (Debian/Ubuntu): sudo apt-get update && sudo apt-get install -y $c"
+    exit 1
+  fi
+}
+require_cmd curl
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
