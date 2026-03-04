@@ -46,3 +46,13 @@ snapshots/uat/
 # Ignore snapshots (evidence)
 snapshots/
 snapshots/uat/
+
+# secrets / tokens (never commit)
+ghp_*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
