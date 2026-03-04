@@ -1,4 +1,16 @@
-?? evidence/AUXDIM-FIELD-01/
+ M evidence/AUXDIM-FIELD-01/auxdim_struct_audit.json
+ M evidence/AUXDIM-FIELD-01/auxdim_struct_audit.md
+ M evidence/AUXDIM-FIELD-01/gate_all.txt
+ M evidence/AUXDIM-FIELD-01/git_head_before.txt
+ M evidence/AUXDIM-FIELD-01/git_status_after.txt
+ M evidence/AUXDIM-FIELD-01/git_status_before.txt
+ M evidence/AUXDIM-FIELD-01/report_head.txt
+ M evidence/AUXDIM-FIELD-01/ts.txt
+ M scripts/auxdim/audit_auxdim_fields_struct.py
+?? evidence/AUXDIM-FIELD-01/auxdim_patch_plan.json
+?? evidence/AUXDIM-FIELD-01/auxdim_patch_plan.md
+?? evidence/AUXDIM-FIELD-01/git_head_after.txt
+?? evidence/AUXDIM-FIELD-01/plan_head.txt
 ?? evidence/PAYROLL-FIELD-01/git_head_after.txt
 ?? evidence/PAYROLL-FIELD-02/git_head_after.txt
 ?? evidence/PAYROLL-FIELD-03/git_head_after.txt
@@ -10,4 +22,3 @@
 ?? evidence/UI-WIRE-07/git_head_after.txt
 ?? evidence/UI-WIRE-08/git_head_after.txt
 ?? evidence/UI-WIRE-09/git_head_after.txt
-?? scripts/auxdim/

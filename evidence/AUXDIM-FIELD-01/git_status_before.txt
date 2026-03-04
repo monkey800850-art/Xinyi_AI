@@ -1,4 +1,6 @@
-?? evidence/AUXDIM-FIELD-01/
+ M evidence/AUXDIM-FIELD-01/git_head_before.txt
+ M evidence/AUXDIM-FIELD-01/ts.txt
+?? evidence/AUXDIM-FIELD-01/git_head_after.txt
 ?? evidence/PAYROLL-FIELD-01/git_head_after.txt
 ?? evidence/PAYROLL-FIELD-02/git_head_after.txt
 ?? evidence/PAYROLL-FIELD-03/git_head_after.txt

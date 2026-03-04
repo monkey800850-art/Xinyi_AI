@@ -2,7 +2,7 @@
   "summary": {
     "spec_count": 72,
     "model_count": 0,
-    "db_count": 50,
+    "db_count": 46,
     "missing_in_model_count": 72,
     "missing_in_db_count": 70,
     "mismatch_count": 0
@@ -155,7 +155,8 @@
   ],
   "mismatch": [],
   "per_dimension": {
-    "往来单位": {
+    "单位(客户/供应商)": {
+      "spec_source": "doc",
       "spec_count": 28,
       "missing_in_model": [
         "ar_ap_subject_code",
@@ -218,7 +219,8 @@
         "taxpayer_type"
       ]
     },
-    "个人": {
+    "个人(员工/往来主体)": {
+      "spec_source": "doc",
       "spec_count": 17,
       "missing_in_model": [
         "bank_account_no",
@@ -258,44 +260,8 @@
         "termination_date"
       ]
     },
-    "项目": {
-      "spec_count": 15,
-      "missing_in_model": [
-        "budget_control_policy",
-        "budget_total",
-        "contract_ids",
-        "cost_center_code",
-        "customer_party_code",
-        "department_code",
-        "end_date",
-        "legal_entity_id",
-        "project_code",
-        "project_manager",
-        "project_name",
-        "project_status",
-        "remarks",
-        "revenue_center_code",
-        "start_date"
-      ],
-      "missing_in_db": [
-        "budget_control_policy",
-        "budget_total",
-        "contract_ids",
-        "cost_center_code",
-        "customer_party_code",
-        "department_code",
-        "end_date",
-        "legal_entity_id",
-        "project_code",
-        "project_manager",
-        "project_name",
-        "project_status",
-        "remarks",
-        "revenue_center_code",
-        "start_date"
-      ]
-    },
     "银行账户": {
+      "spec_source": "doc",
       "spec_count": 17,
       "missing_in_model": [
         "account_internal_code",
@@ -334,6 +300,44 @@
         "reconciliation_method",
         "unreconciled_flag"
       ]
+    },
+    "项目": {
+      "spec_source": "assumption",
+      "spec_count": 15,
+      "missing_in_model": [
+        "budget_control_policy",
+        "budget_total",
+        "contract_ids",
+        "cost_center_code",
+        "customer_party_code",
+        "department_code",
+        "end_date",
+        "legal_entity_id",
+        "project_code",
+        "project_manager",
+        "project_name",
+        "project_status",
+        "remarks",
+        "revenue_center_code",
+        "start_date"
+      ],
+      "missing_in_db": [
+        "budget_control_policy",
+        "budget_total",
+        "contract_ids",
+        "cost_center_code",
+        "customer_party_code",
+        "department_code",
+        "end_date",
+        "legal_entity_id",
+        "project_code",
+        "project_manager",
+        "project_name",
+        "project_status",
+        "remarks",
+        "revenue_center_code",
+        "start_date"
+      ]
     }
   },
   "samples": {
@@ -357,14 +361,11 @@
       "currency",
       "default_scope",
       "effective_from",
-      "failed_attempts",
       "from_status",
       "id",
       "import_hash",
       "is_depreciable",
-      "last_login_at",
       "location",
-      "locked_until",
       "match_reason",
       "match_score",
       "match_status",
@@ -372,7 +373,6 @@
       "message",
       "operator",
       "operator_role",
-      "password_hash",
       "purchase_date",
       "quantity",
       "reminder_at",
