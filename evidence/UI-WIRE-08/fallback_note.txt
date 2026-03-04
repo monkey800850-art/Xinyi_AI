@@ -1,0 +1,1 @@
+NO_EXTENDS_FOUND: will fallback to nav-like template scan
