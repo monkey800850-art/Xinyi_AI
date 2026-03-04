@@ -32,7 +32,8 @@ sql = plan["sql"]
 params = plan["params"]
 
 must("GROUP BY" in sql and "ORDER BY" in sql, "sql must have GROUP BY/ORDER BY")
-must("IN (?,?)" in sql.replace(" ", ""), "sql should contain IN placeholders for multi-select")
+import re as _re
+must(_re.search(r"\bIN\s*\(\s*\?(\s*,\s*\?)+\s*\)", sql, _re.I) is not None, "sql should contain IN placeholders for multi-select")
 must(len(params) == (2 + 2 + 2), "params should include date_from/date_to + 2+2 filters")
 
 print("PASS: offline planner checks")
