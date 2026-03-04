@@ -1,0 +1,4 @@
+ M scripts/ui/check_modules_catalog.py
+?? evidence/UI-WIRE-02/git_head_after.txt
+?? evidence/UI-WIRE-03/
+?? scripts/ui/http_probe_hub.py
