@@ -1,0 +1,2 @@
+SAFE_EXAMPLE_ONLY
+(no token patterns)
