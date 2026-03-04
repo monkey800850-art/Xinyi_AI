@@ -1,0 +1,4 @@
+tables= ['payroll_employees', 'payroll_records', 'payroll_social_housing', 'payroll_tax_ytd', 'payroll_attendance_snapshots']
+total_assignments= 70
+unique_fields= 60
+sample_fields= ['absent_days', 'annual_bonus_separate_tax_flag', 'annual_leave_balance', 'attendance_bonus', 'attendance_days', 'bank_account_no', 'bank_branch_info', 'base_salary', 'commission', 'cost_center_code', 'current_withholding_tax', 'department_id', 'employee_no', 'employer_social_total', 'employment_type', 'fixed_performance', 'heat_allowance', 'hire_date', 'housing_fund_base', 'id_card_no', 'injury_base', 'job_grade', 'late_early_count', 'maternity_base', 'medical_base']

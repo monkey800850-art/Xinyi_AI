@@ -1,0 +1,77 @@
+MIGRATION_FILE=migrations/versions/20260304185406_create_payroll_tables.py
+Tables and fields:
+- payroll_employees 12
+    employee_no
+    name
+    id_card_no
+    hire_date
+    termination_date
+    employment_type
+    department_id
+    job_grade
+    work_location
+    bank_account_no
+    bank_branch_info
+    tax_residency
+- payroll_records 28
+    base_salary
+    position_allowance
+    seniority_pay
+    fixed_performance
+    performance_bonus
+    overtime_pay
+    commission
+    attendance_bonus
+    heat_allowance
+    other_adjustment
+    cost_center_code
+    payroll_payable_subject
+    social_housing_payable_subject
+    tax_payable_subject
+    voucher_gen_status
+    voucher_no
+    pay_batch_no
+    pay_status
+    payable_days
+    attendance_days
+    personal_leave_hours
+    sick_leave_hours
+    absent_days
+    late_early_count
+    ot_hours_weekday
+    ot_hours_weekend
+    ot_hours_holiday
+    annual_leave_balance
+- payroll_social_housing 9
+    social_security_city
+    pension_base
+    medical_base
+    unemployment_base
+    injury_base
+    maternity_base
+    housing_fund_base
+    social_housing_rate
+    employer_social_total
+- payroll_tax_ytd 11
+    ytd_income
+    ytd_tax_exempt_income
+    ytd_standard_deduction
+    ytd_social_housing_deduction
+    ytd_special_additional_deduction
+    ytd_other_legal_deduction
+    ytd_taxable_income
+    tax_rate
+    quick_deduction
+    current_withholding_tax
+    annual_bonus_separate_tax_flag
+- payroll_attendance_snapshots 10
+    payable_days
+    attendance_days
+    personal_leave_hours
+    sick_leave_hours
+    absent_days
+    late_early_count
+    ot_hours_weekday
+    ot_hours_weekend
+    ot_hours_holiday
+    annual_leave_balance
