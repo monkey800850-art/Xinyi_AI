@@ -1,0 +1,53 @@
+{# Sidebar: driven by injected `catalog` (modules_catalog.json). #}
+<div class="nav">
+  {% if not catalog %}
+    <div class="nav-group">
+      <div class="nav-group-title">导航</div>
+      <div class="nav-item disabled">
+        <div class="left"><span class="dot disabled"></span><span class="label">catalog 未就绪</span></div>
+        <span class="badge">ERR</span>
+      </div>
+    </div>
+  {% else %}
+    {# Sort groups with 系统管理 first if present #}
+    {% set group_keys = catalog.get('groups', {}).keys() %}
+    {% set keys = group_keys | list %}
+    {% if '系统管理' in keys %}
+      {% set keys = ['系统管理'] + (keys | reject('equalto','系统管理') | list) %}
+    {% endif %}
+
+    {% for gname in keys %}
+      {% set g = catalog['groups'][gname] %}
+      {% set templates = g.get('templates', []) if g is mapping else [] %}
+      {% if templates %}
+        <div class="nav-group" data-nav-group="{{ gname }}">
+          <div class="nav-group-title">{{ gname }}</div>
+
+          {% for it in templates %}
+            {% set status = it.get('status','stub') %}
+            {% set path = it.get('path','') %}
+            {% set title = it.get('title', it.get('key','(untitled)')) %}
+            {% set requires = it.get('requires', '') %}
+            {% set disabled = (status != 'active') or (not path) %}
+            {% set dotcls = 'active' if status=='active' else ('stub' if status=='stub' else 'disabled') %}
+
+            <a class="nav-item {% if disabled %}disabled{% endif %}"
+               href="{% if disabled %}#{% else %}{{ path }}{% endif %}"
+               {% if requires %}data-hub-requires="{{ requires }}"{% endif %}
+               title="{{ title }}">
+              <span class="left">
+                <span class="dot {{ dotcls }}"></span>
+                <span class="label">{{ title }}</span>
+              </span>
+              {% if requires %}
+                <span class="badge">需权限</span>
+              {% elif status != 'active' %}
+                <span class="badge">未启用</span>
+              {% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</div>

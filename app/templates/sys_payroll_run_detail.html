@@ -1,18 +1,18 @@
-<!doctype html>
-<html lang="zh"><head><meta charset="utf-8"><title>批次明细</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; margin:18px;}
-.pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:inherit; margin-right:8px;}
-.card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
-.muted{opacity:.7;}
-table{border-collapse:collapse; width:100%; margin-top:12px;}
-th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
-th{background:#fafafa;}
-.kv{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px;}
-</style></head>
-<body>
+{% extends "layout.html" %}
+{% block title %}批次明细{% endblock %}
+{% block content %}
+<div class="page-header">
   <div>
+    <h1 class="page-title">批次明细</h1>
+    <p class="page-sub">统一布局：左侧导航 + 右侧工作区</p>
+  </div>
+  <div>
+    <a class="pill" href="/sys/module">系统管理</a>
+    <a class="pill" href="/hub">Hub</a>
+  </div>
+</div>
+<div class="card">
+<div>
     <a class="pill" href="/sys/payroll/runs">返回 批次列表</a>
     <a class="pill" href="/sys/payroll/runs/{{ run_id }}/generate">重新生成明细</a>
     <a class="pill" href="/sys/module">返回 系统管理</a>
@@ -42,4 +42,5 @@ th{background:#fafafa;}
       </tbody>
     </table>
   </div>
-</body></html>
+</div>
+{% endblock %}

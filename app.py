@@ -5412,6 +5412,24 @@ def _run_cli_task() -> int | None:
     return 1
 
 
+
+def _load_modules_catalog():
+    \"\"\"Load app/modules_catalog.json for UI sidebar/hub. Safe fallback to {}.\"\"\"
+    try:
+        base = Path(__file__).resolve().parent
+        fp = base / "app" / "modules_catalog.json"
+        if fp.exists():
+            return json.loads(fp.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+@app.context_processor
+def inject_modules_catalog():
+    # Available in all templates as `catalog`
+    return {"catalog": _load_modules_catalog()}
+
+
 if __name__ == "__main__":
     cli_exit_code = _run_cli_task()
     if cli_exit_code is not None:
