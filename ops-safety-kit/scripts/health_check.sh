@@ -48,13 +48,18 @@ http_get_status() {
 import urllib.request, urllib.error, socket
 url="${url}"
 try:
+    # Force-disable proxies regardless of env vars (http_proxy/https_proxy/no_proxy)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     req = urllib.request.Request(url, method="GET")
-    with urllib.request.urlopen(req, timeout=5) as r:
+    with opener.open(req, timeout=5) as r:
         print(getattr(r, "status", 200))
 except urllib.error.HTTPError as e:
     print(e.code)
-except (urllib.error.URLError, socket.timeout, Exception):
+except Exception as e:
+    # Print diagnostic to stderr so evidence captures the cause
+    import sys
     print("000")
+    print(f"[urllib_diag] {type(e).__name__}: {e}", file=sys.stderr)
 PY
 }
 
