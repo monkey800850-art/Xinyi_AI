@@ -258,6 +258,63 @@ function toggleRowJson(id){
   el.style.display = (el.style.display === "none" ? "block" : "none");
 }
 
+function renderGroupedLedger(groups){
+  const box = document.getElementById("rowsBox");
+  if (!box) return;
+  let html = "";
+  groups.forEach((g, gi)=>{
+    const key = g.key || {};
+    const keyText = Object.keys(key).map(k=>k+"="+key[k]).join(", ");
+    const sub = g.subtotal || {};
+    html += "<div class='card' style='margin:12px 0;padding:12px;border:1px solid #ddd;border-radius:12px;'>";
+    html += "<div style='font-weight:700;margin-bottom:8px;'>"+ keyText +"</div>";
+    html += "<div class='muted' style='margin-bottom:8px;'>本段小计：借 "+ fmtAmount(sub.period_debit) +" / 贷 "+ fmtAmount(sub.period_credit)
+         + "；期末余额：" + (sub.closing_direction||"") + " " + fmtAmount(sub.closing_amount) + "</div>";
+
+    // table header
+    html += "<table style='width:100%;border-collapse:collapse;'><thead><tr>"
+         + "<th style='text-align:left;border-bottom:1px solid #eee;'>日期</th>"
+         + "<th style='text-align:left;border-bottom:1px solid #eee;'>科目</th>"
+         + "<th style='text-align:left;border-bottom:1px solid #eee;'>摘要</th>"
+         + "<th style='text-align:left;border-bottom:1px solid #eee;'>方向</th>"
+         + "<th style='text-align:right;border-bottom:1px solid #eee;'>借方</th>"
+         + "<th style='text-align:right;border-bottom:1px solid #eee;'>贷方</th>"
+         + "<th style='text-align:left;border-bottom:1px solid #eee;'>余额方向</th>"
+         + "<th style='text-align:right;border-bottom:1px solid #eee;'>余额</th>"
+         + "</tr></thead><tbody>";
+
+    (g.lines||[]).forEach((r, ri)=>{
+      const rid = "g"+gi+"_r"+ri;
+      const bal = (r.running_direction==="debit") ? r.running_debit : (r.running_direction==="credit" ? r.running_credit : "");
+      html += "<tr data-rowid='"+rid+"' style='cursor:pointer;'>"
+           + "<td>"+ (r.biz_date||"") +"</td>"
+           + "<td>"+ (r.subject_code||"") +"</td>"
+           + "<td>"+ (r.note||r.summary||"") +"</td>"
+           + "<td>"+ (r.dc_direction||"") +"</td>"
+           + "<td style='text-align:right;'>"+ fmtAmount(r.debit_amount) +"</td>"
+           + "<td style='text-align:right;'>"+ fmtAmount(r.credit_amount) +"</td>"
+           + "<td>"+ (r.running_direction||"") +"</td>"
+           + "<td style='text-align:right;'>"+ fmtAmount(bal) +"</td>"
+           + "</tr>";
+      html += "<tr id='"+rid+"' style='display:none;'><td colspan='8'><pre style='white-space:pre-wrap;'>"
+           + (JSON.stringify(r, null, 2)) + "</pre></td></tr>";
+    });
+
+    html += "</tbody></table></div>";
+  });
+
+  box.innerHTML = html;
+
+  // click to toggle raw json
+  box.querySelectorAll("tr[data-rowid]").forEach(tr=>{
+    tr.addEventListener("click", ()=>{
+      const id = tr.getAttribute("data-rowid");
+      const el = document.getElementById(id);
+      if (el) el.style.display = (el.style.display==="none" ? "" : "none");
+    });
+  });
+}
+
 function renderRows(run){
   const meta = document.getElementById("rowsMeta");
   const tbl = document.getElementById("rowsTable");
@@ -305,6 +362,8 @@ async function executeQuery(buildParamsFn, outEl){
 })();
 
 // REPORTS-QUERY-11
+
+// REPORTS-QUERY-12
 </script>
 {% endblock %}
 
