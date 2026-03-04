@@ -123,7 +123,7 @@ if [ "$code" = "000" ]; then
     exit 1
   fi
 fi
-echoecho "== log path hint =="
+echo "== log path hint =="
 echo "LOG_PATH_HINT=${LOG_PATH_HINT}"
 if [ -f "${LOG_PATH_HINT}" ]; then
   echo "[OK] log file exists at hint path"
