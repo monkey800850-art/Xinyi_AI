@@ -1,0 +1,20 @@
+name: osk-gate-all
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure executable
+        run: |
+          chmod +x ops-safety-kit/scripts/*.sh || true
+          chmod +x ops-safety-kit/.githooks/pre-commit || true
+
+      - name: Run OSK gate_all
+        run: |
+          bash ops-safety-kit/scripts/gate_all.sh

@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-bash scripts/ops/gate_secrets.sh
+echo "[DEPRECATED] use ops-safety-kit/.githooks/pre-commit via core.hooksPath" >&2
+bash ops-safety-kit/scripts/gate_all.sh
