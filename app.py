@@ -1,5 +1,5 @@
 from app.services.ledger_group_view import build_grouped_ledger
-from app.services.ledger_running_balance import enrich_running_balance
+from app.services.ledger_running_balance import enrich_running_balance, enrich_running_balance_grouped
 from app.services.report_result_subtotals_vector import tree_to_lines_vector, overall_total_vector
 from app.services.report_result_tree_vector import rows_to_tree_vector
 from app.services.ledger_engine import compute_trial_balance_from_entries
@@ -5972,12 +5972,15 @@ def ledger_query():
             )
             # sort entries by biz_date then subject_code for stable running balance
             entries_sorted = sorted(entries, key=lambda e: (str(e.get("biz_date") or ""), str(e.get("subject_code") or "")))
-            ledger_rows = enrich_running_balance(entries_sorted)
+            group_cols = plan.get("group_by") or ["subject_code"]
+            ledger_rows = enrich_running_balance_grouped(entries_sorted, group_cols)
+            groups = build_grouped_ledger(ledger_rows, group_cols)
             engine = {
                 "backend": backend,
                 "warnings": warns,
                 "entries_len": len(entries),
                 "rows": ledger_rows[:1000],
+                "groups": (groups[:100] if "groups" in locals() else []),
             }
         except Exception as e:
             engine = {"backend":"none","warnings":[f"engine_failed: {e}"],"entries_len":0,"rows":[]}

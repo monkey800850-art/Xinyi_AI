@@ -3,7 +3,7 @@ import sys, json
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from app.services.ledger_running_balance import enrich_running_balance
+from app.services.ledger_running_balance import enrich_running_balance_grouped
 from app.services.ledger_group_view import build_grouped_ledger
 
 entries = [
@@ -13,7 +13,7 @@ entries = [
   {"biz_date":"2026-03-04","subject_code":"6601","note":"B c1","aux_person_id":"B","debit":0,"credit":10},
 ]
 
-rows = enrich_running_balance(entries)
+rows = enrich_running_balance_grouped(entries, ["aux_person_id","subject_code"])
 # group by person + subject (simulate your multi-dim grouping)
 groups = build_grouped_ledger(rows, ["aux_person_id","subject_code"])
 
