@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+# Always anchor to repo root (portable; avoids '~' issues)
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
 
 # OSK profile:
-#   local (default): secrets + hygiene only (portable)
+#   local (default): secrets + hygiene only
 #   ci: secrets + hygiene + optional enabled gates
 #   prod: all enabled gates
 OSK_PROFILE="${OSK_PROFILE:-local}"
-OSK_ENABLE_DB_GATES="${OSK_ENABLE_DB_GATES:-0}"   # 1 to enable DB/service bound gates
-OSK_ENABLE_RELEASE_GATES="${OSK_ENABLE_RELEASE_GATES:-0}" # 1 to enable release/consolidation chain
+OSK_ENABLE_DB_GATES="${OSK_ENABLE_DB_GATES:-0}"          # 1 enables DB/service smoke
+OSK_ENABLE_RELEASE_GATES="${OSK_ENABLE_RELEASE_GATES:-0}" # 1 enables release/consolidation chain
 
 echo "== gate_all =="
 date '+%Y-%m-%d %H:%M (%z)'
@@ -19,7 +21,7 @@ echo "head=$(git rev-parse --short HEAD 2>/dev/null || echo nogit)"
 echo "OSK_PROFILE=${OSK_PROFILE} OSK_ENABLE_DB_GATES=${OSK_ENABLE_DB_GATES} OSK_ENABLE_RELEASE_GATES=${OSK_ENABLE_RELEASE_GATES}"
 echo
 
-run_if_exists() {
+run_if_exec() {
   local f="$1"
   if [ -x "$f" ]; then
     bash "$f"
@@ -29,27 +31,27 @@ run_if_exists() {
 }
 
 # Required
-run_if_exists ops-safety-kit/scripts/gate_secrets.sh
+run_if_exec ops-safety-kit/scripts/gate_secrets.sh
 
-# Portable hygiene (optional but recommended)
+# Portable hygiene
 if [ -x ops-safety-kit/scripts/gate_hygiene.sh ]; then
-  run_if_exists ops-safety-kit/scripts/gate_hygiene.sh
+  run_if_exec ops-safety-kit/scripts/gate_hygiene.sh
 else
   echo "[SKIP] optional gate not present: gate_hygiene.sh"
 fi
 
-# Release / consolidation gates: ONLY when explicitly enabled
+# Release / consolidation (explicit)
 if [ "${OSK_ENABLE_RELEASE_GATES}" = "1" ] || [ "${OSK_PROFILE}" = "prod" ]; then
-  run_if_exists ops-safety-kit/scripts/gate_consolidation.sh
-  run_if_exists ops-safety-kit/scripts/gate_release.sh
+  run_if_exec ops-safety-kit/scripts/gate_consolidation.sh
+  run_if_exec ops-safety-kit/scripts/gate_release.sh
 else
   echo "[SKIP] release/consolidation gates disabled by profile"
 fi
 
-# DB/service bound smoke gates: ONLY when explicitly enabled
+# DB/service smoke (explicit)
 if [ "${OSK_ENABLE_DB_GATES}" = "1" ] || [ "${OSK_PROFILE}" = "prod" ]; then
-  run_if_exists ops-safety-kit/scripts/smoke_auth.sh
-  run_if_exists ops-safety-kit/scripts/smoke_dashboard.sh
+  run_if_exec ops-safety-kit/scripts/smoke_auth.sh
+  run_if_exec ops-safety-kit/scripts/smoke_dashboard.sh
 else
   echo "[SKIP] DB/service bound smoke disabled by profile"
 fi
