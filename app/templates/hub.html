@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Xinyi 功能总入口</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; }
+    h2 { margin-top: 20px; }
+    ul { line-height: 1.8; }
+    small { color: #666; }
+    code { background: #f2f2f2; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Xinyi 功能总入口（自动生成）</h1>
+  <p>目的：把“已开发但未挂界面”的功能统一挂到 UI。此页只负责导航，不改变业务逻辑。</p>
+  <p><small>如点击出现 401/403：说明需要登录/权限；这属于正常结果，不应 500。</small></p>
+
+  <!-- content injected by server -->
+  <div>{{ content|safe }}</div>
+</body>
+</html>
