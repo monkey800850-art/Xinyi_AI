@@ -274,7 +274,10 @@ function renderRows(run){
     tbl.innerHTML = "";
     return;
   }
-  const cols = Object.keys(rows[0]);
+  // REPORTS-QUERY-09: prefer accounting column set when present
+  const prefer = ["direction","opening_debit","opening_credit","period_debit","period_credit","closing_debit","closing_credit"];
+  const hasAll = prefer.every(c => Object.prototype.hasOwnProperty.call(rows[0], c));
+  const cols = hasAll ? prefer : Object.keys(rows[0]);
   let html = "<thead><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr></thead>";
   html += "<tbody>";
   rows.forEach(r=>{

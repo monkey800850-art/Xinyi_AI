@@ -1,3 +1,5 @@
+from app.services.ledger_engine import compute_trial_balance_from_entries
+from app.services.ledger_entry_source import fetch_entries_best_effort
 from app.services.report_result_subtotals import tree_to_lines, overall_total
 from app.services.report_result_tree import rows_to_tree
 import hashlib
@@ -5869,6 +5871,33 @@ def trial_balance_query():
     )
     plan = build_sql_plan_best_effort(spec)
 
+    mode = request.args.get("mode", "plan").strip()
+    engine = None
+    if mode == "engine":
+        # Use ledger entry source + ledger engine to compute accounting TB rows
+        try:
+            # collect multi-select filters from query args (same keys as UI)
+            filters = {}
+            for k in ("subject","person","project","department","bank_account"):
+                vals = request.args.getlist(k)
+                if vals:
+                    filters[k] = vals
+            entries, warns, backend = fetch_entries_best_effort(
+                date_from=request.args.get("date_from"),
+                date_to=request.args.get("date_to"),
+                filters=filters,
+                limit=5000
+            )
+            tb_rows = compute_trial_balance_from_entries(entries, plan.get("group_by") or [])
+            engine = {
+                "backend": backend,
+                "warnings": warns,
+                "entries_len": len(entries),
+                "rows": tb_rows[:500],
+            }
+        except Exception as e:
+            engine = {"backend":"none","warnings":[f"engine_failed: {e}"],"entries_len":0,"rows":[]}
+
     execute = request.args.get("execute", "0").strip() in ("1","true","True","yes","Y")
     run = None
     if execute:
@@ -5876,7 +5905,7 @@ def trial_balance_query():
             run = run_plan(plan).__dict__
         except Exception as e:
             run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
-    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None), "tree_lines": (tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[]))) if run else []), "tree_total": (overall_total(tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[])))) if run else 0)})
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "engine": engine, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None), "tree_lines": (tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[]))) if run else []), "tree_total": (overall_total(tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[])))) if run else 0)})
 
 
 @app.get("/reports/ledger/query")
