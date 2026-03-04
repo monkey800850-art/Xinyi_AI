@@ -573,89 +573,89 @@ def create_app() -> Flask:
 
 
 
-        # P0-OPS-INJECT-PROOF-02
-        @app.after_request
-        def _inject_proof(resp):
-            """
-            Proof we hit THIS Flask instance:
-            - Always set X-Xinyi-Inject: 1
-            - If response is HTML: inline inject a marker + tiny JS (no /static dependency)
-            """
-            try:
-                resp.headers["X-Xinyi-Inject"] = "1"
-                ct = (resp.headers.get("Content-Type","") or "").lower()
-                if "text/html" not in ct:
-                    return resp
+    # P0-OPS-INJECT-PROOF-02
+    @app.after_request
+    def _inject_proof(resp):
+        """
+        Proof we hit THIS Flask instance:
+        - Always set X-Xinyi-Inject: 1
+        - If response is HTML: inline inject a marker + tiny JS (no /static dependency)
+        """
+        try:
+            resp.headers["X-Xinyi-Inject"] = "1"
+            ct = (resp.headers.get("Content-Type","") or "").lower()
+            if "text/html" not in ct:
+                return resp
 
-                body = resp.get_data(as_text=True)
-                if "XINYI_INJECT_PROOF_02" in body:
-                    return resp
+            body = resp.get_data(as_text=True)
+            if "XINYI_INJECT_PROOF_02" in body:
+                return resp
 
-                inline = (
-                  "<!-- XINYI_INJECT_PROOF_02 -->"
-                  "<script>(function(){"
-                  "try{"
-                  "var d=document.createElement('div');"
-                  "d.id='xinyi_inject_probe_02';"
-                  "d.style='position:fixed;bottom:10px;right:10px;z-index:2147483647;"
-                  "background:rgba(255,255,0,.85);padding:6px 8px;border:1px solid #333;"
-                  "border-radius:8px;font:12px/1.2 system-ui';"
-                  "d.textContent='INJECT_OK_02';"
-                  "document.documentElement.appendChild(d);"
-                  "}catch(e){}"
-                  "})();</script>"
-                )
+            inline = (
+              "<!-- XINYI_INJECT_PROOF_02 -->"
+              "<script>(function(){"
+              "try{"
+              "var d=document.createElement('div');"
+              "d.id='xinyi_inject_probe_02';"
+              "d.style='position:fixed;bottom:10px;right:10px;z-index:2147483647;"
+              "background:rgba(255,255,0,.85);padding:6px 8px;border:1px solid #333;"
+              "border-radius:8px;font:12px/1.2 system-ui';"
+              "d.textContent='INJECT_OK_02';"
+              "document.documentElement.appendChild(d);"
+              "}catch(e){}"
+              "})();</script>"
+            )
 
-                if "</body>" in body:
-                    body = body.replace("</body>", inline + "\n</body>", 1)
-                else:
-                    body = body + "\n" + inline
+            if "</body>" in body:
+                body = body.replace("</body>", inline + "\n</body>", 1)
+            else:
+                body = body + "\n" + inline
 
-                resp.set_data(body)
+            resp.set_data(body)
+            resp.headers.pop("Content-Length", None)
+        except Exception:
+            return resp
+        return resp
+    # P0-OPS-INJECT-DEBUG-01: always-on inject proof header
+    @app.after_request
+    def _inject_proof_header(resp):
+        try:
+            resp.headers["X-Xinyi-Inject"] = "1"
+        except Exception:
+            pass
+        return resp
+    # P1-UX-SIDEBAR-COLLAPSE-03: after_request html injector
+    @app.after_request
+    def _inject_sidebar_shadow_toggle(resp):
+        try:
+            ct = resp.headers.get("Content-Type", "") or ""
+            # only inject into HTML pages
+            if "text/html" not in ct.lower():
+                return resp
+
+            # avoid double injection
+            body = resp.get_data(as_text=True)
+            if "sidebar_shadow_toggle.js" in body:
+                return resp
+
+            # inject script tag before </body> (or append if missing)
+            sha = os.getenv("ASSET_VERSION", "")
+            v = f"?v={sha}" if sha else ""
+            tag = f'<script src="/static/js/sidebar_shadow_toggle.js{v}"></script>'
+
+            if "</body>" in body:
+                body = body.replace("</body>", tag + "\n</body>", 1)
+            else:
+                body = body + "\n" + tag
+
+            resp.set_data(body)
+            # content-length may change
+            if "Content-Length" in resp.headers:
                 resp.headers.pop("Content-Length", None)
-            except Exception:
-                return resp
+        except Exception:
+            # never block page
             return resp
-        # P0-OPS-INJECT-DEBUG-01: always-on inject proof header
-        @app.after_request
-        def _inject_proof_header(resp):
-            try:
-                resp.headers["X-Xinyi-Inject"] = "1"
-            except Exception:
-                pass
-            return resp
-        # P1-UX-SIDEBAR-COLLAPSE-03: after_request html injector
-        @app.after_request
-        def _inject_sidebar_shadow_toggle(resp):
-            try:
-                ct = resp.headers.get("Content-Type", "") or ""
-                # only inject into HTML pages
-                if "text/html" not in ct.lower():
-                    return resp
-
-                # avoid double injection
-                body = resp.get_data(as_text=True)
-                if "sidebar_shadow_toggle.js" in body:
-                    return resp
-
-                # inject script tag before </body> (or append if missing)
-                sha = os.getenv("ASSET_VERSION", "")
-                v = f"?v={sha}" if sha else ""
-                tag = f'<script src="/static/js/sidebar_shadow_toggle.js{v}"></script>'
-
-                if "</body>" in body:
-                    body = body.replace("</body>", tag + "\n</body>", 1)
-                else:
-                    body = body + "\n" + tag
-
-                resp.set_data(body)
-                # content-length may change
-                if "Content-Length" in resp.headers:
-                    resp.headers.pop("Content-Length", None)
-            except Exception:
-                # never block page
-                return resp
-            return resp
+        return resp
     app.secret_key = os.getenv("SECRET_KEY")
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     default_samesite = "Strict" if app_env == "production" else "Lax"
@@ -742,15 +742,18 @@ def create_app() -> Flask:
     app.register_blueprint(core_pages_bp)
 
 
-@app.get("/__debug/inject")
-def __debug_inject():
-    # plain HTML, no template, easy to verify
-    return """<!doctype html>
+    def _register_debug_routes(app: Flask) -> None:
+        @app.get("/__debug/inject")
+        def __debug_inject():
+            # plain HTML, no template, easy to verify
+            return """<!doctype html>
 <html><head><meta charset="utf-8"><title>inject-probe</title></head>
 <body>
   <h1>inject-probe</h1>
   <p>If you see a floating toggle button, JS ran.</p>
 </body></html>"""
+
+    _register_debug_routes(app)
 
     app.register_blueprint(consolidation_bp)
 
@@ -926,21 +929,6 @@ def __debug_inject():
                     now_utc + timedelta(minutes=auth_session_timeout_minutes)
                 ).isoformat()
 
-        operator, role = _get_operator_from_headers()
-        has_auth_headers = bool(
-            str(request.headers.get("X-User") or "").strip() or str(request.headers.get("X-Role") or "").strip()
-        )
-        if operator or role:
-            current = session.get("auth_ctx") if isinstance(session.get("auth_ctx"), dict) else {}
-            # Avoid treating arbitrary payload fields as login; only persist when session already exists
-            # or when upstream auth headers are explicitly present.
-            if current or has_auth_headers:
-                session["auth_ctx"] = {
-                    "username": operator or str(current.get("username") or ""),
-                    "role": role or str(current.get("role") or ""),
-                }
-                if current.get("user_id"):
-                    session["auth_ctx"]["user_id"] = int(current.get("user_id"))
         payload = request.get_json(silent=True)
         subject_type = (
             request.headers.get("X-Subject-Type")
