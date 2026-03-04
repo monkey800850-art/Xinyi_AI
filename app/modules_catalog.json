@@ -1,0 +1,132 @@
+{
+  "generated_at": "2026-03-04T17:41:20.012817",
+  "summary": {
+    "py_files": 1460,
+    "routes": 7,
+    "blueprints": 2,
+    "render_calls": 48,
+    "templates": 10,
+    "groups": [
+      "其他",
+      "合并报表",
+      "固定资产",
+      "工资管理",
+      "报表",
+      "税务",
+      "系统管理",
+      "费用报销"
+    ]
+  },
+  "groups": {
+    "系统管理": {
+      "routes": [
+        {
+          "path": "/hub",
+          "file": "app.py"
+        }
+      ],
+      "templates": [
+        {
+          "template": "hub.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/hub.html"
+        },
+        {
+          "template": "modules/system.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/system.html"
+        }
+      ]
+    },
+    "其他": {
+      "routes": [
+        {
+          "path": "/m/<name>",
+          "file": "app.py"
+        },
+        {
+          "path": "/uploads/<path:name>",
+          "file": "venv/lib/python3.10/site-packages/flask/helpers.py"
+        },
+        {
+          "path": "/",
+          "file": "venv/lib/python3.10/site-packages/flask/ctx.py"
+        },
+        {
+          "path": "/",
+          "file": "venv/lib/python3.10/site-packages/flask/ctx.py"
+        },
+        {
+          "path": "/",
+          "file": "venv/lib/python3.10/site-packages/flask/sansio/scaffold.py"
+        },
+        {
+          "path": "/",
+          "file": "venv/lib/python3.10/site-packages/flask/sansio/scaffold.py"
+        }
+      ],
+      "templates": [
+        {
+          "template": "modules/others.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/others.html"
+        },
+        {
+          "template": "modules/voucher.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/voucher.html"
+        }
+      ]
+    },
+    "费用报销": {
+      "routes": [],
+      "templates": [
+        {
+          "template": "modules/expense.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/expense.html"
+        }
+      ]
+    },
+    "工资管理": {
+      "routes": [],
+      "templates": [
+        {
+          "template": "modules/payroll.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/payroll.html"
+        }
+      ]
+    },
+    "税务": {
+      "routes": [],
+      "templates": [
+        {
+          "template": "modules/tax.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/tax.html"
+        }
+      ]
+    },
+    "报表": {
+      "routes": [],
+      "templates": [
+        {
+          "template": "modules/reports.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/reports.html"
+        }
+      ]
+    },
+    "合并报表": {
+      "routes": [],
+      "templates": [
+        {
+          "template": "modules/consolidation.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/consolidation.html"
+        }
+      ]
+    },
+    "固定资产": {
+      "routes": [],
+      "templates": [
+        {
+          "template": "modules/assets.html",
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/assets.html"
+        }
+      ]
+    }
+  }
+}

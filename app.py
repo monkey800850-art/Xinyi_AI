@@ -682,16 +682,15 @@ def create_app() -> Flask:
 
     @app.route("/hub")
     def hub():
-        return """
-    <h1>Xinyi 功能导航</h1>
-    <ul>
-        <li><a href="/dashboard">工作台</a></li>
-        <li><a href="/reports/trial_balance">试算平衡表</a></li>
-        <li><a href="/tax/summary">税务汇总</a></li>
-        <li><a href="/assets">资产</a></li>
-        <li><a href="/expense">费用报销</a></li>
-    </ul>
-    """
+        catalog_path = Path(__file__).resolve().parent / "app" / "modules_catalog.json"
+        catalog = {}
+        if catalog_path.exists():
+            try:
+                catalog_data = json.loads(catalog_path.read_text(encoding="utf-8"))
+                catalog = catalog_data.get("groups", {})
+            except Exception:
+                catalog = {}
+        return render_template("hub.html", catalog=catalog)
 
     @app.route("/m/<name>")
     def module_page(name):
