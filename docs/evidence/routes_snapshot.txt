@@ -1,0 +1,9 @@
+[FAIL] cannot import/detect flask app
+[MISS] import app: No module named 'app'
+[MISS] import main: No module named 'main'
+[MISS] import run: No module named 'run'
+[MISS] import server: No module named 'server'
+[MISS] import wsgi: No module named 'wsgi'
+[MISS] import app.main: No module named 'app'
+[MISS] import app.server: No module named 'app'
+[MISS] import app.wsgi: No module named 'app'

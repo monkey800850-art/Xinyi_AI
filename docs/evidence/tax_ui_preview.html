@@ -1,0 +1,11 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>Tax UI Preview 202603</title>
+<style>body{font-family:Arial;margin:24px}table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:8px}th{background:#f5f5f5}
+td.num{text-align:right}code{background:#f7f7f7;padding:2px 4px}.small{color:#666}</style>
+</head><body>
+<h2>税务申报表（离线预览）</h2>
+<div class="small">period=202603 pack_id=taxpack-202603-4ab88bbf2d5a source=artifacts/tax_forms_202603.json</div>
+<table><thead><tr><th>表</th><th>版本</th><th>行次</th><th>名称</th><th>金额</th><th>来源</th><th>Trace</th></tr></thead><tbody>
+<tr><td>VAT_GENERAL_MAIN</td><td>v1</td><td>20</td><td>应纳税额</td><td class='num'>7500.00</td><td>pack</td><td><code>tax_return_pack_202603_vat.json</code></td></tr><tr><td>SURTAX_DECLARE</td><td>v1</td><td>A1</td><td>城建税</td><td class='num'>525.00</td><td>computed</td><td><code>vat_payable*7%</code></td></tr><tr><td>SURTAX_DECLARE</td><td>v1</td><td>A2</td><td>教育费附加</td><td class='num'>225.00</td><td>computed</td><td><code>vat_payable*3%</code></td></tr><tr><td>SURTAX_DECLARE</td><td>v1</td><td>A3</td><td>地方教育附加</td><td class='num'>150.00</td><td>computed</td><td><code>vat_payable*2%</code></td></tr><tr><td>SURTAX_DECLARE</td><td>v1</td><td>A9</td><td>附加税合计</td><td class='num'>900.00</td><td>computed</td><td><code>sum(A1..A3)</code></td></tr>
+</tbody></table></body></html>
