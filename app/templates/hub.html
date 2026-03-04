@@ -1,4 +1,59 @@
-<!doctype html><html><head><meta charset='utf-8'/><title>Xinyi Hub</title></head><body><h1>Xinyi 功能导航（离线生成）</h1>
+{% extends "layout.html" %}
+{% block title %}Hub
+<script>
+/* UI-LAYOUT-02 hub align */
+(function(){
+  try{
+    // Align hub items with sidebar rules:
+    // - data-hub-status != "active" => disable link
+    // - data-hub-requires => show badge "需权限"
+    document.querySelectorAll('[data-hub-item]').forEach(function(el){
+      const status = el.getAttribute('data-hub-status') || 'stub';
+      const requires = el.getAttribute('data-hub-requires') || '';
+      const a = el.querySelector('a');
+      if(a){
+        if(status !== 'active'){
+          a.setAttribute('href', '#');
+          a.style.pointerEvents='none';
+          a.style.opacity='0.55';
+          a.title = (a.title || '') + '（未启用）';
+        }
+      }
+      if(requires){
+        let badge = el.querySelector('[data-badge="requires"]');
+        if(!badge){
+          badge = document.createElement('span');
+          badge.setAttribute('data-badge','requires');
+          badge.textContent='需权限';
+          badge.style.fontSize='11px';
+          badge.style.padding='2px 8px';
+          badge.style.border='1px solid #e8e8e8';
+          badge.style.borderRadius='999px';
+          badge.style.color='rgba(0,0,0,.65)';
+          badge.style.marginLeft='8px';
+          el.appendChild(badge);
+        }
+      }
+    });
+  }catch(e){}
+})();
+</script>
+
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Hub</h1>
+    <p class="page-sub">模块入口总览（由 modules_catalog.json 驱动）</p>
+  </div>
+  <div>
+    <a class="pill" href="/sys/module">系统管理</a>
+    <a class="pill" href="/">首页</a>
+  </div>
+</div>
+
+<div class="card">
+<h1>Xinyi 功能导航（离线生成）</h1>
 <div class="hub-toolbar" style="margin:12px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
   <input id="hub-search" type="text" placeholder="搜索：模块名 / 路径 / 组名" style="padding:8px 10px; min-width:280px; border:1px solid #ccc; border-radius:8px;" />
   <span id="hub-count" style="opacity:.8;"></span>
@@ -174,5 +229,45 @@
   }
 })();
 </script>
+</div>
 
-</body></html>
+<script>
+/* UI-LAYOUT-02 hub align */
+(function(){
+  try{
+    // Align hub items with sidebar rules:
+    // - data-hub-status != "active" => disable link
+    // - data-hub-requires => show badge "需权限"
+    document.querySelectorAll('[data-hub-item]').forEach(function(el){
+      const status = el.getAttribute('data-hub-status') || 'stub';
+      const requires = el.getAttribute('data-hub-requires') || '';
+      const a = el.querySelector('a');
+      if(a){
+        if(status !== 'active'){
+          a.setAttribute('href', '#');
+          a.style.pointerEvents='none';
+          a.style.opacity='0.55';
+          a.title = (a.title || '') + '（未启用）';
+        }
+      }
+      if(requires){
+        let badge = el.querySelector('[data-badge="requires"]');
+        if(!badge){
+          badge = document.createElement('span');
+          badge.setAttribute('data-badge','requires');
+          badge.textContent='需权限';
+          badge.style.fontSize='11px';
+          badge.style.padding='2px 8px';
+          badge.style.border='1px solid #e8e8e8';
+          badge.style.borderRadius='999px';
+          badge.style.color='rgba(0,0,0,.65)';
+          badge.style.marginLeft='8px';
+          el.appendChild(badge);
+        }
+      }
+    });
+  }catch(e){}
+})();
+</script>
+
+{% endblock %}
