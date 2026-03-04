@@ -5415,7 +5415,7 @@ def _run_cli_task() -> int | None:
 
 
 def _load_modules_catalog():
-    \"\"\"Load app/modules_catalog.json for UI sidebar/hub. Safe fallback to {}.\"\"\"
+    """Load app/modules_catalog.json for UI sidebar/hub. Safe fallback to {}."""
     try:
         base = Path(__file__).resolve().parent
         fp = base / "app" / "modules_catalog.json"
@@ -5444,6 +5444,21 @@ def sys_payroll_voucher_draft_lines_api(header_id: int):
         return jsonify({"ok": True, "header_id": header_id, "lines": [dict(r) for r in rows]})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e), "header_id": header_id, "lines": []})
+
+
+
+
+@app.route("/debug/routes")
+def debug_routes():
+    try:
+        rules=[]
+        for r in sorted(app.url_map.iter_rules(), key=lambda x: str(x)):
+            methods=",".join(sorted([m for m in (r.methods or []) if m not in ("HEAD","OPTIONS")]))
+            rules.append({"rule": r.rule, "methods": methods, "endpoint": r.endpoint})
+        return jsonify({"ok": True, "count": len(rules), "routes": rules})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "count": 0, "routes": []})
+
 
 
 if __name__ == "__main__":
