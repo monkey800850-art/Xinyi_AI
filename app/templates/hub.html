@@ -1,22 +1,259 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Xinyi 功能总入口</title>
-  <style>
-    body { font-family: sans-serif; margin: 24px; }
-    h2 { margin-top: 20px; }
-    ul { line-height: 1.8; }
-    small { color: #666; }
-    code { background: #f2f2f2; padding: 2px 6px; border-radius: 6px; }
-  </style>
-</head>
-<body>
-  <h1>Xinyi 功能总入口（自动生成）</h1>
-  <p>目的：把“已开发但未挂界面”的功能统一挂到 UI。此页只负责导航，不改变业务逻辑。</p>
-  <p><small>如点击出现 401/403：说明需要登录/权限；这属于正常结果，不应 500。</small></p>
-
-  <!-- content injected by server -->
-  <div>{{ content|safe }}</div>
-</body>
-</html>
+<!doctype html><html><head><meta charset='utf-8'/><title>Xinyi Hub</title></head><body><h1>Xinyi 功能导航（离线生成）</h1><p>本页自动从 Flask url_map 导出，列出“已开发可访问的路由”。401/403 表示需要登录/权限，属于正常。</p><p><small>模块页：/m/payroll /m/expense /m/assets /m/tax /m/reports /m/system /m/consolidation</small></p><h2>工资管理</h2><ul>
+<li><a href="/api/payroll/attendance/sync">/api/payroll/attendance/sync</a> <small><code>POST</code> <code>api_payroll_attendance_sync</code></small></li>
+<li><a href="/api/payroll/disbursement-batches">/api/payroll/disbursement-batches</a> <small><code>POST</code> <code>api_payroll_create_disbursement_batch</code></small></li>
+<li><a href="/api/payroll/disbursement-batches">/api/payroll/disbursement-batches</a> <small><code>GET</code> <code>api_payroll_list_disbursement_batches</code></small></li>
+<li><a href="/api/payroll/disbursement-batches/&lt;int:batch_id&gt;/bank-file">/api/payroll/disbursement-batches/&lt;int:batch_id&gt;/bank-file</a> <small><code>GET</code> <code>api_payroll_export_bank_file</code></small></li>
+<li><a href="/api/payroll/periods">/api/payroll/periods</a> <small><code>POST</code> <code>api_payroll_upsert_period</code></small></li>
+<li><a href="/api/payroll/periods">/api/payroll/periods</a> <small><code>GET</code> <code>api_payroll_list_periods</code></small></li>
+<li><a href="/api/payroll/periods/&lt;int:period_id&gt;/close">/api/payroll/periods/&lt;int:period_id&gt;/close</a> <small><code>POST</code> <code>api_payroll_close_period</code></small></li>
+<li><a href="/api/payroll/periods/&lt;int:period_id&gt;/reopen">/api/payroll/periods/&lt;int:period_id&gt;/reopen</a> <small><code>POST</code> <code>api_payroll_reopen_period</code></small></li>
+<li><a href="/api/payroll/policies/regions">/api/payroll/policies/regions</a> <small><code>POST</code> <code>api_payroll_upsert_region_policy</code></small></li>
+<li><a href="/api/payroll/policies/regions">/api/payroll/policies/regions</a> <small><code>GET</code> <code>api_payroll_list_region_policies</code></small></li>
+<li><a href="/api/payroll/slips">/api/payroll/slips</a> <small><code>POST</code> <code>api_payroll_upsert_slip</code></small></li>
+<li><a href="/api/payroll/slips">/api/payroll/slips</a> <small><code>GET</code> <code>api_payroll_list_slips</code></small></li>
+<li><a href="/api/payroll/slips/&lt;int:slip_id&gt;/confirm">/api/payroll/slips/&lt;int:slip_id&gt;/confirm</a> <small><code>POST</code> <code>api_payroll_confirm_slip</code></small></li>
+<li><a href="/api/payroll/slips/&lt;int:slip_id&gt;/create-payment-request">/api/payroll/slips/&lt;int:slip_id&gt;/create-payment-request</a> <small><code>POST</code> <code>api_payroll_create_payment_request</code></small></li>
+<li><a href="/api/payroll/slips/&lt;int:slip_id&gt;/payment-status">/api/payroll/slips/&lt;int:slip_id&gt;/payment-status</a> <small><code>GET</code> <code>api_payroll_payment_status</code></small></li>
+<li><a href="/api/payroll/slips/&lt;int:slip_id&gt;/voucher-suggestion">/api/payroll/slips/&lt;int:slip_id&gt;/voucher-suggestion</a> <small><code>GET</code> <code>api_payroll_voucher_suggestion</code></small></li>
+<li><a href="/payroll">/payroll</a> <small><code>GET</code> <code>core_pages.payroll_page</code></small></li>
+</ul><h2>费用报销</h2><ul>
+<li><a href="/api/reimbursements">/api/reimbursements</a> <small><code>GET</code> <code>api_reimbursements_list</code></small></li>
+<li><a href="/api/reimbursements">/api/reimbursements</a> <small><code>POST</code> <code>api_reimbursement_save</code></small></li>
+<li><a href="/api/reimbursements/&lt;int:reimbursement_id&gt;">/api/reimbursements/&lt;int:reimbursement_id&gt;</a> <small><code>GET</code> <code>api_reimbursement_detail</code></small></li>
+<li><a href="/api/reimbursements/&lt;int:reimbursement_id&gt;">/api/reimbursements/&lt;int:reimbursement_id&gt;</a> <small><code>DELETE</code> <code>api_reimbursement_delete</code></small></li>
+<li><a href="/api/reimbursements/&lt;int:reimbursement_id&gt;/approve">/api/reimbursements/&lt;int:reimbursement_id&gt;/approve</a> <small><code>POST</code> <code>api_reimbursement_approve</code></small></li>
+<li><a href="/api/reimbursements/&lt;int:reimbursement_id&gt;/reject">/api/reimbursements/&lt;int:reimbursement_id&gt;/reject</a> <small><code>POST</code> <code>api_reimbursement_reject</code></small></li>
+<li><a href="/api/reimbursements/&lt;int:reimbursement_id&gt;/submit">/api/reimbursements/&lt;int:reimbursement_id&gt;/submit</a> <small><code>POST</code> <code>api_reimbursement_submit</code></small></li>
+<li><a href="/api/reimbursements/&lt;int:reimbursement_id&gt;/void">/api/reimbursements/&lt;int:reimbursement_id&gt;/void</a> <small><code>POST</code> <code>api_reimbursement_void</code></small></li>
+<li><a href="/api/reimbursements/sla-reminders">/api/reimbursements/sla-reminders</a> <small><code>GET</code> <code>api_reimbursements_sla_reminders</code></small></li>
+<li><a href="/api/reimbursements/stats">/api/reimbursements/stats</a> <small><code>GET</code> <code>api_reimbursements_stats</code></small></li>
+<li><a href="/reimbursements">/reimbursements</a> <small><code>GET</code> <code>core_pages.reimbursements_list_page</code></small></li>
+<li><a href="/reimbursements/&lt;int:reimbursement_id&gt;">/reimbursements/&lt;int:reimbursement_id&gt;</a> <small><code>GET</code> <code>core_pages.reimbursements_detail_page</code></small></li>
+<li><a href="/reimbursements/new">/reimbursements/new</a> <small><code>GET</code> <code>core_pages.reimbursements_new_page</code></small></li>
+</ul><h2>固定资产</h2><ul>
+<li><a href="/api/assets">/api/assets</a> <small><code>GET</code> <code>api_assets_list</code></small></li>
+<li><a href="/api/assets">/api/assets</a> <small><code>POST</code> <code>api_assets_create</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;">/api/assets/&lt;int:asset_id&gt;</a> <small><code>GET</code> <code>api_assets_detail</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;">/api/assets/&lt;int:asset_id&gt;</a> <small><code>POST</code> <code>api_assets_update</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;/change">/api/assets/&lt;int:asset_id&gt;/change</a> <small><code>POST</code> <code>api_asset_change</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;/dispose">/api/assets/&lt;int:asset_id&gt;/dispose</a> <small><code>POST</code> <code>api_assets_dispose</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;/enabled">/api/assets/&lt;int:asset_id&gt;/enabled</a> <small><code>POST</code> <code>api_assets_enabled</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;/impairment">/api/assets/&lt;int:asset_id&gt;/impairment</a> <small><code>POST</code> <code>api_assets_impairment</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;/journal-entry">/api/assets/&lt;int:asset_id&gt;/journal-entry</a> <small><code>POST</code> <code>api_assets_generate_journal</code></small></li>
+<li><a href="/api/assets/&lt;int:asset_id&gt;/revalue">/api/assets/&lt;int:asset_id&gt;/revalue</a> <small><code>POST</code> <code>api_assets_revalue</code></small></li>
+<li><a href="/api/assets/categories">/api/assets/categories</a> <small><code>GET</code> <code>api_asset_categories</code></small></li>
+<li><a href="/api/assets/categories">/api/assets/categories</a> <small><code>POST</code> <code>api_asset_categories_create</code></small></li>
+<li><a href="/api/assets/categories/&lt;int:category_id&gt;">/api/assets/categories/&lt;int:category_id&gt;</a> <small><code>POST</code> <code>api_asset_categories_update</code></small></li>
+<li><a href="/api/assets/categories/&lt;int:category_id&gt;/enabled">/api/assets/categories/&lt;int:category_id&gt;/enabled</a> <small><code>POST</code> <code>api_asset_categories_enabled</code></small></li>
+<li><a href="/api/assets/changes">/api/assets/changes</a> <small><code>GET</code> <code>api_asset_changes_list</code></small></li>
+<li><a href="/api/assets/depreciation">/api/assets/depreciation</a> <small><code>POST</code> <code>api_depreciation_run</code></small></li>
+<li><a href="/api/assets/depreciation">/api/assets/depreciation</a> <small><code>GET</code> <code>api_depreciation_batches</code></small></li>
+<li><a href="/api/assets/depreciation/&lt;int:batch_id&gt;">/api/assets/depreciation/&lt;int:batch_id&gt;</a> <small><code>GET</code> <code>api_depreciation_detail</code></small></li>
+<li><a href="/api/assets/depreciation/detail">/api/assets/depreciation/detail</a> <small><code>GET</code> <code>api_asset_depreciation_detail</code></small></li>
+<li><a href="/api/assets/depreciation/preview">/api/assets/depreciation/preview</a> <small><code>GET</code> <code>api_depreciation_preview</code></small></li>
+<li><a href="/api/assets/depreciation/summary">/api/assets/depreciation/summary</a> <small><code>GET</code> <code>api_asset_depreciation_summary</code></small></li>
+<li><a href="/api/assets/inventory-check">/api/assets/inventory-check</a> <small><code>POST</code> <code>api_assets_inventory_check</code></small></li>
+<li><a href="/api/assets/ledger">/api/assets/ledger</a> <small><code>GET</code> <code>api_asset_ledger</code></small></li>
+<li><a href="/api/consolidation/eliminations/ic_asset_transfer/generate">/api/consolidation/eliminations/ic_asset_transfer/generate</a> <small><code>POST</code> <code>api_consolidation_ic_asset_transfer_generate</code></small></li>
+<li><a href="/api/exports/assets/&lt;report_key&gt;">/api/exports/assets/&lt;report_key&gt;</a> <small><code>GET</code> <code>api_export_asset_report</code></small></li>
+<li><a href="/assets">/assets</a> <small><code>GET</code> <code>core_pages.assets_list_page</code></small></li>
+<li><a href="/assets/&lt;int:asset_id&gt;">/assets/&lt;int:asset_id&gt;</a> <small><code>GET</code> <code>core_pages.assets_detail_page</code></small></li>
+<li><a href="/assets/categories">/assets/categories</a> <small><code>GET</code> <code>core_pages.asset_categories_page</code></small></li>
+<li><a href="/assets/changes">/assets/changes</a> <small><code>GET</code> <code>core_pages.asset_changes_page</code></small></li>
+<li><a href="/assets/depreciation">/assets/depreciation</a> <small><code>GET</code> <code>core_pages.asset_depreciation_page</code></small></li>
+<li><a href="/assets/new">/assets/new</a> <small><code>GET</code> <code>core_pages.assets_new_page</code></small></li>
+<li><a href="/assets/reports/depreciation">/assets/reports/depreciation</a> <small><code>GET</code> <code>core_pages.asset_depreciation_report_page</code></small></li>
+<li><a href="/assets/reports/ledger">/assets/reports/ledger</a> <small><code>GET</code> <code>core_pages.asset_ledger_page</code></small></li>
+</ul><h2>税务</h2><ul>
+<li><a href="/api/authorizations/&lt;int:authorization_id&gt;/activate">/api/authorizations/&lt;int:authorization_id&gt;/activate</a> <small><code>PATCH</code> <code>api_consolidation_authorization_activate</code></small></li>
+<li><a href="/api/tax/alerts">/api/tax/alerts</a> <small><code>GET</code> <code>api_tax_alerts_list</code></small></li>
+<li><a href="/api/tax/alerts/build">/api/tax/alerts/build</a> <small><code>GET</code> <code>api_tax_alerts_build</code></small></li>
+<li><a href="/api/tax/calc/labor-service">/api/tax/calc/labor-service</a> <small><code>POST</code> <code>api_tax_calc_labor_service</code></small></li>
+<li><a href="/api/tax/calc/year-end-bonus">/api/tax/calc/year-end-bonus</a> <small><code>POST</code> <code>api_tax_calc_year_end_bonus</code></small></li>
+<li><a href="/api/tax/declaration-mappings">/api/tax/declaration-mappings</a> <small><code>POST</code> <code>api_tax_declaration_mapping_save</code></small></li>
+<li><a href="/api/tax/declaration-mappings">/api/tax/declaration-mappings</a> <small><code>GET</code> <code>api_tax_declaration_mapping_list</code></small></li>
+<li><a href="/api/tax/declaration-mappings/build">/api/tax/declaration-mappings/build</a> <small><code>POST</code> <code>api_tax_declaration_mapping_build</code></small></li>
+<li><a href="/api/tax/diff-ledger">/api/tax/diff-ledger</a> <small><code>POST</code> <code>api_tax_diff_ledger_create</code></small></li>
+<li><a href="/api/tax/diff-ledger">/api/tax/diff-ledger</a> <small><code>GET</code> <code>api_tax_diff_ledger_list</code></small></li>
+<li><a href="/api/tax/invoices">/api/tax/invoices</a> <small><code>GET</code> <code>api_tax_invoices</code></small></li>
+<li><a href="/api/tax/invoices/import">/api/tax/invoices/import</a> <small><code>POST</code> <code>api_tax_invoices_import</code></small></li>
+<li><a href="/api/tax/invoices/verify">/api/tax/invoices/verify</a> <small><code>POST</code> <code>api_tax_invoice_verify</code></small></li>
+<li><a href="/api/tax/rules">/api/tax/rules</a> <small><code>GET</code> <code>api_tax_rules</code></small></li>
+<li><a href="/api/tax/rules">/api/tax/rules</a> <small><code>POST</code> <code>api_tax_rules_create</code></small></li>
+<li><a href="/api/tax/summary">/api/tax/summary</a> <small><code>GET</code> <code>api_tax_summary</code></small></li>
+<li><a href="/api/tax/validate">/api/tax/validate</a> <small><code>GET</code> <code>api_tax_validate</code></small></li>
+<li><a href="/tax/invoices">/tax/invoices</a> <small><code>GET</code> <code>core_pages.tax_invoices_page</code></small></li>
+<li><a href="/tax/rules">/tax/rules</a> <small><code>GET</code> <code>core_pages.tax_rules_page</code></small></li>
+<li><a href="/tax/summary">/tax/summary</a> <small><code>GET</code> <code>core_pages.tax_summary_page</code></small></li>
+</ul><h2>报表</h2><ul>
+<li><a href="/api/aux_balance">/api/aux_balance</a> <small><code>GET</code> <code>api_aux_balance</code></small></li>
+<li><a href="/api/aux_ledger">/api/aux_ledger</a> <small><code>GET</code> <code>api_aux_ledger</code></small></li>
+<li><a href="/api/consolidation/reports/automate">/api/consolidation/reports/automate</a> <small><code>POST</code> <code>api_consolidation_reports_automate</code></small></li>
+<li><a href="/api/consolidation/reports/generate">/api/consolidation/reports/generate</a> <small><code>POST</code> <code>api_consolidation_reports_generate</code></small></li>
+<li><a href="/api/exports/&lt;report_key&gt;">/api/exports/&lt;report_key&gt;</a> <small><code>GET</code> <code>api_export_report</code></small></li>
+<li><a href="/api/reconcile/report">/api/reconcile/report</a> <small><code>GET</code> <code>api_reconcile_report</code></small></li>
+<li><a href="/api/subject_ledger">/api/subject_ledger</a> <small><code>GET</code> <code>api_subject_ledger</code></small></li>
+<li><a href="/api/trial_balance">/api/trial_balance</a> <small><code>GET</code> <code>api_trial_balance</code></small></li>
+<li><a href="/reports/ar_ap">/reports/ar_ap</a> <small><code>GET</code> <code>core_pages.ar_ap_page</code></small></li>
+<li><a href="/reports/aux_reports">/reports/aux_reports</a> <small><code>GET</code> <code>core_pages.aux_reports_page</code></small></li>
+<li><a href="/reports/subject_ledger">/reports/subject_ledger</a> <small><code>GET</code> <code>core_pages.subject_ledger_page</code></small></li>
+<li><a href="/reports/trial_balance">/reports/trial_balance</a> <small><code>GET</code> <code>core_pages.trial_balance_page</code></small></li>
+</ul><h2>系统管理</h2><ul>
+<li><a href="/api/dashboard/role-todos">/api/dashboard/role-todos</a> <small><code>GET</code> <code>api_dashboard_role_todos</code></small></li>
+<li><a href="/api/system/audit">/api/system/audit</a> <small><code>GET</code> <code>api_system_audit</code></small></li>
+<li><a href="/api/system/init/reset-and-seed">/api/system/init/reset-and-seed</a> <small><code>POST</code> <code>api_system_init_reset_and_seed</code></small></li>
+<li><a href="/api/system/roles">/api/system/roles</a> <small><code>GET</code> <code>api_system_roles</code></small></li>
+<li><a href="/api/system/roles">/api/system/roles</a> <small><code>POST</code> <code>api_system_roles_save</code></small></li>
+<li><a href="/api/system/roles/&lt;int:role_id&gt;/permissions">/api/system/roles/&lt;int:role_id&gt;/permissions</a> <small><code>POST</code> <code>api_system_role_permissions</code></small></li>
+<li><a href="/api/system/rules">/api/system/rules</a> <small><code>GET</code> <code>api_system_rules</code></small></li>
+<li><a href="/api/system/rules">/api/system/rules</a> <small><code>POST</code> <code>api_system_rules_save</code></small></li>
+<li><a href="/api/system/users">/api/system/users</a> <small><code>GET</code> <code>api_system_users</code></small></li>
+<li><a href="/api/system/users">/api/system/users</a> <small><code>POST</code> <code>api_system_users_save</code></small></li>
+<li><a href="/api/system/users/&lt;int:user_id&gt;/enabled">/api/system/users/&lt;int:user_id&gt;/enabled</a> <small><code>POST</code> <code>api_system_user_enabled</code></small></li>
+<li><a href="/api/system/users/&lt;int:user_id&gt;/roles">/api/system/users/&lt;int:user_id&gt;/roles</a> <small><code>POST</code> <code>api_system_user_roles</code></small></li>
+<li><a href="/system/audit">/system/audit</a> <small><code>GET</code> <code>core_pages.system_audit_page</code></small></li>
+<li><a href="/system/book-init">/system/book-init</a> <small><code>GET</code> <code>core_pages.system_book_init_page</code></small></li>
+<li><a href="/system/books">/system/books</a> <small><code>GET</code> <code>core_pages.system_books_page</code></small></li>
+<li><a href="/system/consolidation">/system/consolidation</a> <small><code>GET</code> <code>consolidation_pages.system_consolidation_page</code></small></li>
+<li><a href="/system/init">/system/init</a> <small><code>GET</code> <code>core_pages.system_init_page</code></small></li>
+<li><a href="/system/roles">/system/roles</a> <small><code>GET</code> <code>core_pages.system_roles_page</code></small></li>
+<li><a href="/system/rules">/system/rules</a> <small><code>GET</code> <code>core_pages.system_rules_page</code></small></li>
+<li><a href="/system/users">/system/users</a> <small><code>GET</code> <code>core_pages.system_users_page</code></small></li>
+</ul><h2>合并报表</h2><ul>
+<li><a href="/api/authorizations">/api/authorizations</a> <small><code>POST</code> <code>api_consolidation_authorization_create</code></small></li>
+<li><a href="/api/authorizations">/api/authorizations</a> <small><code>GET</code> <code>api_consolidation_authorization_list</code></small></li>
+<li><a href="/api/authorizations/&lt;int:authorization_id&gt;/revoke">/api/authorizations/&lt;int:authorization_id&gt;/revoke</a> <small><code>PATCH</code> <code>api_consolidation_authorization_revoke</code></small></li>
+<li><a href="/api/authorizations/&lt;int:authorization_id&gt;/suspend">/api/authorizations/&lt;int:authorization_id&gt;/suspend</a> <small><code>PATCH</code> <code>api_consolidation_authorization_suspend</code></small></li>
+<li><a href="/api/consolidation/adjustment_sets">/api/consolidation/adjustment_sets</a> <small><code>GET</code> <code>api_consolidation_adjustment_sets_list</code></small></li>
+<li><a href="/api/consolidation/adjustment_sets/&lt;string:set_id&gt;/lock">/api/consolidation/adjustment_sets/&lt;string:set_id&gt;/lock</a> <small><code>POST</code> <code>api_consolidation_adjustment_set_lock</code></small></li>
+<li><a href="/api/consolidation/adjustment_sets/&lt;string:set_id&gt;/reopen">/api/consolidation/adjustment_sets/&lt;string:set_id&gt;/reopen</a> <small><code>POST</code> <code>api_consolidation_adjustment_set_reopen</code></small></li>
+<li><a href="/api/consolidation/adjustment_sets/&lt;string:set_id&gt;/review">/api/consolidation/adjustment_sets/&lt;string:set_id&gt;/review</a> <small><code>POST</code> <code>api_consolidation_adjustment_set_review</code></small></li>
+<li><a href="/api/consolidation/adjustments">/api/consolidation/adjustments</a> <small><code>POST</code> <code>api_consolidation_adjustments_create</code></small></li>
+<li><a href="/api/consolidation/adjustments">/api/consolidation/adjustments</a> <small><code>GET</code> <code>api_consolidation_adjustments_list</code></small></li>
+<li><a href="/api/consolidation/audit-permission/check">/api/consolidation/audit-permission/check</a> <small><code>POST</code> <code>api_consolidation_audit_permission_check</code></small></li>
+<li><a href="/api/consolidation/control_decision">/api/consolidation/control_decision</a> <small><code>GET</code> <code>api_consolidation_control_decision</code></small></li>
+<li><a href="/api/consolidation/disclosure-audit-package/generate">/api/consolidation/disclosure-audit-package/generate</a> <small><code>POST</code> <code>api_consolidation_disclosure_audit_package_generate</code></small></li>
+<li><a href="/api/consolidation/eliminations/unrealized_profit/inventory/generate">/api/consolidation/eliminations/unrealized_profit/inventory/generate</a> <small><code>POST</code> <code>api_consolidation_inventory_up_generate</code></small></li>
+<li><a href="/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate">/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate</a> <small><code>POST</code> <code>api_consolidation_inventory_up_reversal_generate</code></small></li>
+<li><a href="/api/consolidation/enhancements">/api/consolidation/enhancements</a> <small><code>POST</code> <code>api_consolidation_enhancements</code></small></li>
+<li><a href="/api/consolidation/equity_method/generate">/api/consolidation/equity_method/generate</a> <small><code>POST</code> <code>api_consolidation_equity_method_generate</code></small></li>
+<li><a href="/api/consolidation/final_check_approval/run">/api/consolidation/final_check_approval/run</a> <small><code>POST</code> <code>api_consolidation_final_check_approval_run</code></small></li>
+<li><a href="/api/consolidation/groups">/api/consolidation/groups</a> <small><code>POST</code> <code>api_create_consolidation_group</code></small></li>
+<li><a href="/api/consolidation/groups/&lt;int:group_id&gt;/members">/api/consolidation/groups/&lt;int:group_id&gt;/members</a> <small><code>POST</code> <code>api_add_consolidation_group_member</code></small></li>
+<li><a href="/api/consolidation/groups/&lt;int:group_id&gt;/members/effective">/api/consolidation/groups/&lt;int:group_id&gt;/members/effective</a> <small><code>GET</code> <code>api_get_consolidation_group_members_effective</code></small></li>
+<li><a href="/api/consolidation/members">/api/consolidation/members</a> <small><code>POST</code> <code>api_consolidation_members_onboard</code></small></li>
+<li><a href="/api/consolidation/members/&lt;int:member_id&gt;/disable">/api/consolidation/members/&lt;int:member_id&gt;/disable</a> <small><code>POST</code> <code>api_consolidation_member_disable</code></small></li>
+<li><a href="/api/consolidation/merge_journal/generate">/api/consolidation/merge_journal/generate</a> <small><code>POST</code> <code>api_consolidation_merge_journal_generate</code></small></li>
+<li><a href="/api/consolidation/nci">/api/consolidation/nci</a> <small><code>GET</code> <code>api_consolidation_nci</code></small></li>
+<li><a href="/api/consolidation/nci/generate">/api/consolidation/nci/generate</a> <small><code>POST</code> <code>api_consolidation_nci_generate</code></small></li>
+<li><a href="/api/consolidation/onboarding/ic_match">/api/consolidation/onboarding/ic_match</a> <small><code>POST</code> <code>api_consolidation_onboarding_ic_match</code></small></li>
+<li><a href="/api/consolidation/ownership">/api/consolidation/ownership</a> <small><code>POST</code> <code>api_consolidation_ownership_create</code></small></li>
+<li><a href="/api/consolidation/ownership">/api/consolidation/ownership</a> <small><code>GET</code> <code>api_consolidation_ownership_list</code></small></li>
+<li><a href="/api/consolidation/parameters">/api/consolidation/parameters</a> <small><code>GET</code> <code>api_consolidation_parameters</code></small></li>
+<li><a href="/api/consolidation/parameters">/api/consolidation/parameters</a> <small><code>PUT</code> <code>api_upsert_consolidation_parameters</code></small></li>
+<li><a href="/api/consolidation/purchase_method/generate">/api/consolidation/purchase_method/generate</a> <small><code>POST</code> <code>api_consolidation_purchase_method_generate</code></small></li>
+<li><a href="/api/consolidation/read_probe">/api/consolidation/read_probe</a> <small><code>GET</code> <code>api_consolidation_read_probe</code></small></li>
+<li><a href="/api/consolidation/relations/non-legal-bind">/api/consolidation/relations/non-legal-bind</a> <small><code>POST</code> <code>api_consolidation_bind_non_legal</code></small></li>
+<li><a href="/api/consolidation/relations/overview">/api/consolidation/relations/overview</a> <small><code>GET</code> <code>api_consolidation_relations_overview</code></small></li>
+<li><a href="/api/consolidation/rollover/generate">/api/consolidation/rollover/generate</a> <small><code>POST</code> <code>api_consolidation_rollover_generate</code></small></li>
+<li><a href="/api/consolidation/scope-criteria/configure">/api/consolidation/scope-criteria/configure</a> <small><code>POST</code> <code>api_consolidation_scope_criteria_configure</code></small></li>
+<li><a href="/api/consolidation/type">/api/consolidation/type</a> <small><code>GET</code> <code>api_consolidation_type_get</code></small></li>
+<li><a href="/api/consolidation/type">/api/consolidation/type</a> <small><code>POST</code> <code>api_consolidation_type_set</code></small></li>
+<li><a href="/api/consolidation/virtual-entities">/api/consolidation/virtual-entities</a> <small><code>GET</code> <code>api_consolidation_virtual_entities</code></small></li>
+<li><a href="/api/consolidation/virtual-entities">/api/consolidation/virtual-entities</a> <small><code>POST</code> <code>api_consolidation_virtual_entities_create</code></small></li>
+<li><a href="/api/consolidation/virtual-entities/&lt;int:virtual_id&gt;">/api/consolidation/virtual-entities/&lt;int:virtual_id&gt;</a> <small><code>GET</code> <code>api_consolidation_virtual_detail</code></small></li>
+<li><a href="/api/consolidation/virtual-entities/&lt;int:virtual_id&gt;/members">/api/consolidation/virtual-entities/&lt;int:virtual_id&gt;/members</a> <small><code>GET</code> <code>api_consolidation_virtual_members</code></small></li>
+<li><a href="/api/consolidation/virtual-entities/&lt;int:virtual_id&gt;/members">/api/consolidation/virtual-entities/&lt;int:virtual_id&gt;/members</a> <small><code>POST</code> <code>api_consolidation_virtual_members_add</code></small></li>
+<li><a href="/consolidation/consolidated-data">/consolidation/consolidated-data</a> <small><code>GET</code> <code>consolidation_pages.consolidated_data</code></small></li>
+</ul><h2>其他</h2><ul>
+<li><a href="/">/</a> <small><code>GET</code> <code>core_pages.index</code></small></li>
+<li><a href="/__debug/inject">/__debug/inject</a> <small><code>GET</code> <code>__debug_inject</code></small></li>
+<li><a href="/api/ar_ap/aging">/api/ar_ap/aging</a> <small><code>GET</code> <code>api_ar_ap_aging</code></small></li>
+<li><a href="/api/ar_ap/summary">/api/ar_ap/summary</a> <small><code>GET</code> <code>api_ar_ap_summary</code></small></li>
+<li><a href="/api/ar_ap/warnings">/api/ar_ap/warnings</a> <small><code>GET</code> <code>api_ar_ap_warnings</code></small></li>
+<li><a href="/api/attendance/sync">/api/attendance/sync</a> <small><code>POST</code> <code>api_attendance_sync</code></small></li>
+<li><a href="/api/auth/login">/api/auth/login</a> <small><code>POST</code> <code>api_auth_login</code></small></li>
+<li><a href="/api/auth/logout">/api/auth/logout</a> <small><code>POST</code> <code>api_auth_logout</code></small></li>
+<li><a href="/api/autocomplete">/api/autocomplete</a> <small><code>GET</code> <code>api_autocomplete</code></small></li>
+<li><a href="/api/bank_transactions">/api/bank_transactions</a> <small><code>GET</code> <code>api_bank_list</code></small></li>
+<li><a href="/api/bank_transactions/import">/api/bank_transactions/import</a> <small><code>POST</code> <code>api_bank_import</code></small></li>
+<li><a href="/api/books">/api/books</a> <small><code>GET</code> <code>api_list_books</code></small></li>
+<li><a href="/api/books/&lt;int:book_id&gt;/backup-snapshot">/api/books/&lt;int:book_id&gt;/backup-snapshot</a> <small><code>GET</code> <code>api_book_backup_snapshot</code></small></li>
+<li><a href="/api/books/&lt;int:book_id&gt;/disable">/api/books/&lt;int:book_id&gt;/disable</a> <small><code>POST</code> <code>api_disable_book</code></small></li>
+<li><a href="/api/books/&lt;int:book_id&gt;/init-integrity">/api/books/&lt;int:book_id&gt;/init-integrity</a> <small><code>GET</code> <code>api_book_init_integrity</code></small></li>
+<li><a href="/api/books/backup-restore-verify">/api/books/backup-restore-verify</a> <small><code>POST</code> <code>api_book_backup_restore_verify</code></small></li>
+<li><a href="/api/dashboard/boss">/api/dashboard/boss</a> <small><code>GET</code> <code>api_dashboard_boss</code></small></li>
+<li><a href="/api/dashboard/task-reminders">/api/dashboard/task-reminders</a> <small><code>POST</code> <code>api_dashboard_task_reminders</code></small></li>
+<li><a href="/api/dashboard/task-status">/api/dashboard/task-status</a> <small><code>GET</code> <code>api_dashboard_task_status</code></small></li>
+<li><a href="/api/dashboard/workbench">/api/dashboard/workbench</a> <small><code>GET</code> <code>api_dashboard_workbench</code></small></li>
+<li><a href="/api/masters/&lt;string:kind&gt;">/api/masters/&lt;string:kind&gt;</a> <small><code>GET</code> <code>api_list_master_items</code></small></li>
+<li><a href="/api/masters/&lt;string:kind&gt;">/api/masters/&lt;string:kind&gt;</a> <small><code>POST</code> <code>api_save_master_item</code></small></li>
+<li><a href="/api/payments">/api/payments</a> <small><code>GET</code> <code>api_payments_list</code></small></li>
+<li><a href="/api/payments">/api/payments</a> <small><code>POST</code> <code>api_payment_save</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;">/api/payments/&lt;int:payment_id&gt;</a> <small><code>GET</code> <code>api_payment_detail</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;">/api/payments/&lt;int:payment_id&gt;</a> <small><code>DELETE</code> <code>api_payment_delete</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;/approve">/api/payments/&lt;int:payment_id&gt;/approve</a> <small><code>POST</code> <code>api_payment_approve</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;/execute">/api/payments/&lt;int:payment_id&gt;/execute</a> <small><code>POST</code> <code>api_payment_execute</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;/reject">/api/payments/&lt;int:payment_id&gt;/reject</a> <small><code>POST</code> <code>api_payment_reject</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;/submit">/api/payments/&lt;int:payment_id&gt;/submit</a> <small><code>POST</code> <code>api_payment_submit</code></small></li>
+<li><a href="/api/payments/&lt;int:payment_id&gt;/void">/api/payments/&lt;int:payment_id&gt;/void</a> <small><code>POST</code> <code>api_payment_void</code></small></li>
+<li><a href="/api/reconcile/auto">/api/reconcile/auto</a> <small><code>POST</code> <code>api_reconcile_auto</code></small></li>
+<li><a href="/api/reconcile/bulk-confirm">/api/reconcile/bulk-confirm</a> <small><code>POST</code> <code>api_reconcile_bulk_confirm</code></small></li>
+<li><a href="/api/reconcile/cancel">/api/reconcile/cancel</a> <small><code>POST</code> <code>api_reconcile_cancel</code></small></li>
+<li><a href="/api/reconcile/confirm">/api/reconcile/confirm</a> <small><code>POST</code> <code>api_reconcile_confirm</code></small></li>
+<li><a href="/api/reconcile/discrepancy-reasons">/api/reconcile/discrepancy-reasons</a> <small><code>GET</code> <code>api_reconcile_discrepancy_reasons</code></small></li>
+<li><a href="/api/reconcile/list">/api/reconcile/list</a> <small><code>GET</code> <code>api_reconcile_list</code></small></li>
+<li><a href="/api/reconcile/rules">/api/reconcile/rules</a> <small><code>GET</code> <code>api_reconcile_rules</code></small></li>
+<li><a href="/api/subjects/aux">/api/subjects/aux</a> <small><code>GET</code> <code>api_list_subject_aux_configs</code></small></li>
+<li><a href="/api/subjects/aux">/api/subjects/aux</a> <small><code>POST</code> <code>api_save_subject_aux_config</code></small></li>
+<li><a href="/api/subjects/aux/effective">/api/subjects/aux/effective</a> <small><code>GET</code> <code>api_subject_aux_effective</code></small></li>
+<li><a href="/api/subjects/switchable">/api/subjects/switchable</a> <small><code>GET</code> <code>api_switchable_subjects</code></small></li>
+<li><a href="/api/ux/error-message">/api/ux/error-message</a> <small><code>GET</code> <code>api_ux_error_message</code></small></li>
+<li><a href="/api/ux/operation-guide">/api/ux/operation-guide</a> <small><code>GET</code> <code>api_ux_operation_guide</code></small></li>
+<li><a href="/api/ux/wizard">/api/ux/wizard</a> <small><code>GET</code> <code>api_ux_wizard</code></small></li>
+<li><a href="/api/voucher-templates/detail">/api/voucher-templates/detail</a> <small><code>GET</code> <code>api_voucher_template_detail</code></small></li>
+<li><a href="/api/voucher-templates/search">/api/voucher-templates/search</a> <small><code>GET</code> <code>api_voucher_template_search</code></small></li>
+<li><a href="/api/vouchers">/api/vouchers</a> <small><code>POST</code> <code>api_save_voucher</code></small></li>
+<li><a href="/api/vouchers/&lt;int:voucher_id&gt;">/api/vouchers/&lt;int:voucher_id&gt;</a> <small><code>GET</code> <code>api_voucher_detail</code></small></li>
+<li><a href="/api/vouchers/&lt;int:voucher_id&gt;/approve">/api/vouchers/&lt;int:voucher_id&gt;/approve</a> <small><code>POST</code> <code>api_voucher_approve</code></small></li>
+<li><a href="/api/vouchers/&lt;int:voucher_id&gt;/post">/api/vouchers/&lt;int:voucher_id&gt;/post</a> <small><code>POST</code> <code>api_voucher_post</code></small></li>
+<li><a href="/api/vouchers/&lt;int:voucher_id&gt;/unapprove">/api/vouchers/&lt;int:voucher_id&gt;/unapprove</a> <small><code>POST</code> <code>api_voucher_unapprove</code></small></li>
+<li><a href="/api/vouchers/&lt;int:voucher_id&gt;/unpost">/api/vouchers/&lt;int:voucher_id&gt;/unpost</a> <small><code>POST</code> <code>api_voucher_unpost</code></small></li>
+<li><a href="/api/vouchers/import/commit">/api/vouchers/import/commit</a> <small><code>POST</code> <code>api_voucher_import_commit</code></small></li>
+<li><a href="/api/vouchers/import/preview">/api/vouchers/import/preview</a> <small><code>POST</code> <code>api_voucher_import_preview</code></small></li>
+<li><a href="/api/vouchers/import/template">/api/vouchers/import/template</a> <small><code>GET</code> <code>api_voucher_import_template</code></small></li>
+<li><a href="/api/vouchers/template-draft">/api/vouchers/template-draft</a> <small><code>POST</code> <code>api_voucher_template_draft</code></small></li>
+<li><a href="/api/vouchers/template-preview">/api/vouchers/template-preview</a> <small><code>POST</code> <code>api_voucher_template_preview</code></small></li>
+<li><a href="/api/vouchers/template-suggest">/api/vouchers/template-suggest</a> <small><code>POST</code> <code>api_voucher_template_suggest</code></small></li>
+<li><a href="/banks/import">/banks/import</a> <small><code>GET</code> <code>core_pages.bank_import_page</code></small></li>
+<li><a href="/banks/reconcile">/banks/reconcile</a> <small><code>GET</code> <code>core_pages.bank_reconcile_page</code></small></li>
+<li><a href="/books">/books</a> <small><code>POST</code> <code>create_book</code></small></li>
+<li><a href="/dashboard">/dashboard</a> <small><code>GET</code> <code>core_pages.dashboard_page</code></small></li>
+<li><a href="/dashboard/boss">/dashboard/boss</a> <small><code>GET</code> <code>core_pages.boss_dashboard_page</code></small></li>
+<li><a href="/demo/autocomplete">/demo/autocomplete</a> <small><code>GET</code> <code>core_pages.demo_autocomplete</code></small></li>
+<li><a href="/demo/filters">/demo/filters</a> <small><code>GET</code> <code>core_pages.demo_filters</code></small></li>
+<li><a href="/healthz">/healthz</a> <small><code>GET</code> <code>core_pages.health</code></small></li>
+<li><a href="/hub">/hub</a> <small><code>GET</code> <code>hub</code></small></li>
+<li><a href="/m/&lt;name&gt;">/m/&lt;name&gt;</a> <small><code>GET</code> <code>module_page</code></small></li>
+<li><a href="/masters/bank_accounts">/masters/bank_accounts</a> <small><code>GET</code> <code>core_pages.master_bank_accounts_page</code></small></li>
+<li><a href="/masters/departments">/masters/departments</a> <small><code>GET</code> <code>core_pages.master_departments_page</code></small></li>
+<li><a href="/masters/entities">/masters/entities</a> <small><code>GET</code> <code>core_pages.master_entities_page</code></small></li>
+<li><a href="/masters/persons">/masters/persons</a> <small><code>GET</code> <code>core_pages.master_persons_page</code></small></li>
+<li><a href="/masters/projects">/masters/projects</a> <small><code>GET</code> <code>core_pages.master_projects_page</code></small></li>
+<li><a href="/masters/subjects/aux">/masters/subjects/aux</a> <small><code>GET</code> <code>core_pages.subject_aux_config_page</code></small></li>
+<li><a href="/payments">/payments</a> <small><code>GET</code> <code>core_pages.payments_list_page</code></small></li>
+<li><a href="/payments/&lt;int:payment_id&gt;">/payments/&lt;int:payment_id&gt;</a> <small><code>GET</code> <code>core_pages.payments_detail_page</code></small></li>
+<li><a href="/payments/new">/payments/new</a> <small><code>GET</code> <code>core_pages.payments_new_page</code></small></li>
+<li><a href="/task/cons-21">/task/cons-21</a> <small><code>POST</code> <code>api_task_cons_21</code></small></li>
+<li><a href="/task/cons-22">/task/cons-22</a> <small><code>POST</code> <code>api_task_cons_22</code></small></li>
+<li><a href="/task/cons-23">/task/cons-23</a> <small><code>POST</code> <code>api_task_cons_23</code></small></li>
+<li><a href="/task/cons-24">/task/cons-24</a> <small><code>POST</code> <code>api_task_cons_24</code></small></li>
+<li><a href="/task/cons-25">/task/cons-25</a> <small><code>POST</code> <code>api_task_cons_25</code></small></li>
+<li><a href="/task/cons-26">/task/cons-26</a> <small><code>POST</code> <code>api_task_cons_26</code></small></li>
+<li><a href="/task/cons-27">/task/cons-27</a> <small><code>POST</code> <code>api_task_cons_27</code></small></li>
+<li><a href="/task/cons-28">/task/cons-28</a> <small><code>POST</code> <code>api_task_cons_28</code></small></li>
+<li><a href="/task/cons-29">/task/cons-29</a> <small><code>POST</code> <code>api_task_cons_29</code></small></li>
+<li><a href="/task/cons-30">/task/cons-30</a> <small><code>POST</code> <code>api_task_cons_30</code></small></li>
+<li><a href="/voucher/entry">/voucher/entry</a> <small><code>GET</code> <code>core_pages.voucher_entry</code></small></li>
+<li><a href="/voucher/import">/voucher/import</a> <small><code>GET</code> <code>core_pages.voucher_import_page</code></small></li>
+</ul></body></html>

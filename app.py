@@ -664,37 +664,24 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
 
-@app.route("/hub")
-def hub():
-    # Evidence-first: render navigation from discovery json
-    import json
-    from pathlib import Path
-    p = Path("/tmp/modules_discovery.json")
-    data = {"routes": [], "templates": []}
-    if p.exists():
-        data = json.loads(p.read_text(encoding="utf-8"))
-    groups = data.get("groups", [])
-    routes = data.get("routes", [])
-    # group routes
-    by = {}
-    for g in groups:
-        by[g] = []
-    for r in routes:
-        g = r.get("group","其他") or "其他"
-        by.setdefault(g, []).append(r)
-    parts = []
-    for g in groups:
-        items = by.get(g, [])
-        if not items:
-            continue
-        parts.append(f"<h2>{g}</h2><ul>")
-        for it in items:
-            path = it.get("path","")
-            src  = it.get("file","")
-            parts.append(f'<li><a href="{path}">{path}</a> <small><code>{src}</code></small></li>')
-        parts.append("</ul>")
-    content = "\n".join(parts) if parts else "<p>[WARN] no routes discovered.</p>"
-    return render_template("hub.html", content=content)
+    @app.route("/hub")
+    def hub():
+        return render_template("hub.html")
+
+    @app.route("/m/<name>")
+    def module_page(name):
+        allowed = {
+            "payroll",
+            "expense",
+            "assets",
+            "tax",
+            "reports",
+            "system",
+            "consolidation",
+            "others",
+        }
+        page = name if name in allowed else "others"
+        return render_template(f"modules/{page}.html")
 
     effective_log_path = _init_file_logging(app.logger)
     app.config["XINYI_LOG_PATH"] = effective_log_path
