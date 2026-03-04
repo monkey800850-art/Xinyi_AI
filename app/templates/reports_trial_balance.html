@@ -142,6 +142,104 @@
 // REPORTS-QUERY-03: render rows and execute query
 
 // REPORTS-QUERY-05: render subtotal lines
+
+// REPORTS-QUERY-06: collapsible tree view with persistence
+function fmtAmount(v){
+  if (v===null || v===undefined || v==="") return "";
+  const n = Number(v);
+  if (Number.isNaN(n)) return String(v);
+  return n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function keyForCollapse(){
+  // include page + primary/secondary to avoid mixing different groupings
+  const p = document.querySelector("select[name='primary']")?.value || "";
+  const s = document.querySelector("input[name='secondary']")?.value || "";
+  return "reports.tree.collapse:trial_balance:" + p + ":" + s;
+}
+function loadCollapsedSet(){
+  try {
+    const raw = localStorage.getItem(keyForCollapse()) || "[]";
+    return new Set(JSON.parse(raw));
+  } catch(e) {
+    return new Set();
+  }
+}
+function saveCollapsedSet(setObj){
+  try {
+    localStorage.setItem(keyForCollapse(), JSON.stringify(Array.from(setObj)));
+  } catch(e) {}
+}
+function isPrefix(prefix, full){
+  if (prefix.length > full.length) return false;
+  for (let i=0;i<prefix.length;i++) if (prefix[i] !== full[i]) return false;
+  return true;
+}
+function renderTreeLines(lines, total){
+  const box = document.getElementById("treeLines");
+  const t = document.getElementById("treeTotal");
+  if (!box || !t) return;
+  t.textContent = "总计: " + fmtAmount(total);
+
+  if (!lines || !lines.length){
+    box.innerHTML = "";
+    return;
+  }
+
+  const collapsed = loadCollapsedSet();
+
+  // Build visibility: hide descendants of collapsed nodes
+  const visible = [];
+  const collapsedPaths = Array.from(collapsed).map(x => x.split("/").filter(Boolean));
+
+  for (const l of lines){
+    const path = (l.path || []).map(x => String(x));
+    let hidden = false;
+    for (const cp of collapsedPaths){
+      if (cp.length>0 && cp.length < path.length && isPrefix(cp, path)){
+        hidden = true; break;
+      }
+    }
+    if (!hidden) visible.push(l);
+  }
+
+  let html = "";
+  visible.forEach(l=>{
+    const level = l.level || 0;
+    const pad = "&nbsp;".repeat(level*4);
+    const kind = l.kind || "";
+    const pathStr = (l.path || []).map(x=>String(x)).join("/");
+    const hasChildren = kind === "node"; // planner tree uses node vs leaf
+    const isSub = kind === "subtotal";
+    const icon = hasChildren ? (collapsed.has(pathStr) ? "▶" : "▼") : (isSub ? "└" : "•");
+    const style = isSub ? "color:#666;" : "";
+    const clickable = hasChildren ? "cursor:pointer; user-select:none;" : "";
+    const val = fmtAmount(l.value);
+
+    html += "<div data-path='"+pathStr+"' data-kind='"+kind+"' style='"+style+clickable+"'>"
+         + pad
+         + "<span class='treeIcon' style='display:inline-block;width:18px;'>" + icon + "</span>"
+         + "<span class='treeLabel'>" + l.label + "</span>"
+         + "<span class='treeVal' style='float:right;'>" + val + "</span>"
+         + "</div>";
+  });
+
+  box.innerHTML = html;
+
+  // bind click on node rows only
+  box.querySelectorAll("div[data-kind='node']").forEach(el=>{
+    el.addEventListener("click", function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      const path = el.getAttribute("data-path") || "";
+      const setObj = loadCollapsedSet();
+      if (setObj.has(path)) setObj.delete(path); else setObj.add(path);
+      saveCollapsedSet(setObj);
+      // re-render with current global cached last lines/total
+      renderTreeLines(window.__lastTreeLines || [], window.__lastTreeTotal || 0);
+    });
+  });
+}
+
 function renderTreeLines(lines, total){
   const box = document.getElementById("treeLines");
   const t = document.getElementById("treeTotal");
