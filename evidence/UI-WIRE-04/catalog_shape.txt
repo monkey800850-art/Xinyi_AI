@@ -1,0 +1,9 @@
+has_groups: True groups_count: 8
+- group=系统管理 type=dict keys=['routes', 'templates']
+- group=其他 type=dict keys=['routes', 'templates']
+- group=费用报销 type=dict keys=['routes', 'templates']
+- group=工资管理 type=dict keys=['routes', 'templates']
+- group=税务 type=dict keys=['routes', 'templates']
+- group=报表 type=dict keys=['routes', 'templates']
+- group=合并报表 type=dict keys=['routes', 'templates']
+- group=固定资产 type=dict keys=['routes', 'templates']
