@@ -6,6 +6,8 @@ cd "$ROOT"
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:5000}"
 PORT="${PORT:-5000}"
+NO_PROXY_OPT="${NO_PROXY_OPT:---noproxy '*'}"
+LOG_PATH_HINT="${LOG_PATH_HINT:-/tmp/xinyi_app_500.log}"
 
 echo "== health_check =="
 date '+%Y-%m-%d %H:%M (%z)'
@@ -13,6 +15,7 @@ echo "pwd=$PWD"
 echo "git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo nogit)"
 echo "git_head=$(git rev-parse --short HEAD 2>/dev/null || echo nogit)"
 echo "BASE_URL=${BASE_URL}"
+echo "PORT=${PORT}"
 echo
 
 echo "== listen check (:${PORT}) =="
@@ -22,7 +25,7 @@ if command -v ss >/dev/null 2>&1; then
   rc=$?
   set -e
   if echo "$out" | grep -qi "Cannot open netlink socket"; then
-    echo "[WARN] ss netlink permission limited; partial output follows"
+    echo "[WARN] ss netlink permission limited; showing best-effort listener line"
     echo "$out" | grep -E ":${PORT}\b" || true
   else
     echo "$out" | grep -E ":${PORT}\b" || echo "[WARN] no listener line found for :${PORT}"
@@ -34,21 +37,18 @@ echo
 
 http_get_status() {
   local url="$1"
+
   if command -v curl >/dev/null 2>&1; then
-    local np="${NO_PROXY_OPT:---noproxy '*'}"
     # shellcheck disable=SC2086
-    curl -sS -o /dev/null -w "%{http_code}" ${np} --max-time 5 "$url" || echo "000"
+    curl -sS -o /dev/null -w "%{http_code}" ${NO_PROXY_OPT} --max-time 5 "$url" || echo "000"
     return 0
   fi
 
-  python3 - "$url" <<'PY'
-import urllib.request
-import urllib.error
-import socket
-import sys
-url=sys.argv[1]
+  python3 - <<PY
+import urllib.request, urllib.error, socket
+url="${url}"
 try:
-    req=urllib.request.Request(url, method="GET")
+    req = urllib.request.Request(url, method="GET")
     with urllib.request.urlopen(req, timeout=5) as r:
         print(getattr(r, "status", 200))
 except urllib.error.HTTPError as e:
@@ -61,15 +61,17 @@ PY
 echo "== http root =="
 code="$(http_get_status "${BASE_URL}/")"
 echo "GET / -> ${code}"
+# Accept 200 or 302 (redirect to login)
 if [ "$code" != "200" ] && [ "$code" != "302" ]; then
   echo "[FAIL] root not reachable or unexpected status: ${code}"
   exit 1
 fi
 echo
 
-echo "== api /api/system/users (reachable check) =="
+echo "== api /api/system/users (reachability only) =="
 code="$(http_get_status "${BASE_URL}/api/system/users")"
 echo "GET /api/system/users -> ${code}"
+# Accept 200/401/403/404 for reachability; only 000 means network fail
 if [ "$code" = "000" ]; then
   echo "[FAIL] /api/system/users unreachable (000)"
   exit 1
@@ -77,7 +79,6 @@ fi
 echo
 
 echo "== log path hint =="
-LOG_PATH_HINT="${LOG_PATH_HINT:-/tmp/xinyi_app_500.log}"
 echo "LOG_PATH_HINT=${LOG_PATH_HINT}"
 if [ -f "${LOG_PATH_HINT}" ]; then
   echo "[OK] log file exists at hint path"
