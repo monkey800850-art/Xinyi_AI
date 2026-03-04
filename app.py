@@ -5430,6 +5430,21 @@ def inject_modules_catalog():
     return {"catalog": _load_modules_catalog()}
 
 
+
+@app.route("/sys/payroll/vouchers/<int:header_id>/lines")
+def sys_payroll_voucher_draft_lines_api(header_id: int):
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+        rows=db.session.execute(sa.text(
+            "SELECT seq, dc, account_code, account_name, amount, memo "
+            "FROM payroll_voucher_draft_lines WHERE header_id=:hid ORDER BY seq ASC"
+        ), {"hid": header_id}).mappings().all()
+        return jsonify({"ok": True, "header_id": header_id, "lines": [dict(r) for r in rows]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "header_id": header_id, "lines": []})
+
+
 if __name__ == "__main__":
     cli_exit_code = _run_cli_task()
     if cli_exit_code is not None:
@@ -5661,8 +5676,8 @@ def sys_payroll_run_vouchers(run_id: int):
         from app import db  # type: ignore
         import sqlalchemy as sa
         res=db.session.execute(sa.text(
-            "SELECT id, voucher_type, status, total_debit, total_credit, note, lines_json "
-            "FROM payroll_voucher_drafts WHERE run_id=:rid ORDER BY id ASC"
+            "SELECT id, voucher_type, status, total_debit, total_credit, note "
+            "FROM payroll_voucher_draft_headers WHERE run_id=:rid ORDER BY id ASC"
         ), {"rid": run_id}).mappings().all()
         class R: pass
         for r in res:
@@ -5683,7 +5698,7 @@ def sys_payroll_run_vouchers_generate(run_id: int):
         import json
 
         # clear old drafts for idempotency
-        db.session.execute(sa.text("DELETE FROM payroll_voucher_drafts WHERE run_id=:rid"), {"rid": run_id})
+        db.session.execute(sa.text("DELETE FROM payroll_voucher_draft_headers WHERE run_id=:rid"), {"rid": run_id})
 
         # totals from run_lines
         totals=db.session.execute(sa.text(
@@ -5715,18 +5730,37 @@ def sys_payroll_run_vouchers_generate(run_id: int):
             {"dc":"C","account":policy["bank_account"],"amount":total_net,"memo":"银行代发"},
         ]
 
+        
         def ins(vtype, lines, note):
             td=sum(x["amount"] for x in lines if x["dc"]=="D")
             tc=sum(x["amount"] for x in lines if x["dc"]=="C")
+
+            # header
             db.session.execute(sa.text(
-                "INSERT INTO payroll_voucher_drafts (run_id, voucher_type, status, total_debit, total_credit, accounting_policy_json, lines_json, note) "
-                "VALUES (:rid,:vt,'draft',:td,:tc,:pj,:lj,:note)"
+                "INSERT INTO payroll_voucher_draft_headers (run_id, voucher_type, status, total_debit, total_credit, policy_json, note) "
+                "VALUES (:rid,:vt,'draft',:td,:tc,:pj,:note)"
             ), {
                 "rid": run_id, "vt": vtype, "td": td, "tc": tc,
                 "pj": json.dumps(policy, ensure_ascii=False),
-                "lj": json.dumps(lines, ensure_ascii=False),
                 "note": note
             })
+            hid = db.session.execute(sa.text(
+                "SELECT id FROM payroll_voucher_draft_headers WHERE run_id=:rid AND voucher_type=:vt ORDER BY id DESC LIMIT 1"
+            ), {"rid": run_id, "vt": vtype}).scalar()
+
+            # lines
+            seq=1
+            for x in lines:
+                db.session.execute(sa.text(
+                    "INSERT INTO payroll_voucher_draft_lines (header_id, seq, dc, account_code, account_name, amount, memo) "
+                    "VALUES (:hid,:seq,:dc,:code,:name,:amt,:memo)"
+                ), {
+                    "hid": hid, "seq": seq, "dc": x.get("dc"),
+                    "code": x.get("account",""), "name": x.get("account",""),
+                    "amt": x.get("amount",0), "memo": x.get("memo","")
+                })
+                seq += 1
+
 
         ins("accrual", accrual_lines, f"工资计提（草稿）| lines={len(emps)} gross={total_gross:.2f} net={total_net:.2f}")
         ins("payment", payment_lines, f"工资发放（草稿）| lines={len(emps)} gross={total_gross:.2f} net={total_net:.2f}")

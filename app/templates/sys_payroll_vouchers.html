@@ -39,7 +39,7 @@ th{background:#fafafa;}
             <td>{{ r.total_credit }}</td>
             <td class="muted">{{ r.note }}</td>
             <td>
-              <a class="pill" href="#" data-action="toggle" data-lines-json='{{ (r.lines_json or "") | e }}'>查看</a>
+              <a class="pill" href="#" data-action="toggle" data-header-id='{{ r.id }}'>查看</a>
             </td>
           </tr>
         {% endfor %}
@@ -58,7 +58,7 @@ th{background:#fafafa;}
   function safeParse(s){
     try{ return JSON.parse(s); }catch(e){ return null; }
   }
-  document.addEventListener('click', function(ev){
+  document.addEventListener('click', async function(ev){
     const a = ev.target.closest('a[data-action="toggle"]');
     if(!a) return;
     ev.preventDefault();
@@ -72,8 +72,15 @@ th{background:#fafafa;}
       return;
     }
 
-    const raw = a.getAttribute('data-lines-json') || '';
-    const arr = safeParse(raw) || [];
+    const hid = a.getAttribute('data-header-id');
+    const url = '/sys/payroll/vouchers/' + hid + '/lines';
+    let arr = [];
+    try{
+      const resp = await fetch(url);
+      const j = await resp.json();
+      arr = (j && j.lines) ? j.lines : [];
+    }catch(e){ arr = [{'error':'fetch_failed'}]; }
+
     const wrap = document.createElement('tr');
     wrap.setAttribute('data-detail-row','1');
     const td = document.createElement('td');
