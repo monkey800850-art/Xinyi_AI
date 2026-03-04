@@ -70,14 +70,21 @@ else
   mark_skip "gate_secrets" "missing"
 fi
 
-# 2) health_check
+# 2) start_app (best-effort bootstrap before checks)
+if [[ -x scripts/ops/start_app.sh ]]; then
+  run_step "start_app" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" bash scripts/ops/start_app.sh"
+else
+  mark_skip "start_app" "missing or not executable"
+fi
+
+# 3) health_check
 if [[ -x scripts/ops/health_check.sh ]]; then
   run_step "health_check" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" bash scripts/ops/health_check.sh"
 else
   mark_skip "health_check" "missing or not executable"
 fi
 
-# 3) smoke_auth (requires admin password)
+# 4) smoke_auth (requires admin password)
 if [[ -x scripts/ops/smoke_auth.sh ]]; then
   if [[ -n "${ADMIN_PASSWORD:-}" || -n "${ADMIN_PASS:-}" ]]; then
     run_step "smoke_auth" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" ADMIN_PASSWORD=\"${ADMIN_PASSWORD:-}\" ADMIN_PASS=\"${ADMIN_PASS:-}\" bash scripts/ops/smoke_auth.sh"
@@ -88,7 +95,7 @@ else
   mark_skip "smoke_auth" "missing or not executable"
 fi
 
-# 4) smoke_dashboard (auth usually required)
+# 5) smoke_dashboard (auth usually required)
 if [[ -x scripts/ops/smoke_dashboard.sh ]]; then
   if [[ -n "${ADMIN_PASSWORD:-}" || -n "${ADMIN_PASS:-}" ]]; then
     run_step "smoke_dashboard" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" ADMIN_PASSWORD=\"${ADMIN_PASSWORD:-}\" ADMIN_PASS=\"${ADMIN_PASS:-}\" bash scripts/ops/smoke_dashboard.sh"
@@ -106,7 +113,7 @@ fi
 } >> "${idx}"
 
 overall_fail=0
-for name in gate_secrets health_check smoke_auth smoke_dashboard; do
+for name in gate_secrets start_app health_check smoke_auth smoke_dashboard; do
   rc="${STEP_RC[$name]:-}"
   if [[ -z "${rc}" ]]; then
     note="${STEP_NOTE[$name]:-SKIP}"
