@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# REPORTS-QUERY-01B: sys.path bootstrap so `import app.*` works when run as a script
+import sys
+from pathlib import Path as _Path
+_repo_root = _Path(__file__).resolve().parents[2]
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
 """
 REPORTS-QUERY-01 offline UAT:
 - ensures planner accepts primary + multi-level secondary
