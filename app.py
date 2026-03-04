@@ -5866,7 +5866,15 @@ def trial_balance_query():
         date_to=date_to,
     )
     plan = build_sql_plan_best_effort(spec)
-    return jsonify({"query_spec": spec.__dict__, "plan": plan})
+
+    execute = request.args.get("execute", "0").strip() in ("1","true","True","yes","Y")
+    run = None
+    if execute:
+        try:
+            run = run_plan(plan).__dict__
+        except Exception as e:
+            run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run})
 
 
 @app.get("/reports/ledger/query")
@@ -5897,7 +5905,15 @@ def ledger_query():
         date_to=date_to,
     )
     plan = build_sql_plan_best_effort(spec)
-    return jsonify({"query_spec": spec.__dict__, "plan": plan})
+
+    execute = request.args.get("execute", "0").strip() in ("1","true","True","yes","Y")
+    run = None
+    if execute:
+        try:
+            run = run_plan(plan).__dict__
+        except Exception as e:
+            run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run})
 
 
 @app.get("/api/reports/dimensions")
@@ -5932,3 +5948,5 @@ def reports_ledger():
         return render_template("reports_ledger.html")
     except Exception as e:
         return f"ledger page render failed: {e}", 200
+
+from app.services.report_query_runner import run_plan

@@ -44,6 +44,8 @@
 
         <div class="actions">
           <button type="submit">生成查询计划</button>
+          <button type="button" id="btnExecute">执行查询</button>
+
           <button type="button" id="btnResetLedger">重置</button>
         </div>
       </form>
@@ -81,6 +83,11 @@
     v.split(",").map(x => x.trim()).filter(Boolean).forEach(x => params.append(key, x));
   }
 
+  function buildParams(){
+    const params = buildParams();
+    return params;
+  }
+
   async function runPlan(ev){
     ev.preventDefault();
     const form = document.getElementById("qryFormLedger");
@@ -94,6 +101,11 @@
     addMulti(params, "person", "personMultiLedger");
     addMulti(params, "project", "projectMultiLedger");
     addMulti(params, "department", "departmentMultiLedger");
+
+              return params;
+        }, document.getElementById("planOutLedger"));
+      });
+    }
 
     const url = "/reports/ledger/query?" + params.toString();
     const out = document.getElementById("planOutLedger");
@@ -116,6 +128,44 @@
     });
     document.getElementById("planOutLedger").textContent = "";
   }
+
+  
+// REPORTS-QUERY-03: render rows and execute query
+function renderRows(run){
+  const meta = document.getElementById("rowsMeta");
+  const tbl = document.getElementById("rowsTable");
+  if (!run){
+    meta.textContent = "";
+    tbl.innerHTML = "";
+    return;
+  }
+  const rows = run.rows || [];
+  const warns = run.warnings || [];
+  meta.textContent = "engine=" + (run.engine || "none") + ", rows=" + rows.length + (warns.length ? (", warnings=" + warns.join(" | ")) : "");
+  if (!rows.length){
+    tbl.innerHTML = "";
+    return;
+  }
+  const cols = Object.keys(rows[0]);
+  let html = "<thead><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr></thead>";
+  html += "<tbody>";
+  rows.forEach(r=>{
+    html += "<tr>" + cols.map(c=>"<td>"+ (r[c]===null||r[c]===undefined ? "" : String(r[c])) +"</td>").join("") + "</tr>";
+  });
+  html += "</tbody>";
+  tbl.innerHTML = html;
+}
+async function executeQuery(buildParamsFn, outEl){
+  const params = buildParamsFn();
+  params.append("execute", "1");
+  const url = "/reports/ledger/query?" + params.toString();
+  outEl.textContent = "Loading...
+" + url;
+  const resp = await fetch(url);
+  const data = await resp.json();
+  outEl.textContent = JSON.stringify(data, null, 2);
+  renderRows((data || {}).run);
+}
 
   document.addEventListener("DOMContentLoaded", function(){
     loadDims().catch(()=>{});
