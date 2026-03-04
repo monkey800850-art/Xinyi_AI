@@ -73,3 +73,7 @@ var/run/ops.env
 
 # Task evidence (generated locally)
 evidence/**
+.venv/
+/.venv/
+.venv_nopip/
+/.venv_nopip/
