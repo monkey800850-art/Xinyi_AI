@@ -7,24 +7,10 @@ cd "${ROOT_DIR}"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-5000}"
 BASE_URL="${BASE_URL:-http://${HOST}:${PORT}}"
-LOG_DIR="${LOG_DIR:-var/log}"
-LOG_FILE="${LOG_FILE:-xinyi_app.log}"
-LOG_PATH_HINT="${LOG_PATH_HINT:-${LOG_DIR}/${LOG_FILE}}"
-EFFECTIVE_LOG_PATH="${XINYI_EFFECTIVE_LOG_PATH:-${LOG_PATH:-}}"
-
-if [[ -z "${EFFECTIVE_LOG_PATH}" ]]; then
-  if [[ -n "${LOG_FILE}" && -n "${LOG_DIR}" ]]; then
-    EFFECTIVE_LOG_PATH="${LOG_DIR}/${LOG_FILE}"
-  elif [[ -n "${LOG_FILE}" ]]; then
-    EFFECTIVE_LOG_PATH="var/log/${LOG_FILE}"
-  else
-    EFFECTIVE_LOG_PATH="var/log/xinyi_app.log"
-  fi
-fi
-
-if [[ ! -f "${EFFECTIVE_LOG_PATH}" && -f "/tmp/xinyi_app.log" ]]; then
-  EFFECTIVE_LOG_PATH="/tmp/xinyi_app.log"
-fi
+LOG_PATH_DEFAULT="${LOG_PATH_DEFAULT:-var/log/xinyi_app.log}"
+LOG_PATH="${LOG_PATH:-${LOG_PATH_HINT:-${LOG_PATH_DEFAULT}}}"
+PID_FILE="${PID_FILE:-var/run/xinyi_app.pid}"
+LOG_CHECK_GRACE_SEC="${LOG_CHECK_GRACE_SEC:-10}"
 
 fail() { echo "[FAIL] $*"; exit 1; }
 warn() { echo "[WARN] $*"; }
@@ -73,6 +59,27 @@ PY
   echo "000"
 }
 
+app_uptime_seconds() {
+  if [[ ! -f "${PID_FILE}" ]]; then
+    echo ""
+    return
+  fi
+
+  local pid
+  pid="$(cat "${PID_FILE}" 2>/dev/null || true)"
+  if [[ ! "${pid}" =~ ^[0-9]+$ ]]; then
+    echo ""
+    return
+  fi
+
+  if ! ps -p "${pid}" >/dev/null 2>&1; then
+    echo ""
+    return
+  fi
+
+  ps -o etimes= -p "${pid}" 2>/dev/null | tr -d ' ' || true
+}
+
 echo "== health_check =="
 date '+%Y-%m-%d %H:%M (%z)'
 echo "pwd=$(pwd)"
@@ -104,15 +111,38 @@ echo "GET /api/system/users -> ${USERS_STATUS}"
 [[ "${USERS_STATUS}" =~ ^(200|401|403)$ ]] || fail "users endpoint not reachable or unexpected status: ${USERS_STATUS}"
 echo ""
 
-echo "== log path hint =="
-LOG_PATH="${EFFECTIVE_LOG_PATH:-${LOG_PATH_HINT}}"
+echo "== log path =="
 echo "LOG_PATH=${LOG_PATH}"
-if [[ -n "${LOG_PATH}" && -f "${LOG_PATH}" ]]; then
-  ok "log file exists: ${LOG_PATH}"
-  echo "-- tail(50) --"
-  tail -n 50 "${LOG_PATH}" || true
+uptime_s="$(app_uptime_seconds)"
+enforce_log_check=1
+if [[ -n "${uptime_s}" && "${uptime_s}" =~ ^[0-9]+$ ]] && (( uptime_s < LOG_CHECK_GRACE_SEC )); then
+  enforce_log_check=0
+fi
+
+if [[ -f "${LOG_PATH}" ]]; then
+  sz="$(wc -c < "${LOG_PATH}" | tr -d ' ')"
+  echo "log_bytes=${sz}"
+  if [[ "${sz}" -gt 0 ]]; then
+    ok "log file exists and non-empty: ${LOG_PATH}"
+  elif [[ "${enforce_log_check}" -eq 1 ]]; then
+    echo "-- tail(40) --"
+    tail -n 40 "${LOG_PATH}" || true
+    fail "log file exists but empty after grace period: ${LOG_PATH}"
+  else
+    warn "log file exists but empty (within grace ${LOG_CHECK_GRACE_SEC}s): ${LOG_PATH}"
+  fi
 else
-  warn "log file not found at LOG_PATH (may be OK if logging disabled): ${LOG_PATH}"
+  if [[ "${enforce_log_check}" -eq 1 ]]; then
+    echo "-- tail(40) --"
+    tail -n 40 "${LOG_PATH}" 2>/dev/null || true
+    fail "log file not found after grace period: ${LOG_PATH}"
+  fi
+  warn "log file not found (within grace ${LOG_CHECK_GRACE_SEC}s): ${LOG_PATH}"
+fi
+
+if [[ -f "${LOG_PATH}" ]]; then
+  echo "-- tail(40) --"
+  tail -n 40 "${LOG_PATH}" || true
 fi
 echo ""
 
