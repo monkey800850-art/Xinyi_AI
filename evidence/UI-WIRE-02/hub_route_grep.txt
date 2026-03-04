@@ -1,0 +1,1 @@
+app/templates/hub.html:5:  <p style="color:#666;">该列表由代码静态扫描生成：<code>app/modules_catalog.json</code>。用于把“已开发但未挂 UI”的入口集中暴露，便于 UAT。</p>
