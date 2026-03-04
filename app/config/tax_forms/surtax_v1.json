@@ -1,0 +1,34 @@
+{
+  "form_code": "SURTAX_DECLARE",
+  "version": "v1",
+  "lines": [
+    {
+      "line_no": "A1",
+      "name": "城建税",
+      "source": "computed",
+      "expr": "city = vat_payable * 7%",
+      "field_ref": "vat.surtax.city"
+    },
+    {
+      "line_no": "A2",
+      "name": "教育费附加",
+      "source": "computed",
+      "expr": "edu = vat_payable * 3%",
+      "field_ref": "vat.surtax.edu"
+    },
+    {
+      "line_no": "A3",
+      "name": "地方教育附加",
+      "source": "computed",
+      "expr": "local_edu = vat_payable * 2%",
+      "field_ref": "vat.surtax.local_edu"
+    },
+    {
+      "line_no": "A9",
+      "name": "附加税合计",
+      "source": "pack",
+      "expr": "total = city + edu + local_edu",
+      "field_ref": "vat.surtax_total"
+    }
+  ]
+}

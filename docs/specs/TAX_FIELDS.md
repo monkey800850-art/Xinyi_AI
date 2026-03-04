@@ -39,3 +39,13 @@
 产物：
 - `artifacts/tax_return_pack_YYYYMM_vat.json`
 - `artifacts/tax_archive_manifest.json`
+
+---
+
+## 4. 申报表行次映射（最小可核验版）
+配置位置：
+- `app/config/tax_forms/vat_general_v1.json`
+- `app/config/tax_forms/surtax_v1.json`
+
+产物：
+- `artifacts/tax_forms_YYYYMM.json`（含行次金额 + trace，可解释可审计）

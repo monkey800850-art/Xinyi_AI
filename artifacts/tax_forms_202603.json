@@ -1,0 +1,53 @@
+{
+  "period": "202603",
+  "pack_id": "taxpack-202603-4ab88bbf2d5a",
+  "forms": [
+    {
+      "form_code": "VAT_GENERAL_MAIN",
+      "version": "v1",
+      "lines": [
+        {
+          "line_no": "20",
+          "name": "应纳税额",
+          "amount": "7500.00",
+          "source": "pack",
+          "trace": "tax_return_pack_202603_vat.json"
+        }
+      ]
+    },
+    {
+      "form_code": "SURTAX_DECLARE",
+      "version": "v1",
+      "lines": [
+        {
+          "line_no": "A1",
+          "name": "城建税",
+          "amount": "525.00",
+          "source": "computed",
+          "trace": "vat_payable*7%"
+        },
+        {
+          "line_no": "A2",
+          "name": "教育费附加",
+          "amount": "225.00",
+          "source": "computed",
+          "trace": "vat_payable*3%"
+        },
+        {
+          "line_no": "A3",
+          "name": "地方教育附加",
+          "amount": "150.00",
+          "source": "computed",
+          "trace": "vat_payable*2%"
+        },
+        {
+          "line_no": "A9",
+          "name": "附加税合计",
+          "amount": "900.00",
+          "source": "computed",
+          "trace": "sum(A1..A3)"
+        }
+      ]
+    }
+  ]
+}
