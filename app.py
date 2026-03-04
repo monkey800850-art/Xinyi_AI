@@ -1,3 +1,4 @@
+import hashlib
 import io
 import os
 import calendar
@@ -5709,6 +5710,11 @@ def sys_payroll_run_vouchers_generate(run_id: int):
             "FROM payroll_run_lines WHERE run_id=:rid"
         ), {"rid": run_id}).mappings().first()
 
+        run_lines_count = db.session.execute(sa.text(
+            "SELECT COUNT(1) FROM payroll_run_lines WHERE run_id=:rid"
+        ), {"rid": run_id}).scalar() or 0
+
+
         total_gross=float(totals["total_gross"])
         total_net=float(totals["total_net"])
 
@@ -5737,12 +5743,16 @@ def sys_payroll_run_vouchers_generate(run_id: int):
 
             # header
             db.session.execute(sa.text(
-                "INSERT INTO payroll_voucher_draft_headers (run_id, voucher_type, status, total_debit, total_credit, policy_json, note) "
-                "VALUES (:rid,:vt,'draft',:td,:tc,:pj,:note)"
+                "INSERT INTO payroll_voucher_draft_headers (run_id, voucher_type, status, total_debit, total_credit, policy_json, note, generated_at, generated_by, source_snapshot_json, fingerprint) "
+                "VALUES (:rid,:vt,'draft',:td,:tc,:pj,:note,:gat,:gby,:ss,:fp)"
             ), {
                 "rid": run_id, "vt": vtype, "td": td, "tc": tc,
                 "pj": json.dumps(policy, ensure_ascii=False),
-                "note": note
+                "note": note2,
+                "gat": __import__("datetime").datetime.now(),
+                "gby": "system",
+                "ss": ss,
+                "fp": fp
             })
             hid = db.session.execute(sa.text(
                 "SELECT id FROM payroll_voucher_draft_headers WHERE run_id=:rid AND voucher_type=:vt ORDER BY id DESC LIMIT 1"

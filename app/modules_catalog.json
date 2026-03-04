@@ -222,7 +222,8 @@
           "title": "工资凭证草稿",
           "path": "/sys/payroll/runs",
           "status": "active",
-          "source": "route"
+          "source": "route",
+          "requires": "payroll.voucher.draft"
         }
       ]
     },

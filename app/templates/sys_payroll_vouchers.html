@@ -27,7 +27,7 @@ th{background:#fafafa;}
 
   <div class="card">
     <table>
-      <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>借方合计</th><th>贷方合计</th><th>备注</th><th>明细</th></tr></thead>
+      <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>借方合计</th><th>贷方合计</th><th>生成时间</th><th>备注</th><th>明细</th></tr></thead>
       <tbody>
       {% if rows %}
         {% for r in rows %}
@@ -37,6 +37,7 @@ th{background:#fafafa;}
             <td>{{ r.status }}</td>
             <td>{{ r.total_debit }}</td>
             <td>{{ r.total_credit }}</td>
+            <td class="muted">{{ r.generated_at if r.generated_at is defined else '' }}</td>
             <td class="muted">{{ r.note }}</td>
             <td>
               <a class="pill" href="#" data-action="toggle" data-header-id='{{ r.id }}'>查看</a>
@@ -44,7 +45,7 @@ th{background:#fafafa;}
           </tr>
         {% endfor %}
       {% else %}
-        <tr class="muted"><td colspan="7">暂无草稿（可点击“生成草稿”）。</td></tr>
+        <tr class="muted"><td colspan="8">暂无草稿（可点击“生成草稿”）。</td></tr>
       {% endif %}
       </tbody>
     </table>
@@ -84,7 +85,7 @@ th{background:#fafafa;}
     const wrap = document.createElement('tr');
     wrap.setAttribute('data-detail-row','1');
     const td = document.createElement('td');
-    td.colSpan = 7;
+    td.colSpan = 8;
     td.style.background = '#fafafa';
 
     const pre = document.createElement('pre');
