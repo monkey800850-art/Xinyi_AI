@@ -1,0 +1,14 @@
+# Copy to: var/run/ops.env  (DO NOT COMMIT)
+# Used by scripts/ops/gate_all.sh to run authenticated smokes.
+
+# Base URL override (optional)
+# HOST=127.0.0.1
+# PORT=5000
+# BASE_URL=http://127.0.0.1:5000
+
+# Proxy bypass (recommended)
+NO_PROXY_OPT=--noproxy '*'
+
+# Admin credentials for smoke_auth/smoke_dashboard
+ADMIN_USER=p1c01_admin
+ADMIN_PASSWORD=__FILL_ME__

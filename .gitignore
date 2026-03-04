@@ -63,3 +63,6 @@ var/log/
 # runtime
 var/run/
 var/log/
+
+# ops local env (DO NOT COMMIT)
+var/run/ops.env

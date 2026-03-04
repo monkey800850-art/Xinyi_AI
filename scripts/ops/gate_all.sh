@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# load optional ops env (local, not committed)
+OPS_ENV_FILE="${OPS_ENV_FILE:-var/run/ops.env}"
+if [[ -f "${OPS_ENV_FILE}" ]]; then
+  # shellcheck disable=SC1090
+  source "${OPS_ENV_FILE}"
+fi
+
 TS="$(date '+%Y%m%d_%H%M%S')"
 OUT="/tmp/xinyi_gate_${TS}"
 mkdir -p "${OUT}"
