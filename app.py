@@ -4,6 +4,7 @@ import calendar
 import argparse
 import json
 import logging
+import subprocess
 from copy import deepcopy
 from fnmatch import fnmatch
 from logging.handlers import RotatingFileHandler
@@ -26,6 +27,21 @@ def _bootstrap_local_site_packages() -> None:
 
 
 _bootstrap_local_site_packages()
+
+_GIT_STAMP_CACHE = None
+
+
+def _git_stamp() -> str:
+    global _GIT_STAMP_CACHE
+    if _GIT_STAMP_CACHE:
+        return _GIT_STAMP_CACHE
+    try:
+        br = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
+        hd = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
+        _GIT_STAMP_CACHE = f"{br}@{hd}"
+    except Exception:
+        _GIT_STAMP_CACHE = "nogit"
+    return _GIT_STAMP_CACHE
 
 
 def _resolve_log_path() -> str:
@@ -992,6 +1008,7 @@ def create_app() -> Flask:
             "home_nav_groups": _sort_home_nav_groups(nav_groups, current_user_role),
             "top_nav_groups": top_nav_groups,
             "sidebar_group": sidebar_group,
+            "GIT_STAMP": _git_stamp(),
             "current_nav_title": current_title,
             "current_user_name": (
                 request.headers.get("X-User") or request.args.get("user") or str(auth_ctx.get("username") or "")

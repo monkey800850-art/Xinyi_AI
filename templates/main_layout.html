@@ -201,6 +201,17 @@
     .shell-home-link:hover {
       background: rgba(255, 255, 255, 0.14);
     }
+    .shell-git-stamp {
+      border: 1px solid rgba(234, 242, 252, 0.5);
+      background: rgba(7, 61, 122, 0.5);
+      color: #fff;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
     .shell-scale-control {
       display: flex;
       align-items: center;
@@ -513,6 +524,7 @@
               </select>
             </div>
             <button id="sidebarToggleBtn" type="button">收起侧边栏</button>
+            <span class="shell-git-stamp">{{ GIT_STAMP }}</span>
             <a class="shell-home-link" href="/">返回主页</a>
           </div>
         </div>
