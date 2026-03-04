@@ -1,0 +1,1293 @@
+{
+  "spec": {
+    "员工基础信息": [
+      "employee_no",
+      "name",
+      "id_card_no",
+      "hire_date",
+      "termination_date",
+      "employment_type",
+      "department_id",
+      "job_grade",
+      "work_location",
+      "bank_account_no",
+      "bank_branch_info",
+      "tax_residency"
+    ],
+    "薪资项目固定项": [
+      "base_salary",
+      "position_allowance",
+      "seniority_pay",
+      "fixed_performance"
+    ],
+    "薪资项目变动项": [
+      "performance_bonus",
+      "overtime_pay",
+      "commission",
+      "attendance_bonus",
+      "heat_allowance",
+      "other_adjustment"
+    ],
+    "社保公积金": [
+      "social_security_city",
+      "pension_base",
+      "medical_base",
+      "unemployment_base",
+      "injury_base",
+      "maternity_base",
+      "housing_fund_base",
+      "social_housing_rate",
+      "employer_social_total"
+    ],
+    "个税累计预扣": [
+      "ytd_income",
+      "ytd_tax_exempt_income",
+      "ytd_standard_deduction",
+      "ytd_social_housing_deduction",
+      "ytd_special_additional_deduction",
+      "ytd_other_legal_deduction",
+      "ytd_taxable_income",
+      "tax_rate",
+      "quick_deduction",
+      "current_withholding_tax",
+      "annual_bonus_separate_tax_flag"
+    ],
+    "考勤假期": [
+      "payable_days",
+      "attendance_days",
+      "personal_leave_hours",
+      "sick_leave_hours",
+      "absent_days",
+      "late_early_count",
+      "ot_hours_weekday",
+      "ot_hours_weekend",
+      "ot_hours_holiday",
+      "annual_leave_balance"
+    ],
+    "财务核算凭证": [
+      "cost_center_code",
+      "payroll_payable_subject",
+      "social_housing_payable_subject",
+      "tax_payable_subject",
+      "voucher_gen_status",
+      "voucher_no",
+      "pay_batch_no",
+      "pay_status"
+    ]
+  },
+  "groups": {
+    "员工基础信息": [
+      {
+        "field": "employee_no",
+        "ok": true,
+        "terms": [
+          "employee_no",
+          "emp_no",
+          "staff_no",
+          "工号",
+          "员工工号"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "_code (ledger_id, dept_code) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;  -- 2) hr_employees CREATE TABLE IF NOT EXISTS hr_employees (   id BIGINT PRIMARY KEY AUTO_INCREMENT,   ledger_id BIGINT NOT NULL,   emp_no VARCHAR(64) NOT NULL,   name VARCHAR(64) NOT NULL,   id_card_no_enc VARBINARY(255) NOT NULL,   dept_id BIGINT NOT NULL,   job_title VARCHAR(64) NOT NULL,   hire_date DATE"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ROOT = Path(\".\") OUT_JSON = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.json\") OUT_MD   = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.md\")  # === Spec fields (from 工资管理功能字段列表.docx) === # 员工基础信息：员工工号/姓名/身份证号/入离职/用工性质/部门/岗位职级/地点/银行卡/开户行/居民身份等 :contentReference[oaicite:5]{index=5} # 薪资项目：基本工资/津贴/工龄/绩效/奖金/加班/提成/全勤/补贴/其他补发扣减等 :contentReference[oaicite:6]{index=6} # 社"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": "： - uniq(ledger_id, dept_code) - 可选：parent_dept_code 外键/一致性校验（可用触发器或应用层校验）  ---  ## 2. 员工管理（薪酬与往来主体）  建议表：`hr_employees`  | 字段 | 类型 | 必填 | 规则/说明 | |---|---|---:|---| | ledger_id | BIGINT | 是 | 账套分区键 | | emp_no | VARCHAR(64) | 是 | 全局唯一工号（建议 uniq(ledger_id, emp_no) 或全局 uniq） | | name | VARCHAR(64) | 是 | 真实姓名 | | id_card_no_enc | VARBINARY / VARCHAR | 是 | 身份证号加密存储（仅密文） | | dept_id"
+          }
+        ]
+      },
+      {
+        "field": "name",
+        "ok": true,
+        "terms": [
+          "name",
+          "employee_name",
+          "姓名"
+        ],
+        "hits": [
+          {
+            "file": "app/config.py",
+            "snippet": "import os from dataclasses import dataclass from typing import List  from dotenv import load_dotenv   @dataclass(frozen=True) class DbConfig:     host: str     port: str     name: str     user: str     password: str   class DatabaseConfigError(ValueError):     pass   def load_env() -> str:     # Load base .env first, then env-specific overrides     load_dotenv()     app_env ="
+          },
+          {
+            "file": "app/db.py",
+            "snippet": "eate_engine, text from sqlalchemy.exc import SQLAlchemyError  from app.config import build_db_url, get_db_config   _engine_cache = {} _engine_lock = Lock()   def _error_summary(err: Exception) -> str:     return f\"{type(err).__name__}: {err}\"   def format_db_error(host: str, port: str, name: str, err: Exception) -> str:     return (         \"Database connection failed: \"       "
+          },
+          {
+            "file": "app/db_router.py",
+            "snippet": "ort ContextVar from dataclasses import dataclass from threading import Lock from typing import Optional  from sqlalchemy import create_engine, text  from app.config import build_db_url, get_db_config  _logger = logging.getLogger(__name__)   @dataclass(frozen=True) class RequestRouteContext:     tenant_id: Optional[str] = None     book_id: Optional[int] = None   @dataclass(froze"
+          },
+          {
+            "file": "app/modules_catalog.json",
+            "snippet": "\",           \"status\": \"stub\",           \"title\": \"Module\",           \"key\": \"module\",           \"path\": \"/hub#tpl-modules-system-html\"         }       ]     },     \"其他\": {       \"routes\": [         {           \"path\": \"/m/<name>\",           \"file\": \"app.py\",           \"group\": \"其他\",           \"source\": \"route\",           \"status\": \"active\",           \"title\": \"<name>\",        "
+          },
+          {
+            "file": "app/templates/hub.html",
+            "snippet": "x; border:1px dashed #bbb; border-radius:10px;\">   <div style=\"font-weight:600; margin-bottom:6px;\">最近访问</div>   <div id=\"hub-recent-list\" style=\"display:flex; gap:10px; flex-wrap:wrap;\"></div> </div> <p>序时账导入/导出已归类到「凭证与账务」「报表与导出」。401/403 表示需登录权限。</p><p><small>模块页：<a href=\"/m/payroll\">/m/payroll</a> <a href=\"/m/expense\">/m/expense</a> <a href=\"/m/assets\">/m/assets</a> <a href=\""
+          },
+          {
+            "file": "app/repositories/consolidation_query_repo.py",
+            "snippet": " max(1, min(int(limit or 20), 200))         provider = get_connection_provider()         with provider.connect() as conn:             rows = conn.execute(                 text(                     \"\"\"                     SELECT id, group_code, group_name                     FROM consolidation_groups                     ORDER BY id DESC                     LIMIT :limit          "
+          },
+          {
+            "file": "app/services/consolidation_type_service.py",
+            "snippet": "ation_type_invalid\")     if raw == \"purchase\":         return \"non_same_control\"     return raw   def _normalize_note(value: object) -> str:     note = str(value or \"\").strip()     return note[:255]   def _table_columns(conn, table_name: str) -> set[str]:     rows = conn.execute(         text(             \"\"\"             SELECT column_name             FROM information_schema.co"
+          },
+          {
+            "file": "app/services/voucher_import_service.py",
+            "snippet": "(RuntimeError):     pass   REQUIRED_HEADERS = [     \"voucher_date\",     \"voucher_no\",     \"summary\",     \"subject_code\",     \"debit_amount\",     \"credit_amount\", ]  OPTIONAL_HEADERS = [     \"line_no\",     \"subject_name\",     \"aux_department_code\",     \"aux_person_code\",     \"aux_entity_code\",     \"aux_project_code\",     \"aux_bank_account_code\", ]  AUX_COLUMN_MAP = {     \"aux_de"
+          },
+          {
+            "file": "app/services/reimbursement_service.py",
+            "snippet": "ield\": \"amount\", \"message\": \"金额格式非法\"}])         if amt < 0:             raise ReimbursementError(\"validation_error\", [{\"field\": \"amount\", \"message\": \"金额不能为负\"}])         total += amt     return total   def _table_columns(conn, table_name: str) -> set[str]:     def _read_column_name(row) -> str:         if row is None:             return \"\"         value = getattr(row, \"column_na"
+          },
+          {
+            "file": "app/services/user_dashboard_service.py",
+            "snippet": ":         val = int(raw)     except Exception as err:         raise UserDashboardError(\"book_id_invalid\") from err     if val <= 0:         raise UserDashboardError(\"book_id_invalid\")     return val   def _table_exists(conn, table_name: str) -> bool:     try:         row = conn.execute(             text(                 \"\"\"                 SELECT COUNT(*) AS cnt                "
+          },
+          {
+            "file": "app/services/ar_ap_service.py",
+            "snippet": "arams: Dict[str, str]) -> date:     raw = (params.get(\"as_of_date\") or \"\").strip()     if not raw:         return date.today()     return _parse_date(raw)   def _is_receivable_payable_filter() -> str:     # use subject name/category/note keywords     return (         \"(s.name LIKE '%应收%' OR s.name LIKE '%应付%' OR s.name LIKE '%往来%' \"         \"OR s.category LIKE '%应收%' OR s.categ"
+          },
+          {
+            "file": "app/services/consolidation_scope_criteria_service.py",
+            "snippet": "lue: object) -> str:     if isinstance(value, bool):         return \"1\" if value else \"0\"     raw = str(value or \"\").strip().lower()     return \"1\" if raw in {\"1\", \"true\", \"yes\", \"y\", \"on\"} else \"0\"   def _table_columns(conn, table_name: str) -> set[str]:     rows = conn.execute(         text(             \"\"\"             SELECT column_name             FROM information_schema.co"
+          },
+          {
+            "file": "app/services/reconciliation_service.py",
+            "snippet": "y         items.append({\"reason_id\": rid, \"description\": str(getattr(r, \"rule_value\", \"\") or \"\")})     return items   def _upsert_reconcile_row(conn, txn_id: int, voucher_id: int | None, reason: str):     dialect = str(conn.engine.dialect.name or \"\").lower()     if dialect == \"sqlite\":         conn.execute(             text(                 \"\"\"                 INSERT INTO bank_"
+          },
+          {
+            "file": "app/services/asset_reports_service.py",
+            "snippet": ", \"book_id\", \"必填\")     if errors:         raise AssetReportError(\"validation_error\", errors)      book_id = _parse_int(book_id_raw, \"book_id\")     asset_code = (params.get(\"asset_code\") or \"\").strip()     asset_name = (params.get(\"asset_name\") or \"\").strip()     category_id = _parse_int(params.get(\"category_id\"), \"category_id\")     status = (params.get(\"status\") or \"\").strip()."
+          },
+          {
+            "file": "app/services/consolidation_control_service.py",
+            "snippet": "raise ConsolidationControlError(f\"{field}_required\")     try:         return date.fromisoformat(raw)     except Exception as err:         raise ConsolidationControlError(f\"{field}_invalid\") from err   def _table_columns(conn, table_name: str) -> Set[str]:     rows = conn.execute(         text(             \"\"\"             SELECT column_name             FROM information_schema.co"
+          },
+          {
+            "file": "app/services/consolidation_parameters_service.py",
+            "snippet": "   except Exception as err:         raise ConsolidationParameterError(f\"{field}_invalid\") from err     if parsed <= 0:         raise ConsolidationParameterError(f\"{field}_invalid\")     return parsed   def _table_columns(conn, table_name: str) -> set[str]:     rows = conn.execute(         text(             \"\"\"             SELECT column_name             FROM information_schema.co"
+          },
+          {
+            "file": "app/services/consolidation_purchase_method_service.py",
+            "snippet": "   raise ConsolidationPurchaseMethodError(\"acquiree_book_id_or_entity_id_required\")     return {         \"acquiree_book_id\": acquiree_book_id,         \"acquiree_entity_id\": acquiree_entity_id,     }   def _table_columns(conn, table_name: str) -> set[str]:     rows = conn.execute(         text(             \"\"\"             SELECT column_name             FROM information_schema.co"
+          },
+          {
+            "file": "app/services/consolidation_disclosure_audit_package_service.py",
+            "snippet": "it_packages (                 id BIGINT PRIMARY KEY AUTO_INCREMENT,                 group_id BIGINT NOT NULL,                 period VARCHAR(7) NOT NULL,                 batch_id VARCHAR(64) NOT NULL,                 file_name VARCHAR(255) NOT NULL,                 source VARCHAR(32) NOT NULL DEFAULT 'generated',                 rule_code VARCHAR(64) NOT NULL DEFAULT 'CONS30_DI"
+          },
+          {
+            "file": "app/services/asset_change_service.py",
+            "snippet": "        end_date = _parse_date(end_date_raw) if end_date_raw else None     except Exception:         raise AssetChangeError(\"validation_error\", [{\"field\": \"fields\", \"message\": \"字段格式非法\"}])      sql = (         \"SELECT ac.id, ac.asset_id, ac.asset_code, fa.asset_name, ac.change_type, ac.change_date, \"         \"ac.from_department_id, ac.to_department_id, ac.from_person_id, ac.to_p"
+          },
+          {
+            "file": "app/services/aux_reports_service.py",
+            "snippet": "      \"primary\": primary,     }   def get_aux_balance(params: Dict[str, str]) -> Dict[str, object]:     cfg = _validate_common(params)      group_by_aux = cfg[\"primary\"] == \"aux\"      if group_by_aux:         select_cols = \"vl.aux_code, vl.aux_name\"         group_cols = \"vl.aux_code, vl.aux_name\"     else:         select_cols = \"vl.subject_code, vl.subject_name\"         group_c"
+          },
+          {
+            "file": "app/services/export_service.py",
+            "snippet": "on_detail,     get_depreciation_summary, ) from app.services.audit_service import log_audit   class ExportError(RuntimeError):     def __init__(self, message: str):         super().__init__(message)   def _parse_date(value: str, field_name: str):     try:         return datetime.strptime(str(value or \"\").strip(), \"%Y-%m-%d\").date()     except Exception as err:         raise Exp"
+          },
+          {
+            "file": "app/services/voucher_service.py",
+            "snippet": "or(\"invalid_amount\")   def _require(cond: bool, errors: List[Dict[str, object]], row: int, field: str, msg: str):     if not cond:         errors.append({\"row\": row, \"field\": field, \"message\": msg})   def _subject_requires_due_date(subject_name: str, subject_note: str, category: str) -> bool:     text_blob = \"\".join([subject_name or \"\", subject_note or \"\", category or \"\"])     "
+          },
+          {
+            "file": "app/services/consolidation_adjustment_service.py",
+            "snippet": "trip(),                 \"evidence_ref\": str(item.get(\"evidence_ref\") or \"\").strip(),                 \"operator_id\": str(item.get(\"operator_id\") or \"\").strip(),             }         )     return out   def _table_columns(conn, table_name: str) -> set[str]:     rows = conn.execute(         text(             \"\"\"             SELECT column_name             FROM information_schema.co"
+          },
+          {
+            "file": "app/services/payroll_service.py",
+            "snippet": "or\", [{\"field\": field, \"message\": \"必须为整数\"}])   def _parse_int_safe(value) -> int | None:     try:         x = int(value)         return x if x > 0 else None     except Exception:         return None   def _table_columns(conn, table_name: str) -> set[str]:     try:         rows = conn.execute(             text(                 \"\"\"                 SELECT column_name              "
+          },
+          {
+            "file": "app/services/ledger_service.py",
+            "snippet": "de = \"consolidation_group\"             query_mode_label = \"合并组模式（成员汇总）\"         else:             scope_book_ids = [book_id]          subject_rows = conn.execute(             text(                 \"\"\"                 SELECT id, code, name, parent_code                 FROM subjects                 WHERE book_id IN :book_ids                 \"\"\"             ).bindparams(bindparam("
+          }
+        ]
+      },
+      {
+        "field": "id_card_no",
+        "ok": true,
+        "terms": [
+          "id_card",
+          "id_card_no",
+          "identity_no",
+          "身份证",
+          "身份证号"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "=utf8mb4;  -- 2) hr_employees CREATE TABLE IF NOT EXISTS hr_employees (   id BIGINT PRIMARY KEY AUTO_INCREMENT,   ledger_id BIGINT NOT NULL,   emp_no VARCHAR(64) NOT NULL,   name VARCHAR(64) NOT NULL,   id_card_no_enc VARBINARY(255) NOT NULL,   dept_id BIGINT NOT NULL,   job_title VARCHAR(64) NOT NULL,   hire_date DATE NOT NULL,   terminate_date DATE NULL,   employment_type VAR"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ROOT = Path(\".\") OUT_JSON = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.json\") OUT_MD   = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.md\")  # === Spec fields (from 工资管理功能字段列表.docx) === # 员工基础信息：员工工号/姓名/身份证号/入离职/用工性质/部门/岗位职级/地点/银行卡/开户行/居民身份等 :contentReference[oaicite:5]{index=5} # 薪资项目：基本工资/津贴/工龄/绩效/奖金/加班/提成/全勤/补贴/其他补发扣减等 :contentReference[oaicite:6]{index=6} # 社"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": "_employees`  | 字段 | 类型 | 必填 | 规则/说明 | |---|---|---:|---| | ledger_id | BIGINT | 是 | 账套分区键 | | emp_no | VARCHAR(64) | 是 | 全局唯一工号（建议 uniq(ledger_id, emp_no) 或全局 uniq） | | name | VARCHAR(64) | 是 | 真实姓名 | | id_card_no_enc | VARBINARY / VARCHAR | 是 | 身份证号加密存储（仅密文） | | dept_id | BIGINT | 是 | 关联 dim_departments.id | | job_title | VARCHAR(64) | 是 | 岗位/职务 | | hire_date | DATE | 是 | 入职日期"
+          }
+        ]
+      },
+      {
+        "field": "hire_date",
+        "ok": true,
+        "terms": [
+          "hire_date",
+          "join_date",
+          "入职日期"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "CREMENT,   ledger_id BIGINT NOT NULL,   emp_no VARCHAR(64) NOT NULL,   name VARCHAR(64) NOT NULL,   id_card_no_enc VARBINARY(255) NOT NULL,   dept_id BIGINT NOT NULL,   job_title VARCHAR(64) NOT NULL,   hire_date DATE NOT NULL,   terminate_date DATE NULL,   employment_type VARCHAR(16) NOT NULL,   tax_residency VARCHAR(16) NOT NULL,   bank_account_no_enc VARBINARY(255) NOT NULL,"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " # 考勤假期：计薪天数/出勤/事病假/旷工/迟到早退/加班(平日周末节日)/年假剩余等 :contentReference[oaicite:9]{index=9} # 核算凭证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_r"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": "_no) 或全局 uniq） | | name | VARCHAR(64) | 是 | 真实姓名 | | id_card_no_enc | VARBINARY / VARCHAR | 是 | 身份证号加密存储（仅密文） | | dept_id | BIGINT | 是 | 关联 dim_departments.id | | job_title | VARCHAR(64) | 是 | 岗位/职务 | | hire_date | DATE | 是 | 入职日期 | | terminate_date | DATE | 否 | 离职日期 | | employment_type | ENUM | 是 | formal/probation/intern/labor/rehire | | tax_residency | ENUM | 是 | resident/no"
+          }
+        ]
+      },
+      {
+        "field": "termination_date",
+        "ok": true,
+        "terms": [
+          "termination_date",
+          "leave_date",
+          "离职日期"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " # 考勤假期：计薪天数/出勤/事病假/旷工/迟到早退/加班(平日周末节日)/年假剩余等 :contentReference[oaicite:9]{index=9} # 核算凭证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_r"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": "R(64) | 是 | 真实姓名 | | id_card_no_enc | VARBINARY / VARCHAR | 是 | 身份证号加密存储（仅密文） | | dept_id | BIGINT | 是 | 关联 dim_departments.id | | job_title | VARCHAR(64) | 是 | 岗位/职务 | | hire_date | DATE | 是 | 入职日期 | | terminate_date | DATE | 否 | 离职日期 | | employment_type | ENUM | 是 | formal/probation/intern/labor/rehire | | tax_residency | ENUM | 是 | resident/non_resident | | bank_account_no_e"
+          }
+        ]
+      },
+      {
+        "field": "employment_type",
+        "ok": true,
+        "terms": [
+          "employment_type"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "64) NOT NULL,   name VARCHAR(64) NOT NULL,   id_card_no_enc VARBINARY(255) NOT NULL,   dept_id BIGINT NOT NULL,   job_title VARCHAR(64) NOT NULL,   hire_date DATE NOT NULL,   terminate_date DATE NULL,   employment_type VARCHAR(16) NOT NULL,   tax_residency VARCHAR(16) NOT NULL,   bank_account_no_enc VARBINARY(255) NOT NULL,   bank_cnaps VARCHAR(16) NOT NULL,   social_security_c"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " # 考勤假期：计薪天数/出勤/事病假/旷工/迟到早退/加班(平日周末节日)/年假剩余等 :contentReference[oaicite:9]{index=9} # 核算凭证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_r"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": " VARBINARY / VARCHAR | 是 | 身份证号加密存储（仅密文） | | dept_id | BIGINT | 是 | 关联 dim_departments.id | | job_title | VARCHAR(64) | 是 | 岗位/职务 | | hire_date | DATE | 是 | 入职日期 | | terminate_date | DATE | 否 | 离职日期 | | employment_type | ENUM | 是 | formal/probation/intern/labor/rehire | | tax_residency | ENUM | 是 | resident/non_resident | | bank_account_no_enc | VARBINARY / VARCHAR | 是 | 默认工资卡号"
+          }
+        ]
+      },
+      {
+        "field": "department_id",
+        "ok": true,
+        "terms": [
+          "department_id",
+          "dept_id",
+          "所属部门",
+          "部门"
+        ],
+        "hits": [
+          {
+            "file": "app/services/asset_reports_service.py",
+            "snippet": "r \"\").strip()     asset_name = (params.get(\"asset_name\") or \"\").strip()     category_id = _parse_int(params.get(\"category_id\"), \"category_id\")     status = (params.get(\"status\") or \"\").strip().upper()     department_id = _parse_int(params.get(\"department_id\"), \"department_id\")     person_id = _parse_int(params.get(\"person_id\"), \"person_id\")     start_use_from = _parse_date(para"
+          },
+          {
+            "file": "app/services/asset_change_service.py",
+            "snippet": "Dict[str, object]) -> Dict[str, object]:     errors: List[Dict[str, object]] = []      change_type = (payload.get(\"change_type\") or \"\").strip().upper()     change_date_raw = payload.get(\"change_date\")     to_department_id = payload.get(\"to_department_id\")     to_person_id = payload.get(\"to_person_id\")     note = (payload.get(\"note\") or \"\").strip()     operator = (payload.get(\"o"
+          },
+          {
+            "file": "app/services/export_service.py",
+            "snippet": "t_code\": params.get(\"asset_code\", \"\"),             \"asset_name\": params.get(\"asset_name\", \"\"),             \"category_id\": params.get(\"category_id\", \"\"),             \"status\": params.get(\"status\", \"\"),             \"department_id\": params.get(\"department_id\", \"\"),             \"person_id\": params.get(\"person_id\", \"\"),             \"start_use_from\": params.get(\"start_use_from\", \"\"),"
+          },
+          {
+            "file": "app/services/voucher_service.py",
+            "snippet": "  class VoucherValidationError(RuntimeError):     def __init__(self, message: str, errors: List[Dict[str, object]]):         super().__init__(message)         self.errors = errors   AXIS_LABEL_MAP = {     \"department\": \"部门\",     \"person\": \"人员\",     \"entity\": \"往来单位\",     \"project\": \"项目\",     \"bank_account\": \"银行账户\", }   def _parse_decimal(value) -> Decimal:     if value is None o"
+          },
+          {
+            "file": "app/services/asset_service.py",
+            "snippet": "thod\") or \"STRAIGHT_LINE\").strip()     start_use_date = payload.get(\"start_use_date\")     capitalization_date = payload.get(\"capitalization_date\")     is_depreciable = payload.get(\"is_depreciable\", 1)     department_id = payload.get(\"department_id\")     person_id = payload.get(\"person_id\")     note = (payload.get(\"note\") or \"\").strip()     status = (payload.get(\"status\") or \"DR"
+          },
+          {
+            "file": "app/services/master_data_service.py",
+            "snippet": "code\",         \"contact_name\",         \"contact_phone\",         \"address\",     ],     \"projects\": [\"start_date\", \"end_date\"],     \"bank_accounts\": [\"bank_name\", \"account_no\"], }  MASTER_CODE_RULES = {     \"departments\": (re.compile(r\"^D[0-9]{3,}$\"), \"部门编码格式不符合规则（示例：D001）\"),     \"persons\": (re.compile(r\"^(P|PS)[0-9]{3,}$\"), \"个人编码格式不符合规则（示例：P001 或 PS001）\"),     \"entities\": (re.co"
+          },
+          {
+            "file": "app/routes/core_pages.py",
+            "snippet": "html\")   @core_pages_bp.get(\"/banks/reconcile\") def bank_reconcile_page():     return render_template(\"bank_reconcile.html\")   @core_pages_bp.get(\"/masters/departments\") def master_departments_page():     return render_template(\"master_data.html\", master_kind=\"departments\", master_label=\"部门\")   @core_pages_bp.get(\"/masters/persons\") def master_persons_page():     return render_"
+          },
+          {
+            "file": "migrations/versions/20260227_000014_asset_changes.py",
+            "snippet": "able=False),         sa.Column(\"asset_code\", sa.String(64), nullable=False),         sa.Column(\"change_type\", sa.String(16), nullable=False),         sa.Column(\"change_date\", sa.Date, nullable=False),         sa.Column(\"from_department_id\", sa.BigInteger, nullable=True),         sa.Column(\"to_department_id\", sa.BigInteger, nullable=True),         sa.Column(\"from_person_id\", sa."
+          },
+          {
+            "file": "migrations/versions/20260227_000012_fixed_assets.py",
+            "snippet": "a.String(32), nullable=False, server_default=sa.text(\"'STRAIGHT_LINE'\")),         sa.Column(\"start_use_date\", sa.Date, nullable=True),         sa.Column(\"capitalization_date\", sa.Date, nullable=True),         sa.Column(\"department_id\", sa.BigInteger, nullable=True),         sa.Column(\"person_id\", sa.BigInteger, nullable=True),         sa.Column(\"note\", sa.String(255), nullable="
+          },
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": " IF NOT EXISTS hr_employees (   id BIGINT PRIMARY KEY AUTO_INCREMENT,   ledger_id BIGINT NOT NULL,   emp_no VARCHAR(64) NOT NULL,   name VARCHAR(64) NOT NULL,   id_card_no_enc VARBINARY(255) NOT NULL,   dept_id BIGINT NOT NULL,   job_title VARCHAR(64) NOT NULL,   hire_date DATE NOT NULL,   terminate_date DATE NULL,   employment_type VARCHAR(16) NOT NULL,   tax_residency VARCHAR"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ROOT = Path(\".\") OUT_JSON = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.json\") OUT_MD   = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.md\")  # === Spec fields (from 工资管理功能字段列表.docx) === # 员工基础信息：员工工号/姓名/身份证号/入离职/用工性质/部门/岗位职级/地点/银行卡/开户行/居民身份等 :contentReference[oaicite:5]{index=5} # 薪资项目：基本工资/津贴/工龄/绩效/奖金/加班/提成/全勤/补贴/其他补发扣减等 :contentReference[oaicite:6]{index=6} # 社"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": "# 辅助核算主数据字段规范（部门/员工/银行账户/往来单位）  本规范用于“心易智能”财务系统的辅助核算维度主数据建设，确保： - 结构化（可用于自动凭证、自动对账、电子发票/数电票处理） - 可审计（字段、规则固定；迁移可追溯） - 可扩展（后续供销存/多店可复用维度桥表）  ---  ## 1. 部门管理（组织架构与成本中心）  建议表：`dim_departments`  | 字段 | 类型 | 必填 | 规则/说明 | "
+          }
+        ]
+      },
+      {
+        "field": "job_grade",
+        "ok": true,
+        "terms": [
+          "job_grade"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_p"
+          }
+        ]
+      },
+      {
+        "field": "work_location",
+        "ok": true,
+        "terms": [
+          "work_location"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_p"
+          }
+        ]
+      },
+      {
+        "field": "bank_account_no",
+        "ok": true,
+        "terms": [
+          "bank_account",
+          "bank_account_no",
+          "银行卡",
+          "银行卡号"
+        ],
+        "hits": [
+          {
+            "file": "app/templates/hub.html",
+            "snippet": "x; border:1px dashed #bbb; border-radius:10px;\">   <div style=\"font-weight:600; margin-bottom:6px;\">最近访问</div>   <div id=\"hub-recent-list\" style=\"display:flex; gap:10px; flex-wrap:wrap;\"></div> </div> <p>序时账导入/导出已归类到「凭证与账务」「报表与导出」。401/403 表示需登录权限。</p><p><small>模块页：<a href=\"/m/payroll\">/m/payroll</a> <a href=\"/m/expense\">/m/expense</a> <a href=\"/m/assets\">/m/assets</a> <a href=\""
+          },
+          {
+            "file": "app/services/voucher_import_service.py",
+            "snippet": "e\",     \"debit_amount\",     \"credit_amount\", ]  OPTIONAL_HEADERS = [     \"line_no\",     \"subject_name\",     \"aux_department_code\",     \"aux_person_code\",     \"aux_entity_code\",     \"aux_project_code\",     \"aux_bank_account_code\", ]  AUX_COLUMN_MAP = {     \"aux_department_code\": \"department\",     \"aux_person_code\": \"person\",     \"aux_entity_code\": \"entity\",     \"aux_project_code"
+          },
+          {
+            "file": "app/services/dashboard_service.py",
+            "snippet": "parse_date(end_raw)      engine = get_engine()     with engine.connect() as conn:         # cash: latest balance per bank account         balances = conn.execute(             text(                 \"\"\"                 SELECT bank_account_id, MAX(txn_date) AS d                 FROM bank_transactions                 WHERE book_id=:book_id                 GROUP BY bank_account_id  "
+          },
+          {
+            "file": "app/services/export_service.py",
+            "snippet": " data.get(\"items\", [])         ]         _write_sheet(ws, \"支付明细\", filters, headers, rows)         return wb, filters      if report_key == \"bank_reconcile\":         data = get_reconcile_report(params)         filters = {\"book_id\": data[\"book_id\"], \"bank_account_id\": data[\"bank_account_id\"]}         headers = [\"指标\", \"值\"]         rows = [             [\"流水总笔数\", data[\"total\"]],    "
+          },
+          {
+            "file": "app/services/voucher_service.py",
+            "snippet": "rs: List[Dict[str, object]]):         super().__init__(message)         self.errors = errors   AXIS_LABEL_MAP = {     \"department\": \"部门\",     \"person\": \"人员\",     \"entity\": \"往来单位\",     \"project\": \"项目\",     \"bank_account\": \"银行账户\", }   def _parse_decimal(value) -> Decimal:     if value is None or value == \"\":         return Decimal(\"0\")     try:         return Decimal(str(value)) "
+          },
+          {
+            "file": "app/services/payroll_service.py",
+            "snippet": "id\"), \"employee_id\")     employee_name = str(payload.get(\"employee_name\") or \"\").strip()     department = str(payload.get(\"department\") or \"\").strip()     city = str(payload.get(\"city\") or \"\").strip()     bank_account = str(payload.get(\"bank_account\") or \"\").strip()     attendance_ref = str(payload.get(\"attendance_ref\") or \"\").strip() or None     attendance_days = _as_int(paylo"
+          },
+          {
+            "file": "app/services/standard_importer.py",
+            "snippet": "\"权益\" in text_cat:         return \"CREDIT\"     return None   def _derive_flags(note: str) -> Dict[str, int]:     note = note or \"\"     return {         \"requires_auxiliary\": 1 if \"辅助核算\" in note else 0,         \"requires_bank_account_aux\": 1         if (\"银行账户\" in note or \"银行\" in note)         else 0,         \"supports_foreign_currency\": 1 if \"外币\" in note else 0,     }   def _impo"
+          },
+          {
+            "file": "app/services/bank_import_service.py",
+            "snippet": "ex_map[key] = idx             continue         source_norm = _normalize(raw)         if source_norm in norm_headers:             index_map[key] = norm_headers.index(source_norm)     return index_map   def _hash_row(book_id: int, bank_account_id: int, txn_date: date, amount: Decimal, summary: str, serial_no: str) -> str:     raw = f\"{book_id}|{bank_account_id}|{txn_date.isoforma"
+          },
+          {
+            "file": "app/services/bank_reconcile_service.py",
+            "snippet": "    \"role\": role,             \"comment\": comment,         },     )   def list_reconciliation_items(params: Dict[str, str]) -> Dict[str, object]:     book_id_raw = (params.get(\"book_id\") or \"\").strip()     bank_account_raw = (params.get(\"bank_account_id\") or \"\").strip()     if not book_id_raw:         raise ReconcileError(\"book_id required\")     try:         book_id = int(book_i"
+          },
+          {
+            "file": "app/services/master_data_service.py",
+            "snippet": "mport get_engine   class MasterDataError(RuntimeError):     pass   MASTER_TABLES = {     \"departments\": \"departments\",     \"persons\": \"persons\",     \"entities\": \"entities\",     \"projects\": \"projects\",     \"bank_accounts\": \"bank_accounts\", }  ALLOWED_AUX_TYPES = {\"\", \"department\", \"person\", \"entity\", \"project\", \"bank_account\"} MASTER_META_PREFIX = \"master_meta:\"  MASTER_EXTRA_FI"
+          },
+          {
+            "file": "app/routes/core_pages.py",
+            "snippet": "er_kind=\"entities\", master_label=\"单位\")   @core_pages_bp.get(\"/masters/projects\") def master_projects_page():     return render_template(\"master_data.html\", master_kind=\"projects\", master_label=\"项目\")   @core_pages_bp.get(\"/masters/bank_accounts\") def master_bank_accounts_page():     return render_template(\"master_data.html\", master_kind=\"bank_accounts\", master_label=\"银行账户\")   @c"
+          },
+          {
+            "file": "app/queries/optimized_sql.sql",
+            "snippet": "MIT 50;  -- Payment list EXPLAIN SELECT id, title, payee_name, pay_method, amount, status FROM payment_requests WHERE book_id = 1 ORDER BY id DESC LIMIT 50;  -- Bank unmatched list (reconcile) EXPLAIN SELECT id, bank_account_id, txn_date, amount, match_status FROM bank_transactions WHERE book_id = 1   AND COALESCE(match_status, 'unmatched') = 'unmatched' ORDER BY id DESC LIMIT "
+          },
+          {
+            "file": "app/templates/modules/others.html",
+            "snippet": "<!doctype html><html><head><meta charset='utf-8'/><title>其他</title></head><body><h1>其他</h1><p><a href=\"/hub\">返回 Hub</a></p><p>以下为已注册路由清单：</p><ul><li><a href=\"/\">/</a> <small><code>GET</code> <code>core_pages.index</code></small></li><li><a href=\"/__debug/inject\">/__debug/inject</a> <small><code>GET</code> <code>__debug_inject</code></small></li><li><a href=\"/api/ar_ap/aging\">/a"
+          },
+          {
+            "file": "migrations/versions/20260303_000044_payroll_enhancements.py",
+            "snippet": "> 0   def upgrade() -> None:     bind = op.get_bind()      if not _column_exists(bind, \"payroll_slips\", \"city\"):         op.add_column(\"payroll_slips\", sa.Column(\"city\", sa.String(64), nullable=True))     if not _column_exists(bind, \"payroll_slips\", \"bank_account\"):         op.add_column(\"payroll_slips\", sa.Column(\"bank_account\", sa.String(128), nullable=True))     if not _colu"
+          },
+          {
+            "file": "migrations/versions/20260227_000009_bank_transactions.py",
+            "snippet": "() -> None:     op.create_table(         \"bank_transactions\",         sa.Column(\"id\", sa.BigInteger, primary_key=True, autoincrement=True),         sa.Column(\"book_id\", sa.BigInteger, nullable=False),         sa.Column(\"bank_account_id\", sa.BigInteger, nullable=False),         sa.Column(\"txn_date\", sa.Date, nullable=False),         sa.Column(\"amount\", sa.Numeric(18, 2), nullabl"
+          },
+          {
+            "file": "migrations/versions/20260227_000002_masterdata.py",
+            "snippet": "4), nullable=True),         sa.Column(             \"requires_auxiliary\",             sa.SmallInteger,             nullable=False,             server_default=sa.text(\"0\"),         ),         sa.Column(             \"requires_bank_account_aux\",             sa.SmallInteger,             nullable=False,             server_default=sa.text(\"0\"),         ),         sa.Column(           "
+          },
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "-- AUXDIM schema hardening (department/employee/bank_account/party) -- safe pattern: add columns if not exists (MySQL 8 supports IF NOT EXISTS for ADD COLUMN) -- If your MySQL version does not support it, apply manually.  -- 1) dim_departments CREATE TABLE IF "
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ROOT = Path(\".\") OUT_JSON = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.json\") OUT_MD   = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.md\")  # === Spec fields (from 工资管理功能字段列表.docx) === # 员工基础信息：员工工号/姓名/身份证号/入离职/用工性质/部门/岗位职级/地点/银行卡/开户行/居民身份等 :contentReference[oaicite:5]{index=5} # 薪资项目：基本工资/津贴/工龄/绩效/奖金/加班/提成/全勤/补贴/其他补发扣减等 :contentReference[oaicite:6]{index=6} # 社"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": " 岗位/职务 | | hire_date | DATE | 是 | 入职日期 | | terminate_date | DATE | 否 | 离职日期 | | employment_type | ENUM | 是 | formal/probation/intern/labor/rehire | | tax_residency | ENUM | 是 | resident/non_resident | | bank_account_no_enc | VARBINARY / VARCHAR | 是 | 默认工资卡号（密文） | | bank_cnaps | VARCHAR(16) | 是 | 联行号 | | social_security_city | VARCHAR(64) | 是 | 社保缴纳地 | | housing_fund_account | V"
+          }
+        ]
+      },
+      {
+        "field": "bank_branch_info",
+        "ok": true,
+        "terms": [
+          "bank_branch_info"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_p"
+          }
+        ]
+      },
+      {
+        "field": "tax_residency",
+        "ok": true,
+        "terms": [
+          "tax_residency"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "L,   id_card_no_enc VARBINARY(255) NOT NULL,   dept_id BIGINT NOT NULL,   job_title VARCHAR(64) NOT NULL,   hire_date DATE NOT NULL,   terminate_date DATE NULL,   employment_type VARCHAR(16) NOT NULL,   tax_residency VARCHAR(16) NOT NULL,   bank_account_no_enc VARBINARY(255) NOT NULL,   bank_cnaps VARCHAR(16) NOT NULL,   social_security_city VARCHAR(64) NOT NULL,   housing_fund"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_p"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": " dim_departments.id | | job_title | VARCHAR(64) | 是 | 岗位/职务 | | hire_date | DATE | 是 | 入职日期 | | terminate_date | DATE | 否 | 离职日期 | | employment_type | ENUM | 是 | formal/probation/intern/labor/rehire | | tax_residency | ENUM | 是 | resident/non_resident | | bank_account_no_enc | VARBINARY / VARCHAR | 是 | 默认工资卡号（密文） | | bank_cnaps | VARCHAR(16) | 是 | 联行号 | | social_security_city |"
+          }
+        ]
+      }
+    ],
+    "薪资项目固定项": [
+      {
+        "field": "base_salary",
+        "ok": true,
+        "terms": [
+          "base_salary",
+          "basic_salary",
+          "基本工资"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  = Path(\"evidence/PAYROLL-FIELD-01/payroll_field_audit.md\")  # === Spec fields (from 工资管理功能字段列表.docx) === # 员工基础信息：员工工号/姓名/身份证号/入离职/用工性质/部门/岗位职级/地点/银行卡/开户行/居民身份等 :contentReference[oaicite:5]{index=5} # 薪资项目：基本工资/津贴/工龄/绩效/奖金/加班/提成/全勤/补贴/其他补发扣减等 :contentReference[oaicite:6]{index=6} # 社保公积金：参保地、各险种基数、比例、企业承担额等 :contentReference[oaicite:7]{index=7} # 个税累计预扣：累计收入/免税/减除/专项/附加/税率速算/"
+          }
+        ]
+      },
+      {
+        "field": "position_allowance",
+        "ok": true,
+        "terms": [
+          "position_allowance"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allow"
+          }
+        ]
+      },
+      {
+        "field": "seniority_pay",
+        "ok": true,
+        "terms": [
+          "seniority_pay"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allow"
+          }
+        ]
+      },
+      {
+        "field": "fixed_performance",
+        "ok": true,
+        "terms": [
+          "fixed_performance"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"termination_date\",\"employment_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allow"
+          }
+        ]
+      }
+    ],
+    "薪资项目变动项": [
+      {
+        "field": "performance_bonus",
+        "ok": true,
+        "terms": [
+          "performance_bonus"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medi"
+          }
+        ]
+      },
+      {
+        "field": "overtime_pay",
+        "ok": true,
+        "terms": [
+          "overtime_pay"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medi"
+          }
+        ]
+      },
+      {
+        "field": "commission",
+        "ok": true,
+        "terms": [
+          "commission"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medi"
+          }
+        ]
+      },
+      {
+        "field": "attendance_bonus",
+        "ok": true,
+        "terms": [
+          "attendance_bonus"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medi"
+          }
+        ]
+      },
+      {
+        "field": "heat_allowance",
+        "ok": true,
+        "terms": [
+          "heat_allowance"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medi"
+          }
+        ]
+      },
+      {
+        "field": "other_adjustment",
+        "ok": true,
+        "terms": [
+          "other_adjustment"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_type\",     \"department_id\",\"job_grade\",\"work_location\",\"bank_account_no\",\"bank_branch_info\",\"tax_residency\"   ],   \"薪资项目固定项\": [\"base_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medi"
+          }
+        ]
+      }
+    ],
+    "社保公积金": [
+      {
+        "field": "social_security_city",
+        "ok": true,
+        "terms": [
+          "social_security_city"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "TE NOT NULL,   terminate_date DATE NULL,   employment_type VARCHAR(16) NOT NULL,   tax_residency VARCHAR(16) NOT NULL,   bank_account_no_enc VARBINARY(255) NOT NULL,   bank_cnaps VARCHAR(16) NOT NULL,   social_security_city VARCHAR(64) NOT NULL,   housing_fund_account VARCHAR(64) NULL,   special_deductions_json JSON NOT NULL,   credit_score DECIMAL(6,2) NULL,   internal_ar_subj"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "e_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\" "
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": " | 是 | formal/probation/intern/labor/rehire | | tax_residency | ENUM | 是 | resident/non_resident | | bank_account_no_enc | VARBINARY / VARCHAR | 是 | 默认工资卡号（密文） | | bank_cnaps | VARCHAR(16) | 是 | 联行号 | | social_security_city | VARCHAR(64) | 是 | 社保缴纳地 | | housing_fund_account | VARCHAR(64) | 否 | 公积金账号 | | special_deductions_json | JSON | 是 | 专项附加扣除信息（定期同步） | | credit_score | DECI"
+          }
+        ]
+      },
+      {
+        "field": "pension_base",
+        "ok": true,
+        "terms": [
+          "pension_base"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "e_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\" "
+          }
+        ]
+      },
+      {
+        "field": "medical_base",
+        "ok": true,
+        "terms": [
+          "medical_base"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "e_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\" "
+          }
+        ]
+      },
+      {
+        "field": "unemployment_base",
+        "ok": true,
+        "terms": [
+          "unemployment_base"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "e_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\" "
+          }
+        ]
+      },
+      {
+        "field": "injury_base",
+        "ok": true,
+        "terms": [
+          "injury_base"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "e_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\" "
+          }
+        ]
+      },
+      {
+        "field": "maternity_base",
+        "ok": true,
+        "terms": [
+          "maternity_base"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "e_salary\",\"position_allowance\",\"seniority_pay\",\"fixed_performance\"],   \"薪资项目变动项\": [\"performance_bonus\",\"overtime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\" "
+          }
+        ]
+      },
+      {
+        "field": "housing_fund_base",
+        "ok": true,
+        "terms": [
+          "housing_fund_base"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_dedu"
+          }
+        ]
+      },
+      {
+        "field": "social_housing_rate",
+        "ok": true,
+        "terms": [
+          "social_housing_rate"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_dedu"
+          }
+        ]
+      },
+      {
+        "field": "employer_social_total",
+        "ok": true,
+        "terms": [
+          "employer_social_total"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ime_pay\",\"commission\",\"attendance_bonus\",\"heat_allowance\",\"other_adjustment\"],   \"社保公积金\": [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_dedu"
+          }
+        ]
+      }
+    ],
+    "个税累计预扣": [
+      {
+        "field": "ytd_income",
+        "ok": true,
+        "terms": [
+          "ytd_income"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_i"
+          }
+        ]
+      },
+      {
+        "field": "ytd_tax_exempt_income",
+        "ok": true,
+        "terms": [
+          "ytd_tax_exempt_income"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_i"
+          }
+        ]
+      },
+      {
+        "field": "ytd_standard_deduction",
+        "ok": true,
+        "terms": [
+          "ytd_standard_deduction"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_i"
+          }
+        ]
+      },
+      {
+        "field": "ytd_social_housing_deduction",
+        "ok": true,
+        "terms": [
+          "ytd_social_housing_deduction"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": " [     \"social_security_city\",\"pension_base\",\"medical_base\",\"unemployment_base\",\"injury_base\",\"maternity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_i"
+          }
+        ]
+      },
+      {
+        "field": "ytd_special_additional_deduction",
+        "ok": true,
+        "terms": [
+          "ytd_special_additional_deduction"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ernity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag"
+          }
+        ]
+      },
+      {
+        "field": "ytd_other_legal_deduction",
+        "ok": true,
+        "terms": [
+          "ytd_other_legal_deduction"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ernity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag"
+          }
+        ]
+      },
+      {
+        "field": "ytd_taxable_income",
+        "ok": true,
+        "terms": [
+          "ytd_taxable_income"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ernity_base\",     \"housing_fund_base\",\"social_housing_rate\",\"employer_social_total\"   ],   \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag"
+          }
+        ]
+      },
+      {
+        "field": "tax_rate",
+        "ok": true,
+        "terms": [
+          "tax_rate"
+        ],
+        "hits": [
+          {
+            "file": "app/services/consolidation_purchase_method_service.py",
+            "snippet": "r(\"deferred_tax_json_invalid\")         return {             \"dtl\": dtl.quantize(Decimal(\"0.01\")),             \"dta\": dta.quantize(Decimal(\"0.01\")),             \"temporary_difference\": Decimal(\"0.00\"),             \"tax_rate\": Decimal(\"0.00\"),         }      tax_rate = _to_decimal(         deferred_tax.get(\"tax_rate\", deferred_tax.get(\"effective_tax_rate\", 0)),         \"deferred_"
+          },
+          {
+            "file": "app/services/consolidation_adjustment_service.py",
+            "snippet": "et(\"original_amount\")     remaining_amount = payload.get(\"remaining_amount\")     original_tax_amount = payload.get(\"original_tax_amount\")     remaining_tax_amount = payload.get(\"remaining_tax_amount\")     tax_rate_snapshot = payload.get(\"tax_rate_snapshot\")      provider = get_connection_provider()     with provider.begin() as conn:         cols = _table_columns(conn, \"consolid"
+          },
+          {
+            "file": "app/services/consolidation_unrealized_profit_reversal_service.py",
+            "snippet": "unt\" if \"remaining_amount\" in cols else \"remaining_unrealized_profit AS remaining_amount\"     rem_tax_col = \"remaining_tax_amount\" if \"remaining_tax_amount\" in cols else \"NULL AS remaining_tax_amount\"     rate_col = \"tax_rate_snapshot\" if \"tax_rate_snapshot\" in cols else \"NULL AS tax_rate_snapshot\"     period_end_col = \"period_end\" if \"period_end\" in cols else \"NULL AS period_e"
+          },
+          {
+            "file": "app/services/consolidation_unrealized_profit_service.py",
+            "snippet": "dit\": str(credit),         \"note\": note,         \"set_id\": set_id,         \"source\": SOURCE,         \"rule\": rule_code,         \"evidence_ref\": set_id,         \"operator_id\": str(operator_id),     }   def _normalize_tax_rate(value: object) -> Decimal:     rate = _to_decimal(value)     if rate <= 0:         return Decimal(\"0.25\")     if rate > 1 and rate <= 100:         rate = r"
+          },
+          {
+            "file": "app/services/tax_service.py",
+            "snippet": "EADER_MAP = {     \"invoice_no\": [\"invoice_no\", \"发票号码\", \"发票号\"],     \"invoice_code\": [\"invoice_code\", \"发票代码\"],     \"invoice_date\": [\"invoice_date\", \"开票日期\", \"日期\"],     \"amount\": [\"amount\", \"金额\", \"价税合计\"],     \"tax_rate\": [\"tax_rate\", \"税率\"],     \"tax_amount\": [\"tax_amount\", \"税额\"],     \"seller_name\": [\"seller_name\", \"销方名称\", \"销售方\", \"销售方名称\"],     \"buyer_name\": [\"buyer_name\", \"购方名称\", \"购"
+          },
+          {
+            "file": "app/services/consolidation_multi_period_rollover_service.py",
+            "snippet": "ount=:original_tax_amount\")         sets.append(\"remaining_tax_amount=:remaining_tax_amount\")         params[\"original_tax_amount\"] = str(rem_tax)         params[\"remaining_tax_amount\"] = str(rem_tax)     if \"tax_rate_snapshot\" in cols:         tax_rate = getattr(source_row, \"tax_rate_snapshot\", None)         if tax_rate is not None:             sets.append(\"tax_rate_snapshot=:"
+          },
+          {
+            "file": "app/services/consolidation_ic_asset_transfer_service.py",
+            "snippet": "chema = DATABASE()               AND table_name=:table_name             \"\"\"         ),         {\"table_name\": table_name},     ).fetchall()     return {str(r[0] or \"\").strip().lower() for r in rows}   def _normalize_tax_rate(value: object) -> Decimal:     try:         rate = Decimal(str(value if value is not None else \"0\"))     except Exception:         return Decimal(\"0.25\")  "
+          },
+          {
+            "file": "migrations/versions/20260227_000011_tax_module.py",
+            "snippet": "lable=True),         sa.Column(\"invoice_no\", sa.String(64), nullable=False),         sa.Column(\"invoice_date\", sa.Date, nullable=False),         sa.Column(\"amount\", sa.Numeric(18, 2), nullable=False),         sa.Column(\"tax_rate\", sa.Numeric(6, 4), nullable=True),         sa.Column(\"tax_amount\", sa.Numeric(18, 2), nullable=True),         sa.Column(\"seller_name\", sa.String(128),"
+          },
+          {
+            "file": "migrations/versions/20260303_000038_consolidation_adjustments_up_balance_fields.py",
+            "snippet": "        (\"origin_period_start\", \"DATE NULL\"),         (\"origin_period_end\", \"DATE NULL\"),         (\"original_tax_amount\", \"DECIMAL(18,2) NULL\"),         (\"remaining_tax_amount\", \"DECIMAL(18,2) NULL\"),         (\"tax_rate_snapshot\", \"DECIMAL(9,6) NULL\"),     ]     for col, ddl in alter_list:         if not _has_column(conn, \"consolidation_adjustments\", col):             conn.exec"
+          },
+          {
+            "file": "migrations/versions/20260303_000036_consolidation_parameters_tax_rate.py",
+            "snippet": "\"\"\" 20260303_000036_consolidation_parameters_tax_rate  Add tax_rate field to consolidation_parameters for deferred tax calculations. \"\"\"  from typing import Sequence, Union  from alembic import op from sqlalchemy import text  revision: str = \"20260303_0"
+          },
+          {
+            "file": "migrations/versions/20260303_000039_consolidation_ic_asset_transfer_events.py",
+            "snippet": "L,                 transfer_price DECIMAL(18,2) NOT NULL DEFAULT 0,                 carrying_amount DECIMAL(18,2) NOT NULL DEFAULT 0,                 gain_loss_amount DECIMAL(18,2) NOT NULL DEFAULT 0,                 tax_rate_snapshot DECIMAL(9,6) NOT NULL DEFAULT 0.25,                 dtl_amount DECIMAL(18,2) NOT NULL DEFAULT 0,                 original_gain_loss_amount DECIMA"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leav"
+          }
+        ]
+      },
+      {
+        "field": "quick_deduction",
+        "ok": true,
+        "terms": [
+          "quick_deduction"
+        ],
+        "hits": [
+          {
+            "file": "app/services/tax_service.py",
+            "snippet": "= _pick_bracket(taxable_base, BONUS_MONTHLY_BRACKETS)         tax = (amount * rate - quick).quantize(Decimal(\"0.01\"))         explain = (             \"separate mode: bonus/12 choose monthly bracket; \"             \"tax=bonus*rate-quick_deduction\"         )     else:         taxable_base = amount         rate, quick = _pick_bracket(taxable_base, COMPREHENSIVE_ANNUAL_BRACKETS)    "
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leav"
+          },
+          {
+            "file": "docs/release/STEP28_BATCH2_PLATFORM_CHECK_AND_UAT.md",
+            "snippet": "色调用 `POST /api/books/<id>/disable` -> `403 forbidden`  ## 6. 税务两项实现与实测（本批必做）  ### 6.1 年终奖单独计税/并入计税切换 - API：`POST /api/tax/calc/year-end-bonus` - 输入：`bonus_amount`、`tax_mode(separate/merge)`、`biz_year` - 输出：`tax_mode/tax_amount/taxable_base/rate/quick_deduction/explain` - 实测：   1. `separate` 成功：`200`，`tax_amount=1080.0`   2. `merge` 成功：`200`，`tax_amount=1080.0`   3. 非法模式失败：`400`"
+          },
+          {
+            "file": "docs/release/STEP28_PAYROLL_TAX_DESIGN_CARD.md",
+            "snippet": "（本批不做） - 不做 AI/OCR/语音识别。 - 不做复杂考勤、非居民复杂税制、汇缴差异自动摊销。 - 不做完整工资模块重构与全量 UI。  ## 6. 本轮优先项（已实现） - 年终奖计税切换：`POST /api/tax/calc/year-end-bonus` - 劳务报酬个税：`POST /api/tax/calc/labor-service`  ## 7. 计算口径与简化假设（本轮） - 年终奖 `separate`：`bonus/12` 选月度档，`tax=bonus*rate-quick_deduction`。 - 年终奖 `merge`（简化）：仅将 `bonus_amount` 作为“并入后应税基数示例”，未并入全年工资累计流水。 - 劳务报酬（简化预扣）：   - `gross<=4000`：`taxable_base=gro"
+          }
+        ]
+      },
+      {
+        "field": "current_withholding_tax",
+        "ok": true,
+        "terms": [
+          "current_withholding_tax"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leav"
+          }
+        ]
+      },
+      {
+        "field": "annual_bonus_separate_tax_flag",
+        "ok": true,
+        "terms": [
+          "annual_bonus_separate_tax_flag"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"个税累计预扣\": [     \"ytd_income\",\"ytd_tax_exempt_income\",\"ytd_standard_deduction\",\"ytd_social_housing_deduction\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leav"
+          }
+        ]
+      }
+    ],
+    "考勤假期": [
+      {
+        "field": "payable_days",
+        "ok": true,
+        "terms": [
+          "payable_days"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annu"
+          }
+        ]
+      },
+      {
+        "field": "attendance_days",
+        "ok": true,
+        "terms": [
+          "attendance_days"
+        ],
+        "hits": [
+          {
+            "file": "app/services/payroll_service.py",
+            "snippet": "trip()     city = str(payload.get(\"city\") or \"\").strip()     bank_account = str(payload.get(\"bank_account\") or \"\").strip()     attendance_ref = str(payload.get(\"attendance_ref\") or \"\").strip() or None     attendance_days = _as_int(payload.get(\"attendance_days\", 0), \"attendance_days\")     absent_days = _as_int(payload.get(\"absent_days\", 0), \"absent_days\")     gross_amount = _as_"
+          },
+          {
+            "file": "migrations/versions/20260303_000042_payroll_mvp.py",
+            "snippet": "se),         sa.Column(\"employee_name\", sa.String(64), nullable=True),         sa.Column(\"department\", sa.String(64), nullable=True),         sa.Column(\"attendance_ref\", sa.String(64), nullable=True),         sa.Column(\"attendance_days\", sa.Integer, nullable=False, server_default=sa.text(\"0\")),         sa.Column(\"absent_days\", sa.Integer, nullable=False, server_default=sa.text("
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annu"
+          }
+        ]
+      },
+      {
+        "field": "personal_leave_hours",
+        "ok": true,
+        "terms": [
+          "personal_leave_hours"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annu"
+          }
+        ]
+      },
+      {
+        "field": "sick_leave_hours",
+        "ok": true,
+        "terms": [
+          "sick_leave_hours"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annu"
+          }
+        ]
+      },
+      {
+        "field": "absent_days",
+        "ok": true,
+        "terms": [
+          "absent_days"
+        ],
+        "hits": [
+          {
+            "file": "app/services/payroll_service.py",
+            "snippet": "oad.get(\"bank_account\") or \"\").strip()     attendance_ref = str(payload.get(\"attendance_ref\") or \"\").strip() or None     attendance_days = _as_int(payload.get(\"attendance_days\", 0), \"attendance_days\")     absent_days = _as_int(payload.get(\"absent_days\", 0), \"absent_days\")     gross_amount = _as_decimal(payload.get(\"gross_amount\"), \"gross_amount\")     deduction_amount = _as_deci"
+          },
+          {
+            "file": "migrations/versions/20260303_000042_payroll_mvp.py",
+            "snippet": "tment\", sa.String(64), nullable=True),         sa.Column(\"attendance_ref\", sa.String(64), nullable=True),         sa.Column(\"attendance_days\", sa.Integer, nullable=False, server_default=sa.text(\"0\")),         sa.Column(\"absent_days\", sa.Integer, nullable=False, server_default=sa.text(\"0\")),         sa.Column(\"gross_amount\", sa.Numeric(18, 2), nullable=False, server_default=sa.t"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "\",     \"ytd_special_additional_deduction\",\"ytd_other_legal_deduction\",\"ytd_taxable_income\",     \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annu"
+          }
+        ]
+      },
+      {
+        "field": "late_early_count",
+        "ok": true,
+        "terms": [
+          "late_early_count"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_"
+          }
+        ]
+      },
+      {
+        "field": "ot_hours_weekday",
+        "ok": true,
+        "terms": [
+          "ot_hours_weekday"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_"
+          }
+        ]
+      },
+      {
+        "field": "ot_hours_weekend",
+        "ok": true,
+        "terms": [
+          "ot_hours_weekend"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_"
+          }
+        ]
+      },
+      {
+        "field": "ot_hours_holiday",
+        "ok": true,
+        "terms": [
+          "ot_hours_holiday"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_"
+          }
+        ]
+      },
+      {
+        "field": "annual_leave_balance",
+        "ok": true,
+        "terms": [
+          "annual_leave_balance"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "  \"tax_rate\",\"quick_deduction\",\"current_withholding_tax\",\"annual_bonus_separate_tax_flag\"   ],   \"考勤假期\": [     \"payable_days\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_"
+          }
+        ]
+      }
+    ],
+    "财务核算凭证": [
+      {
+        "field": "cost_center_code",
+        "ok": true,
+        "terms": [
+          "cost_center_code",
+          "cost_center",
+          "成本中心",
+          "成本中心代码"
+        ],
+        "hits": [
+          {
+            "file": "migrations/sql/aux_dim_20260304.sql",
+            "snippet": "INT PRIMARY KEY AUTO_INCREMENT,   ledger_id BIGINT NOT NULL,   dept_code VARCHAR(64) NOT NULL,   dept_name VARCHAR(128) NOT NULL,   parent_dept_code VARCHAR(64) NULL,   dept_type VARCHAR(32) NOT NULL,   cost_center_code VARCHAR(64) NOT NULL,   profit_center_code VARCHAR(64) NULL,   manager_employee_id BIGINT NOT NULL,   established_on DATE NOT NULL,   revoked_on DATE NULL,   bu"
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": ":contentReference[oaicite:7]{index=7} # 个税累计预扣：累计收入/免税/减除/专项/附加/税率速算/本期税额/年终奖标识等 :contentReference[oaicite:8]{index=8} # 考勤假期：计薪天数/出勤/事病假/旷工/迟到早退/加班(平日周末节日)/年假剩余等 :contentReference[oaicite:9]{index=9} # 核算凭证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"terminatio"
+          },
+          {
+            "file": "docs/specs/AUX_DIM_FIELDS.md",
+            "snippet": "# 辅助核算主数据字段规范（部门/员工/银行账户/往来单位）  本规范用于“心易智能”财务系统的辅助核算维度主数据建设，确保： - 结构化（可用于自动凭证、自动对账、电子发票/数电票处理） - 可审计（字段、规则固定；迁移可追溯） - 可扩展（后续供销存/多店可复用维度桥表）  ---  ## 1. 部门管理（组织架构与成本中心）  建议表：`dim_departments`  | 字段 | 类型 | 必填 | 规则/说明 | |---|---|---:|---| | ledger_id | BIGINT | 是 | 账套分区键 | | dept_code | VARCHAR(64) | 是 | 唯一编码；支持树形：01.02.03 | | dept_name | VARCHAR(128) | 是 | 标准全称 | | "
+          }
+        ]
+      },
+      {
+        "field": "payroll_payable_subject",
+        "ok": true,
+        "terms": [
+          "payroll_payable_subject"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ys\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_housing_payable_subject\",\"tax_payable_subject\",     \"voucher_gen_status\",\"voucher_no\",\"pay_batch_no\",\"pay_status\"   ] }  #"
+          }
+        ]
+      },
+      {
+        "field": "social_housing_payable_subject",
+        "ok": true,
+        "terms": [
+          "social_housing_payable_subject"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ys\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_housing_payable_subject\",\"tax_payable_subject\",     \"voucher_gen_status\",\"voucher_no\",\"pay_batch_no\",\"pay_status\"   ] }  #"
+          }
+        ]
+      },
+      {
+        "field": "tax_payable_subject",
+        "ok": true,
+        "terms": [
+          "tax_payable_subject"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "ys\",\"attendance_days\",\"personal_leave_hours\",\"sick_leave_hours\",\"absent_days\",     \"late_early_count\",\"ot_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_housing_payable_subject\",\"tax_payable_subject\",     \"voucher_gen_status\",\"voucher_no\",\"pay_batch_no\",\"pay_status\"   ] }  #"
+          }
+        ]
+      },
+      {
+        "field": "voucher_gen_status",
+        "ok": true,
+        "terms": [
+          "voucher_gen_status"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_housing_payable_subject\",\"tax_payable_subject\",     \"voucher_gen_status\",\"voucher_no\",\"pay_batch_no\",\"pay_status\"   ] }  # Heuristic aliases (to catch existing naming variants) ALIASES = {   \"employee_no\": [\"employee_no\",\"emp_n"
+          }
+        ]
+      },
+      {
+        "field": "voucher_no",
+        "ok": true,
+        "terms": [
+          "voucher_no",
+          "voucher_number",
+          "关联凭证号",
+          "凭证号"
+        ],
+        "hits": [
+          {
+            "file": "app/services/voucher_import_service.py",
+            "snippet": "    _subject_aux_requirements,     _subject_requires_due_date,     _ensure_voucher_line_aux_items_table, )   class VoucherImportError(RuntimeError):     pass   REQUIRED_HEADERS = [     \"voucher_date\",     \"voucher_no\",     \"summary\",     \"subject_code\",     \"debit_amount\",     \"credit_amount\", ]  OPTIONAL_HEADERS = [     \"line_no\",     \"subject_name\",     \"aux_department_code\","
+          },
+          {
+            "file": "app/services/aux_reports_service.py",
+            "snippet": " not cfg[\"aux_code\"]:         raise AuxReportError(\"subject_code and aux_code required\")      sql = \"\"\"         SELECT v.id AS voucher_id,                v.voucher_date,                v.voucher_word,                v.voucher_no,                vl.line_no,                vl.summary,                vl.subject_code,                vl.subject_name,                vl.aux_code,     "
+          },
+          {
+            "file": "app/services/export_service.py",
+            "snippet": ".strip().lower() or \"posted\"         if status not in (\"draft\", \"reviewed\", \"posted\"):             raise ExportError(\"invalid_status\")         subject_code = (params.get(\"subject_code\") or \"\").strip()         voucher_no = (params.get(\"voucher_no\") or \"\").strip()         summary_kw = (params.get(\"summary\") or \"\").strip()         direction = (params.get(\"direction\") or \"\").strip("
+          },
+          {
+            "file": "app/services/voucher_service.py",
+            "snippet": "ect]) -> Dict[str, object]:     errors: List[Dict[str, object]] = []      book_id = payload.get(\"book_id\")     voucher_date = payload.get(\"voucher_date\")     voucher_word = payload.get(\"voucher_word\")     voucher_no = payload.get(\"voucher_no\")     attachments = payload.get(\"attachments\", 0)     maker = payload.get(\"maker\")     status = payload.get(\"status\") or \"draft\"     lines"
+          },
+          {
+            "file": "app/services/ledger_service.py",
+            "snippet": "      stack.append(code)          include_children = len(scope_codes) > 1         sql = \"\"\"             SELECT v.id AS voucher_id,                    v.voucher_date,                    v.voucher_word,                    v.voucher_no,                    vl.line_no,                    vl.summary,                    vl.debit,                    vl.credit,                    vl.not"
+          },
+          {
+            "file": "app/services/depreciation_service.py",
+            "snippet": "nt),             }         )      period_end = _period_end(year, month)     voucher_payload = {         \"book_id\": book_id,         \"voucher_date\": period_end.isoformat(),         \"voucher_word\": \"记\",         \"voucher_no\": \"\",         \"attachments\": 0,         \"maker\": \"system\",         \"status\": generate_status,         \"lines\": voucher_lines,     }      batch_id = None     vo"
+          },
+          {
+            "file": "app/services/bank_reconcile_service.py",
+            "snippet": "nt_id must be integer\")      sql = \"\"\"         SELECT bt.id, bt.bank_account_id, bt.txn_date, bt.amount, bt.summary, bt.counterparty,                bt.balance, bt.match_status, bt.matched_voucher_id,                v.voucher_date, v.voucher_word, v.voucher_no         FROM bank_transactions bt         LEFT JOIN vouchers v ON v.id = bt.matched_voucher_id         WHERE bt.book_id"
+          },
+          {
+            "file": "app/services/voucher_status_service.py",
+            "snippet": "r_required\")     if not role:         raise VoucherStatusError(\"role_required\")      _require_role(action, role)      engine = get_engine()     with engine.begin() as conn:         row = conn.execute(             text(\"SELECT id, status, voucher_no FROM vouchers WHERE id=:id\"),             {\"id\": voucher_id},         ).fetchone()         if not row:             raise VoucherSta"
+          },
+          {
+            "file": "migrations/versions/20260227_000004_vouchers.py",
+            "snippet": "crement=True),         sa.Column(\"book_id\", sa.BigInteger, nullable=False),         sa.Column(\"voucher_date\", sa.Date, nullable=False),         sa.Column(\"voucher_word\", sa.String(16), nullable=True),         sa.Column(\"voucher_no\", sa.String(32), nullable=True),         sa.Column(\"attachments\", sa.Integer, nullable=False, server_default=sa.text(\"0\")),         sa.Column(\"maker\""
+          },
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": ":contentReference[oaicite:7]{index=7} # 个税累计预扣：累计收入/免税/减除/专项/附加/税率速算/本期税额/年终奖标识等 :contentReference[oaicite:8]{index=8} # 考勤假期：计薪天数/出勤/事病假/旷工/迟到早退/加班(平日周末节日)/年假剩余等 :contentReference[oaicite:9]{index=9} # 核算凭证：成本中心/应付职工薪酬科目/社保公积金科目/个税科目/凭证状态/凭证号/支付批次/支付状态等 :contentReference[oaicite:10]{index=10}  SPEC = {   \"员工基础信息\": [     \"employee_no\",\"name\",\"id_card_no\",\"hire_date\",\"terminatio"
+          },
+          {
+            "file": "docs/release/STEP29_P1_IMPORT_DESIGN.md",
+            "snippet": "vouchers/import/preview`   - 作用：文件/数据预检，不落库。 - `POST /api/vouchers/import/commit`   - 作用：执行导入（按校验通过的记录），输出批次结果。 - `GET /api/vouchers/import/batches/<batch_id>`   - 作用：查询批次明细与失败原因。  ### A3. 模板/字段定义（最小） - 头部字段：`book_id`, `voucher_date`, `voucher_word`, `voucher_no`, `maker`, `status(draft/posted)` - 行字段：`line_no`, `summary`, `subject_code`, `debit`, `credit`, `aux_code(可选)`, `not"
+          }
+        ]
+      },
+      {
+        "field": "pay_batch_no",
+        "ok": true,
+        "terms": [
+          "pay_batch_no"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_housing_payable_subject\",\"tax_payable_subject\",     \"voucher_gen_status\",\"voucher_no\",\"pay_batch_no\",\"pay_status\"   ] }  # Heuristic aliases (to catch existing naming variants) ALIASES = {   \"employee_no\": [\"employee_no\",\"emp_n"
+          }
+        ]
+      },
+      {
+        "field": "pay_status",
+        "ok": true,
+        "terms": [
+          "pay_status"
+        ],
+        "hits": [
+          {
+            "file": "scripts/payroll/audit_payroll_fields.py",
+            "snippet": "_hours_weekday\",\"ot_hours_weekend\",\"ot_hours_holiday\",\"annual_leave_balance\"   ],   \"财务核算凭证\": [     \"cost_center_code\",\"payroll_payable_subject\",\"social_housing_payable_subject\",\"tax_payable_subject\",     \"voucher_gen_status\",\"voucher_no\",\"pay_batch_no\",\"pay_status\"   ] }  # Heuristic aliases (to catch existing naming variants) ALIASES = {   \"employee_no\": [\"employee_no\",\"emp_n"
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "total_spec_fields": 60,
+    "hit_fields": 60,
+    "missing_fields": 0,
+    "missing": [],
+    "suspicious": []
+  }
+}
