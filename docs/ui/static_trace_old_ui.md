@@ -1,0 +1,97 @@
+# UI static trace report (old UI sources)
+
+- templates_total: 24
+- old_layout_count (not extends layout.html): 9
+- legacy_toggle_count (has legacy toggle patterns): 4
+
+## OLD_LAYOUT_TEMPLATES
+- app/templates/_sidebar.html
+- app/templates/layout.html
+- app/templates/modules/expense.html
+- app/templates/modules/others.html
+- app/templates/modules/payroll.html
+- app/templates/modules/system.html
+- app/templates/modules/tax.html
+- app/templates/modules/voucher.html
+- app/templates/sys_payroll_vouchers.html
+
+## LEGACY_TOGGLE_TEMPLATES (with line samples)
+- app/templates/_sidebar.html
+  - L1: {# Sidebar: driven by injected `catalog` (modules_catalog.json). #}
+- app/templates/hub.html
+  - L7: // Align hub items with sidebar rules:
+  - L238: // Align hub items with sidebar rules:
+- app/templates/layout.html
+  - L17: --sidebar-w: 280px;
+  - L27: .sidebar{
+  - L28: width:var(--sidebar-w);
+  - L37: .sidebar.compact{
+  - L56: .sidebar.compact .brand .text{display:none;}
+  - L57: .sidebar.compact #sidebarSearchWrap{display:none;}
+  - L88: .sidebar.compact .nav-group-title{display:none;}
+  - L123: .sidebar.compact .label,
+  - L124: .sidebar.compact .badge{display:none;}
+  - L161: <aside id="sidebar" class="sidebar">
+  - L192: const sb=document.getElementById("sidebar");
+  - L197: sb.classList.toggle("compact");
+  - L249: // 3) render recent in sidebar
+  - L279: /* UI-LAYOUT-04 sidebar search + collapse */
+  - L290: // 1) group collapse toggle
+  - L318: // 2) sidebar search filter
+- app/templates/sys_payroll_vouchers.html
+  - L9: table{border-collapse:collapse; width:100%; margin-top:12px;}
+  - L43: <a class="pill" href="#" data-action="toggle" data-header-id='{{ r.id }}'>查看</a>
+  - L63: const a = ev.target.closest('a[data-action="toggle"]');
+  - L69: // toggle existing detail row
+
+## ENTRY_LINKS (top 50 unique hrefs from legacy/old templates)
+- /sys/module
+- /m/payroll
+- /m/expense
+- /m/assets
+- /m/tax
+- /m/voucher
+- /m/reports
+- /m/system
+- /m/consolidation
+- /m/others
+- /api/payroll/attendance/sync
+- /api/payroll/disbursement-batches
+- /api/payroll/disbursement-batches/&lt;int:batch_id&gt;/bank-file
+- /api/payroll/periods
+- /api/payroll/periods/&lt;int:period_id&gt;/close
+- /api/payroll/periods/&lt;int:period_id&gt;/reopen
+- /api/payroll/policies/regions
+- /api/payroll/slips
+- /api/payroll/slips/&lt;int:slip_id&gt;/confirm
+- /api/payroll/slips/&lt;int:slip_id&gt;/create-payment-request
+- /api/payroll/slips/&lt;int:slip_id&gt;/payment-status
+- /api/payroll/slips/&lt;int:slip_id&gt;/voucher-suggestion
+- /payroll
+- /api/reimbursements
+- /api/reimbursements/&lt;int:reimbursement_id&gt;
+- /api/reimbursements/&lt;int:reimbursement_id&gt;/approve
+- /api/reimbursements/&lt;int:reimbursement_id&gt;/reject
+- /api/reimbursements/&lt;int:reimbursement_id&gt;/submit
+- /api/reimbursements/&lt;int:reimbursement_id&gt;/void
+- /api/reimbursements/sla-reminders
+- /api/reimbursements/stats
+- /reimbursements
+- /reimbursements/&lt;int:reimbursement_id&gt;
+- /reimbursements/new
+- /api/assets
+- /api/assets/&lt;int:asset_id&gt;
+- /api/assets/&lt;int:asset_id&gt;/change
+- /api/assets/&lt;int:asset_id&gt;/dispose
+- /api/assets/&lt;int:asset_id&gt;/enabled
+- /api/assets/&lt;int:asset_id&gt;/impairment
+- /api/assets/&lt;int:asset_id&gt;/journal-entry
+- /api/assets/&lt;int:asset_id&gt;/revalue
+- /api/assets/categories
+- /api/assets/categories/&lt;int:category_id&gt;
+- /api/assets/categories/&lt;int:category_id&gt;/enabled
+- /api/assets/changes
+- /api/assets/depreciation
+- /api/assets/depreciation/&lt;int:batch_id&gt;
+- /api/assets/depreciation/detail
+- /api/assets/depreciation/preview
