@@ -12,6 +12,49 @@ We group by a composite key: ["subject_code"] + selected dims (if present).
 from __future__ import annotations
 from typing import Any, Dict, List, Tuple
 
+
+try:
+
+    subtotal = _rq13_recalc_subtotal_closing(subtotal)
+
+except Exception:
+
+    pass
+
+# --- REPORTS-QUERY-13 HOTFIX BEGIN ---
+def _rq13_recalc_subtotal_closing(subtotal: dict):
+    """Best-effort: enforce closing = opening + period for grouped subtotal."""
+    if not isinstance(subtotal, dict):
+        return subtotal
+    # locate opening
+    opening = None
+    for k in ("opening_amount", "opening", "opening_balance"):
+        if k in subtotal and subtotal.get(k) is not None:
+            opening = float(subtotal.get(k) or 0.0)
+            break
+    if opening is None:
+        return subtotal
+
+    # locate period (本期)
+    period = None
+    for k in ("period_amount", "period", "period_delta", "net_amount", "current_amount", "this_period_amount"):
+        if k in subtotal and subtotal.get(k) is not None:
+            period = float(subtotal.get(k) or 0.0)
+            break
+
+    # fallback: debit-credit if present
+    if period is None and ("debit_amount" in subtotal or "credit_amount" in subtotal):
+        debit = float(subtotal.get("debit_amount") or 0.0)
+        credit = float(subtotal.get("credit_amount") or 0.0)
+        # assume net = debit - credit (common convention; if opposite in your engine, adjust upstream)
+        period = debit - credit
+
+    if period is None:
+        return subtotal
+
+    subtotal["closing_amount"] = opening + period
+    return subtotal
+# --- REPORTS-QUERY-13 HOTFIX END ---
 def _num(x) -> float:
     if x is None or x == "":
         return 0.0
@@ -23,7 +66,7 @@ def _num(x) -> float:
 def _key(row: Dict[str,Any], group_cols: List[str]) -> Tuple[Any,...]:
     return tuple(row.get(c) for c in group_cols)
 
-def build_grouped_ledger(rows: List[Dict[str,Any]], group_cols: List[str]) -> List[Dict[str,Any]]:
+def build_grouped_ledger(rows: List[Dict[str,Any]], group_cols: List[str], opening_by_group: dict | None = None) -> List[Dict[str,Any]]:
     if not group_cols:
         group_cols = ["subject_code"]
 
@@ -44,6 +87,11 @@ def build_grouped_ledger(rows: List[Dict[str,Any]], group_cols: List[str]) -> Li
                     "closing_amount": 0.0,
                 }
             }
+            if opening_by_group and k in opening_by_group:
+                g["opening"] = {
+                    "direction": opening_by_group[k].get("direction",""),
+                    "amount": float(opening_by_group[k].get("amount") or 0.0)
+                }
             groups[k] = g
 
         g["lines"].append(r)
