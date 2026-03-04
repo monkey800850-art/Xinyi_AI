@@ -8,6 +8,8 @@ BASE_URL="${BASE_URL:-http://127.0.0.1:5000}"
 PORT="${PORT:-5000}"
 NO_PROXY_OPT="${NO_PROXY_OPT:---noproxy '*'}"
 LOG_PATH_HINT="${LOG_PATH_HINT:-/tmp/xinyi_app_500.log}"
+OSK_HC_STRICT="${OSK_HC_STRICT:-1}"  # 1=strict FAIL; 0=degrade on restricted network
+
 
 echo "== health_check =="
 date '+%Y-%m-%d %H:%M (%z)'
@@ -63,12 +65,34 @@ PY
 }
 
 echo "== http root =="
-code="$(http_get_status "${BASE_URL}/")"
+# capture stderr from http_get_status by running it in a subshell
+diag_file="$(mktemp)"
+set +e
+code="$( { http_get_status "${BASE_URL}/" 2> "$diag_file"; } )"
+rc=$?
+set -e
+diag="$(cat "$diag_file" 2>/dev/null || true)"
+rm -f "$diag_file" || true
+
+# Print diag first if any
+if [ -n "$diag" ]; then
+  echo "$diag"
+fi
 echo "GET / -> ${code}"
-# Accept 200 or 302 (redirect to login)
+
 if [ "$code" != "200" ] && [ "$code" != "302" ]; then
-  echo "[FAIL] root not reachable or unexpected status: ${code}"
-  exit 1
+  if echo "$diag" | grep -qi "Operation not permitted"; then
+    echo "[WARN] NETWORK_RESTRICTED: outbound connect blocked by environment policy (Errno 1)."
+    if [ "${OSK_HC_STRICT}" = "1" ]; then
+      echo "[FAIL] strict mode enabled; failing health_check due to unreachable root."
+      exit 1
+    else
+      echo "[OK] degrade mode: skipping http root failure (listen check still valid)."
+    fi
+  else
+    echo "[FAIL] root not reachable or unexpected status: ${code}"
+    exit 1
+  fi
 fi
 echo
 
