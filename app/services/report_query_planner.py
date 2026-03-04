@@ -106,7 +106,10 @@ def build_sql_plan_best_effort(spec: QuerySpec, dim_registry: Dict[str, Dict[str
     sql = f"""
 SELECT
   {", ".join(group_exprs)},
-  SUM(amount) AS amount
+  
+SUM(debit) AS period_debit,
+SUM(credit) AS period_credit
+
 FROM {base_table}
 WHERE {" AND ".join(where)}
 GROUP BY {", ".join(group_exprs)}
