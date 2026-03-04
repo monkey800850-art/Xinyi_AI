@@ -1,0 +1,1 @@
+layout/base template not found; will only patch hub.html behavior

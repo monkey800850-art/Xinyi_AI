@@ -45,6 +45,24 @@
     });
   }
   rebuildItemsFallback();
+  // Add requires badge + hide hidden rows (row-level)
+  Array.from(document.querySelectorAll("[data-hub-row='1']")).forEach(function(r){
+    var st = (r.dataset.hubStatus||"active");
+    if(st==="hidden"){ r.remove(); return; }
+    var req = r.dataset.hubRequires;
+    if(req){
+      var tag=document.createElement("span");
+      tag.textContent="需权限";
+      tag.style.marginLeft="8px";
+      tag.style.padding="2px 8px";
+      tag.style.border="1px solid #e0a800";
+      tag.style.borderRadius="999px";
+      tag.style.fontSize="12px";
+      tag.style.opacity="0.85";
+      r.appendChild(tag);
+    }
+  });
+
 
   // Sort groups + items (client-side, stable best-effort)
   var groupOrder = ["系统管理","报表","合并报表","税务","费用报销","固定资产","工资管理","其他"];
