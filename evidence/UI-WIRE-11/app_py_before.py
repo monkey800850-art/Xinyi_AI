@@ -5430,19 +5430,5 @@ def home():
 
 @app.route("/sys/module")
 def sys_module():
-    import json
-    try:
-        with open("app/modules_catalog.json", "r", encoding="utf-8") as f:
-            d = json.load(f)
-        g = (d.get("groups") or {}).get("系统管理") or {}
-        items = []
-        for it in (g.get("routes") or []):
-            if isinstance(it, dict): items.append(it)
-        for it in (g.get("templates") or []):
-            if isinstance(it, dict): items.append(it)
-        # hide hidden
-        items = [it for it in items if it.get("status") != "hidden"]
-    except Exception:
-        items = None
-    return render_template("sys_modules.html", sys_items=items)
+    return render_template("hub.html")
 

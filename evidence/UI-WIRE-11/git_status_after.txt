@@ -1,0 +1,21 @@
+ M app.py
+ M evidence/AUXDIM-FIELD-01/auxdim_patch_plan.json
+ M evidence/AUXDIM-FIELD-01/auxdim_patch_plan.md
+ M evidence/AUXDIM-FIELD-01/auxdim_struct_audit.json
+ M evidence/AUXDIM-FIELD-01/auxdim_struct_audit.md
+ M evidence/AUXDIM-FIELD-01/git_head_after.txt
+?? app/templates/sys_modules.html
+?? evidence/AUXDIM-FIELD-02/git_head_after.txt
+?? evidence/PAYROLL-FIELD-01/git_head_after.txt
+?? evidence/PAYROLL-FIELD-02/git_head_after.txt
+?? evidence/PAYROLL-FIELD-03/git_head_after.txt
+?? evidence/UI-WIRE-02/git_head_after.txt
+?? evidence/UI-WIRE-03/git_head_after.txt
+?? evidence/UI-WIRE-04/git_head_after.txt
+?? evidence/UI-WIRE-05/git_head_after.txt
+?? evidence/UI-WIRE-06/git_head_after.txt
+?? evidence/UI-WIRE-07/git_head_after.txt
+?? evidence/UI-WIRE-08/git_head_after.txt
+?? evidence/UI-WIRE-09/git_head_after.txt
+?? evidence/UI-WIRE-10/git_head_after.txt
+?? evidence/UI-WIRE-11/
