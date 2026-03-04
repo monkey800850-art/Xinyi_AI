@@ -97,7 +97,7 @@ def _init_file_logging(app_logger: logging.Logger) -> str:
     return log_path
 
 try:
-    from flask import Flask, jsonify, request, send_file, session, render_template, redirect
+    from flask import Flask, jsonify, request, send_file, session, render_template
 
     from sqlalchemy import text
     from werkzeug.exceptions import HTTPException
@@ -5418,10 +5418,3 @@ if __name__ == "__main__":
         sys.exit(cli_exit_code)
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=False)
-
-
-
-@app.route("/")
-def home():
-    return redirect("/hub")
-
