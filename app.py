@@ -15,6 +15,14 @@ from pathlib import Path
 from argparse import Namespace
 from datetime import date, datetime, timedelta, timezone
 
+
+# APP-BOOT-ORDER-01: ensure `app` exists before any @app.* decorators (for tooling/static inspection)
+try:
+    app  # type: ignore[name-defined]
+except Exception:
+# APP-BOOT-ORDER-01: reuse existing `app` (avoid re-creating Flask app)
+#     app = Flask(__name__)
+
 def _bootstrap_local_site_packages() -> None:
     project_root = Path(__file__).resolve().parent
     lib_root = project_root / "venv" / "lib"
@@ -688,7 +696,8 @@ def create_app() -> Flask:
             file=sys.stderr,
         )
 
-    app = Flask(__name__)
+# APP-BOOT-ORDER-01: reuse existing `app` (avoid re-creating Flask app)
+#     app = Flask(__name__)
 
     @app.route("/hub")
     def hub():
