@@ -5480,6 +5480,8 @@ from pathlib import Path as _Path
 import json as _json
 from flask import jsonify as _jsonify
 
+from app.services.report_query_planner import QuerySpec, build_sql_plan_best_effort
+
 @app.get("/api/tax/forms/latest")
 def api_tax_forms_latest():
     forms = sorted(_Path("artifacts").glob("tax_forms_*.json"))
@@ -5828,3 +5830,71 @@ def sys_payroll_run_vouchers_generate(run_id: int):
     except Exception:
         pass
     return redirect(f"/sys/payroll/runs/{run_id}/vouchers")
+
+
+@app.get("/reports/trial_balance/query")
+def trial_balance_query():
+    """
+    REPORTS-QUERY-01: Multi-dimension query spec endpoint (planner output).
+    This endpoint returns a SQL plan (best-effort) and does not require DB connectivity.
+    Query params:
+      - primary: subject|person|project|department|bank_account|...
+      - secondary: comma-separated dims
+      - filters: repeated params like subject=1001&subject=1002&department=SALES ...
+      - date_from/date_to: YYYY-MM-DD
+    """
+    primary = request.args.get("primary", "subject").strip()
+    secondary = [x.strip() for x in (request.args.get("secondary","").split(",")) if x.strip()]
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+
+    # collect multi-select filters: any key with multiple values
+    filters = {}
+    for k in request.args.keys():
+        if k in ("primary","secondary","date_from","date_to"):
+            continue
+        vals = request.args.getlist(k)
+        if vals:
+            filters[k] = vals
+
+    spec = QuerySpec(
+        report="trial_balance",
+        primary_dim=primary,
+        secondary_dims=secondary,
+        filters=filters,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    plan = build_sql_plan_best_effort(spec)
+    return jsonify({"query_spec": spec.__dict__, "plan": plan})
+
+
+@app.get("/reports/ledger/query")
+def ledger_query():
+    """
+    REPORTS-QUERY-01: Multi-dimension query spec endpoint (planner output) for ledger.
+    See /reports/trial_balance/query for param conventions.
+    """
+    primary = request.args.get("primary", "subject").strip()
+    secondary = [x.strip() for x in (request.args.get("secondary","").split(",")) if x.strip()]
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+
+    filters = {}
+    for k in request.args.keys():
+        if k in ("primary","secondary","date_from","date_to"):
+            continue
+        vals = request.args.getlist(k)
+        if vals:
+            filters[k] = vals
+
+    spec = QuerySpec(
+        report="ledger",
+        primary_dim=primary,
+        secondary_dims=secondary,
+        filters=filters,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    plan = build_sql_plan_best_effort(spec)
+    return jsonify({"query_spec": spec.__dict__, "plan": plan})
