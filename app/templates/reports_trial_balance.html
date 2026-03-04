@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <h2>余额表（多维度查询）</h2>
+    <p class="muted">主键 + 多级副键（一级/二级/三级…）+ 多选过滤；DB 不可用时展示查询计划（plan）。</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form id="qryForm">
+        <div class="grid">
+          <label>主键（primary）
+            <select id="primaryDim" name="primary"></select>
+          </label>
+
+          <label>副键（secondary，逗号分隔，按一级/二级/三级顺序）
+            <input id="secondaryDims" name="secondary" placeholder="例如：subject,department" />
+          </label>
+
+          <label>期间起（date_from）
+            <input name="date_from" placeholder="YYYY-MM-DD" />
+          </label>
+
+          <label>期间止（date_to）
+            <input name="date_to" placeholder="YYYY-MM-DD" />
+          </label>
+        </div>
+
+        <div class="grid">
+          <label>科目（subject，多选；可重复传参）
+            <input id="subjectMulti" placeholder="例如：6601,6602（逗号分隔）" />
+          </label>
+
+          <label>个人（person，多选）
+            <input id="personMulti" placeholder="例如：1,2,3" />
+          </label>
+
+          <label>项目（project，多选）
+            <input id="projectMulti" placeholder="例如：P001,P002" />
+          </label>
+
+          <label>部门（department，多选）
+            <input id="departmentMulti" placeholder="例如：HR,CEO" />
+          </label>
+
+          <label>银行账户（bank_account，多选）
+            <input id="bankMulti" placeholder="例如：BA001,BA002" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit">生成查询计划</button>
+          <button type="button" id="btnReset">重置</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="card-body">
+      <h3>查询计划（Explain / Plan）</h3>
+      <pre id="planOut" style="white-space:pre-wrap;"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  async function loadDims(){
+    const resp = await fetch("/api/reports/dimensions");
+    const data = await resp.json();
+    const sel = document.getElementById("primaryDim");
+    sel.innerHTML = "";
+    (data.dims || []).forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.key;
+      opt.textContent = d.label + " (" + d.key + ")";
+      sel.appendChild(opt);
+    });
+    // default primary = subject if exists
+    const hasSubject = (data.dims || []).some(d => d.key === "subject");
+    if (hasSubject) sel.value = "subject";
+  }
+
+  function addMulti(params, key, inputId){
+    const v = (document.getElementById(inputId).value || "").trim();
+    if (!v) return;
+    v.split(",").map(x => x.trim()).filter(Boolean).forEach(x => params.append(key, x));
+  }
+
+  async function runPlan(ev){
+    ev.preventDefault();
+    const form = document.getElementById("qryForm");
+    const fd = new FormData(form);
+    const params = new URLSearchParams();
+    for (const [k,v] of fd.entries()){
+      if (v && String(v).trim()) params.append(k, String(v).trim());
+    }
+    // multi-select filters (comma -> repeated params)
+    addMulti(params, "subject", "subjectMulti");
+    addMulti(params, "person", "personMulti");
+    addMulti(params, "project", "projectMulti");
+    addMulti(params, "department", "departmentMulti");
+    addMulti(params, "bank_account", "bankMulti");
+
+    const url = "/reports/trial_balance/query?" + params.toString();
+    const out = document.getElementById("planOut");
+    out.textContent = "Loading...\n" + url;
+
+    try{
+      const resp = await fetch(url);
+      const data = await resp.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    }catch(e){
+      out.textContent = "ERROR: " + (e && e.message ? e.message : String(e));
+    }
+  }
+
+  function reset(){
+    document.getElementById("qryForm").reset();
+    ["subjectMulti","personMulti","projectMulti","departmentMulti","bankMulti"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    document.getElementById("planOut").textContent = "";
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    loadDims().catch(()=>{});
+    document.getElementById("qryForm").addEventListener("submit", runPlan);
+    document.getElementById("btnReset").addEventListener("click", reset);
+  });
+})();
+</script>
+{% endblock %}

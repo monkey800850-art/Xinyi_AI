@@ -5480,7 +5480,7 @@ from pathlib import Path as _Path
 import json as _json
 from flask import jsonify as _jsonify
 
-from app.services.report_query_planner import QuerySpec, build_sql_plan_best_effort
+from app.services.report_query_planner import QuerySpec, build_sql_plan_best_effort, DEFAULT_DIM_REGISTRY
 
 @app.get("/api/tax/forms/latest")
 def api_tax_forms_latest():
@@ -5898,3 +5898,37 @@ def ledger_query():
     )
     plan = build_sql_plan_best_effort(spec)
     return jsonify({"query_spec": spec.__dict__, "plan": plan})
+
+
+@app.get("/api/reports/dimensions")
+def api_reports_dimensions():
+    """
+    REPORTS-QUERY-02: expose dimension registry for report query UI.
+    """
+    dims = []
+    for k, meta in DEFAULT_DIM_REGISTRY.items():
+        dims.append({"key": k, "label": meta.get("label", k), "expr": meta.get("expr", k)})
+    return jsonify({"dims": dims})
+
+
+@app.get("/reports/trial_balance")
+def reports_trial_balance():
+    """
+    REPORTS-QUERY-02: UI for trial balance multi-dimension query planner.
+    """
+    try:
+        return render_template("reports_trial_balance.html")
+    except Exception as e:
+        # DB-safe/templ-safe fallback
+        return f"trial_balance page render failed: {e}", 200
+
+
+@app.get("/reports/ledger")
+def reports_ledger():
+    """
+    REPORTS-QUERY-02: UI for ledger multi-dimension query planner.
+    """
+    try:
+        return render_template("reports_ledger.html")
+    except Exception as e:
+        return f"ledger page render failed: {e}", 200

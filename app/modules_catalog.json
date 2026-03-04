@@ -254,6 +254,20 @@
           "title": "Module",
           "key": "module",
           "path": "/hub#tpl-modules-reports-html"
+        },
+        {
+          "key": "reports.trial_balance.multi",
+          "title": "余额表（多维度查询）",
+          "path": "/reports/trial_balance",
+          "source": "route",
+          "status": "active"
+        },
+        {
+          "key": "reports.ledger.multi",
+          "title": "明细账（多维度查询）",
+          "path": "/reports/ledger",
+          "source": "route",
+          "status": "active"
         }
       ]
     },

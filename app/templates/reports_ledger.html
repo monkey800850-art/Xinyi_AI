@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <h2>明细账（多维度查询）</h2>
+    <p class="muted">主键 + 多级副键 + 多选过滤；当前展示查询计划（plan），DB 可用后再接真实查询。</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form id="qryFormLedger">
+        <div class="grid">
+          <label>主键（primary）
+            <select id="primaryDimLedger" name="primary"></select>
+          </label>
+
+          <label>副键（secondary，逗号分隔）
+            <input id="secondaryDimsLedger" name="secondary" placeholder="例如：subject,person,department" />
+          </label>
+
+          <label>期间起（date_from）
+            <input name="date_from" placeholder="YYYY-MM-DD" />
+          </label>
+
+          <label>期间止（date_to）
+            <input name="date_to" placeholder="YYYY-MM-DD" />
+          </label>
+        </div>
+
+        <div class="grid">
+          <label>科目（subject，多选）
+            <input id="subjectMultiLedger" placeholder="例如：1001,6601" />
+          </label>
+          <label>个人（person，多选）
+            <input id="personMultiLedger" placeholder="例如：1,2,3" />
+          </label>
+          <label>项目（project，多选）
+            <input id="projectMultiLedger" placeholder="例如：P001" />
+          </label>
+          <label>部门（department，多选）
+            <input id="departmentMultiLedger" placeholder="例如：HR" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit">生成查询计划</button>
+          <button type="button" id="btnResetLedger">重置</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="card-body">
+      <h3>查询计划（Explain / Plan）</h3>
+      <pre id="planOutLedger" style="white-space:pre-wrap;"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  async function loadDims(){
+    const resp = await fetch("/api/reports/dimensions");
+    const data = await resp.json();
+    const sel = document.getElementById("primaryDimLedger");
+    sel.innerHTML = "";
+    (data.dims || []).forEach(d => {
+      const opt = document.createElement("option");
+      opt.value = d.key;
+      opt.textContent = d.label + " (" + d.key + ")";
+      sel.appendChild(opt);
+    });
+    const hasSubject = (data.dims || []).some(d => d.key === "subject");
+    if (hasSubject) sel.value = "subject";
+  }
+
+  function addMulti(params, key, inputId){
+    const v = (document.getElementById(inputId).value || "").trim();
+    if (!v) return;
+    v.split(",").map(x => x.trim()).filter(Boolean).forEach(x => params.append(key, x));
+  }
+
+  async function runPlan(ev){
+    ev.preventDefault();
+    const form = document.getElementById("qryFormLedger");
+    const fd = new FormData(form);
+    const params = new URLSearchParams();
+    for (const [k,v] of fd.entries()){
+      if (v && String(v).trim()) params.append(k, String(v).trim());
+    }
+
+    addMulti(params, "subject", "subjectMultiLedger");
+    addMulti(params, "person", "personMultiLedger");
+    addMulti(params, "project", "projectMultiLedger");
+    addMulti(params, "department", "departmentMultiLedger");
+
+    const url = "/reports/ledger/query?" + params.toString();
+    const out = document.getElementById("planOutLedger");
+    out.textContent = "Loading...\n" + url;
+
+    try{
+      const resp = await fetch(url);
+      const data = await resp.json();
+      out.textContent = JSON.stringify(data, null, 2);
+    }catch(e){
+      out.textContent = "ERROR: " + (e && e.message ? e.message : String(e));
+    }
+  }
+
+  function reset(){
+    document.getElementById("qryFormLedger").reset();
+    ["subjectMultiLedger","personMultiLedger","projectMultiLedger","departmentMultiLedger"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    document.getElementById("planOutLedger").textContent = "";
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    loadDims().catch(()=>{});
+    document.getElementById("qryFormLedger").addEventListener("submit", runPlan);
+    document.getElementById("btnResetLedger").addEventListener("click", reset);
+  });
+})();
+</script>
+{% endblock %}
