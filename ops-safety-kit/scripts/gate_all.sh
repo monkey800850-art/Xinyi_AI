@@ -56,6 +56,8 @@ else
   echo "[SKIP] DB/service bound smoke disabled by profile"
 fi
 
+scripts/ops/check_no_tee_mask.sh
+
 echo "[OK] gate_all passed."
 
 # [UI-WIRE] catalog schema gate
