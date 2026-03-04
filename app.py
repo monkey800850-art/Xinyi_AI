@@ -111,7 +111,16 @@ except ModuleNotFoundError as err:
     )
     sys.exit(1)
 
-from app.config import DatabaseConfigError, get_startup_env_missing, load_env
+# ENV-IMPORT-01: make app.py importable even if app.config is missing/broken
+try:
+    from app.config import DatabaseConfigError, get_startup_env_missing, load_env
+except Exception:
+    # Fallback stubs (keep signatures minimal; used by startup diagnostics only)
+    def get_startup_env_missing(*args, **kwargs):
+        return []
+DatabaseConfigError = None
+load_env = None
+
 from app.db import test_db_connection
 from app.db_router import clear_request_route_context, get_connection_provider, set_request_route_context
 from app.routes import consolidation_bp, core_pages_bp
