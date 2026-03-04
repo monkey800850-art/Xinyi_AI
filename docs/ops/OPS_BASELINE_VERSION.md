@@ -33,6 +33,11 @@
 - audit: /tmp/xinyi_audit_<ts>/
 
 ## Window wake-up phrase
+```
+加载工程上下文：读取 project_state / gate_all / doctor / audit 生成的 INDEX.md；
+仓库 ~/Xinyi_AI，分支 main。
+按工程化三件套继续发 CLI 任务卡。
+```
 
 
 ## Daily operating procedure
