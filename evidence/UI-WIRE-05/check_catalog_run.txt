@@ -1,0 +1,11 @@
+mode=groups entries=17 bad=10
+BAD: ('module', 'missing field path', '系统管理', 'template')
+BAD: ('module', 'missing field path', '系统管理', 'template')
+BAD: ('module', 'missing field path', '其他', 'template')
+BAD: ('module', 'missing field path', '其他', 'template')
+BAD: ('module', 'missing field path', '费用报销', 'template')
+BAD: ('module', 'missing field path', '工资管理', 'template')
+BAD: ('module', 'missing field path', '税务', 'template')
+BAD: ('module', 'missing field path', '报表', 'template')
+BAD: ('module', 'missing field path', '合并报表', 'template')
+BAD: ('module', 'missing field path', '固定资产', 'template')

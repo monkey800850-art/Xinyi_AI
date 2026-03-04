@@ -1,0 +1,3 @@
+entries_seen= 17
+fields_added= 51
+normalized_written= app/modules_catalog.json

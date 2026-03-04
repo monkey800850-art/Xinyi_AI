@@ -22,17 +22,34 @@
       "routes": [
         {
           "path": "/hub",
-          "file": "app.py"
+          "file": "app.py",
+          "group": "系统管理",
+          "source": "route",
+          "status": "active",
+          "title": "Hub",
+          "key": "hub"
         }
       ],
       "templates": [
         {
           "template": "hub.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/hub.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/hub.html",
+          "group": "系统管理",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-hub-html"
         },
         {
           "template": "modules/system.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/system.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/system.html",
+          "group": "系统管理",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-system-html"
         }
       ]
     },
@@ -40,37 +57,79 @@
       "routes": [
         {
           "path": "/m/<name>",
-          "file": "app.py"
+          "file": "app.py",
+          "group": "其他",
+          "source": "route",
+          "status": "active",
+          "title": "<name>",
+          "key": "m___name_"
         },
         {
           "path": "/uploads/<path:name>",
-          "file": "venv/lib/python3.10/site-packages/flask/helpers.py"
+          "file": "venv/lib/python3.10/site-packages/flask/helpers.py",
+          "group": "其他",
+          "source": "route",
+          "status": "active",
+          "title": "<path:name>",
+          "key": "uploads___path_name_"
         },
         {
           "path": "/",
-          "file": "venv/lib/python3.10/site-packages/flask/ctx.py"
+          "file": "venv/lib/python3.10/site-packages/flask/ctx.py",
+          "group": "其他",
+          "source": "route",
+          "status": "active",
+          "title": "Module",
+          "key": "root"
         },
         {
           "path": "/",
-          "file": "venv/lib/python3.10/site-packages/flask/ctx.py"
+          "file": "venv/lib/python3.10/site-packages/flask/ctx.py",
+          "group": "其他",
+          "source": "route",
+          "status": "active",
+          "title": "Module",
+          "key": "root"
         },
         {
           "path": "/",
-          "file": "venv/lib/python3.10/site-packages/flask/sansio/scaffold.py"
+          "file": "venv/lib/python3.10/site-packages/flask/sansio/scaffold.py",
+          "group": "其他",
+          "source": "route",
+          "status": "active",
+          "title": "Module",
+          "key": "root"
         },
         {
           "path": "/",
-          "file": "venv/lib/python3.10/site-packages/flask/sansio/scaffold.py"
+          "file": "venv/lib/python3.10/site-packages/flask/sansio/scaffold.py",
+          "group": "其他",
+          "source": "route",
+          "status": "active",
+          "title": "Module",
+          "key": "root"
         }
       ],
       "templates": [
         {
           "template": "modules/others.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/others.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/others.html",
+          "group": "其他",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-others-html"
         },
         {
           "template": "modules/voucher.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/voucher.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/voucher.html",
+          "group": "其他",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-voucher-html"
         }
       ]
     },
@@ -79,7 +138,13 @@
       "templates": [
         {
           "template": "modules/expense.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/expense.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/expense.html",
+          "group": "费用报销",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-expense-html"
         }
       ]
     },
@@ -88,7 +153,13 @@
       "templates": [
         {
           "template": "modules/payroll.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/payroll.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/payroll.html",
+          "group": "工资管理",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-payroll-html"
         }
       ]
     },
@@ -97,7 +168,13 @@
       "templates": [
         {
           "template": "modules/tax.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/tax.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/tax.html",
+          "group": "税务",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-tax-html"
         }
       ]
     },
@@ -106,7 +183,13 @@
       "templates": [
         {
           "template": "modules/reports.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/reports.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/reports.html",
+          "group": "报表",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-reports-html"
         }
       ]
     },
@@ -115,7 +198,13 @@
       "templates": [
         {
           "template": "modules/consolidation.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/consolidation.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/consolidation.html",
+          "group": "合并报表",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-consolidation-html"
         }
       ]
     },
@@ -124,7 +213,13 @@
       "templates": [
         {
           "template": "modules/assets.html",
-          "file": "/home/x1560/Xinyi_AI/app/templates/modules/assets.html"
+          "file": "/home/x1560/Xinyi_AI/app/templates/modules/assets.html",
+          "group": "固定资产",
+          "source": "template",
+          "status": "stub",
+          "title": "Module",
+          "key": "module",
+          "path": "/hub#tpl-modules-assets-html"
         }
       ]
     }

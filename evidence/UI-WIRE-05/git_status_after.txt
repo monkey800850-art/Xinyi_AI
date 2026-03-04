@@ -1,0 +1,6 @@
+ M app/modules_catalog.json
+ M ops-safety-kit/scripts/gate_all.sh
+?? evidence/UI-WIRE-02/git_head_after.txt
+?? evidence/UI-WIRE-03/git_head_after.txt
+?? evidence/UI-WIRE-04/git_head_after.txt
+?? evidence/UI-WIRE-05/

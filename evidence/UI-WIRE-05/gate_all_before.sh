@@ -57,6 +57,3 @@ else
 fi
 
 echo "[OK] gate_all passed."
-
-# [UI-WIRE] catalog schema gate
-python3 scripts/ui/check_modules_catalog.py
