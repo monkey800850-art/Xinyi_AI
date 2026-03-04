@@ -1,0 +1,12 @@
+{
+  "metadata_pack_id": "taxpack-202603-4ab88bbf2d5a",
+  "original_format": "JSON",
+  "signature_verify_status": "not_applicable",
+  "archive_dir_path": "var/archives/tax/202603/vat",
+  "retention_years": 10,
+  "regulator_report_status": "not_submitted",
+  "source": {
+    "type": "tax_return_pack",
+    "path": "artifacts/tax_return_pack_202603_vat.json"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "pack_id": "taxpack-202603-4ab88bbf2d5a",
+  "tax_type": "VAT",
+  "period": "202603",
+  "generated_on": "2026-03-04",
+  "summary": "税务计提 2026-03-04",
+  "vat": {
+    "vat_payable": "7500.00",
+    "surtax_total": "900.00"
+  },
+  "attachments": {
+    "voucher_preview_path": "artifacts/tax_voucher_preview.json"
+  }
+}

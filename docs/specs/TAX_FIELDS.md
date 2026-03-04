@@ -27,3 +27,15 @@
 - tax_archives（电子档案元数据）
 - tax_archive_access_logs（借阅记录，系统算） :contentReference[oaicite:16]{index=16}
 
+
+---
+
+## 3. 申报包与凭证穿透口径（阶段性）
+本阶段不做真实税局报送，仅生成“申报数据包（JSON）”用于审计穿透与后续对接：
+
+- 申报包 VAT.vat_payable = 凭证行 `vat_payable` 的净贷方（贷 - 借）
+- 申报包 VAT.surtax_total = 凭证行 `surtax_payable` 的净贷方
+
+产物：
+- `artifacts/tax_return_pack_YYYYMM_vat.json`
+- `artifacts/tax_archive_manifest.json`
