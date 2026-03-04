@@ -178,7 +178,7 @@ function renderTreeLines(lines, total){
   const box = document.getElementById("treeLines");
   const t = document.getElementById("treeTotal");
   if (!box || !t) return;
-  t.textContent = "总计: " + fmtAmount(total);
+  t.textContent = "总计(期初借/贷,本期借/贷,期末借/贷): " + (total? (fmtAmount(total.opening_debit)+"/"+fmtAmount(total.opening_credit)+", "+fmtAmount(total.period_debit)+"/"+fmtAmount(total.period_credit)+", "+fmtAmount(total.closing_debit)+"/"+fmtAmount(total.closing_credit)) : "");
 
   if (!lines || !lines.length){
     box.innerHTML = "";
@@ -213,7 +213,19 @@ function renderTreeLines(lines, total){
     const icon = hasChildren ? (collapsed.has(pathStr) ? "▶" : "▼") : (isSub ? "└" : "•");
     const style = isSub ? "color:#666;" : "";
     const clickable = hasChildren ? "cursor:pointer; user-select:none;" : "";
-    const val = fmtAmount(l.value);
+    // REPORTS-QUERY-10: render vector amounts if present
+    const a = l.amounts || {};
+    const dir = (l.direction || "").toString();
+    const cols = [
+      dir,
+      fmtAmount(a.opening_debit),
+      fmtAmount(a.opening_credit),
+      fmtAmount(a.period_debit),
+      fmtAmount(a.period_credit),
+      fmtAmount(a.closing_debit),
+      fmtAmount(a.closing_credit),
+    ];
+
 
     html += "<div data-path='"+pathStr+"' data-kind='"+kind+"' style='"+style+clickable+"'>"
          + pad
@@ -310,6 +322,8 @@ async function executeQuery(buildParamsFn, outEl){
 
   });
 })();
+
+// REPORTS-QUERY-10
 </script>
 {% endblock %}
 

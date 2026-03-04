@@ -1,3 +1,5 @@
+from app.services.report_result_subtotals_vector import tree_to_lines_vector, overall_total_vector
+from app.services.report_result_tree_vector import rows_to_tree_vector
 from app.services.ledger_engine import compute_trial_balance_from_entries
 from app.services.ledger_entry_source import fetch_entries_best_effort
 from app.services.report_result_subtotals import tree_to_lines, overall_total
@@ -5905,6 +5907,20 @@ def trial_balance_query():
             run = run_plan(plan).__dict__
         except Exception as e:
             run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
+
+    # REPORTS-QUERY-10: vectorize tree/subtotals for accounting columns when engine rows are available
+    if mode == "engine" and engine and isinstance(engine.get("rows"), list):
+        try:
+            vtree = rows_to_tree_vector(engine["rows"], plan.get("group_by") or [])
+            vlines = tree_to_lines_vector(vtree)
+            vtotal = overall_total_vector(vlines)
+            # overwrite the generic tree payload (used by UI)
+            tree = vtree
+            tree_lines = vlines
+            tree_total = vtotal
+        except Exception as e:
+            engine.setdefault("warnings", []).append(f"vectorize_failed: {e}")
+
     return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "engine": engine, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None), "tree_lines": (tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[]))) if run else []), "tree_total": (overall_total(tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[])))) if run else 0)})
 
 
