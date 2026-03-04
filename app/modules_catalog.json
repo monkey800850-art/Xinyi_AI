@@ -216,6 +216,13 @@
           "path": "/sys/payroll/runs",
           "status": "active",
           "source": "route"
+        },
+        {
+          "key": "payroll_voucher_drafts",
+          "title": "工资凭证草稿",
+          "path": "/sys/payroll/runs",
+          "status": "active",
+          "source": "route"
         }
       ]
     },

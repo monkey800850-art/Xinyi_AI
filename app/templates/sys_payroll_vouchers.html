@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>工资凭证草稿</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; margin:18px;}
+.pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:inherit; margin-right:8px;}
+.card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
+.muted{opacity:.7;}
+table{border-collapse:collapse; width:100%; margin-top:12px;}
+th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
+th{background:#fafafa;}
+.kv{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px;}
+</style></head>
+<body>
+  <div>
+    <a class="pill" href="/sys/payroll/runs">返回 批次列表</a>
+    <a class="pill" href="/sys/payroll/runs/{{ run_id }}/vouchers/generate">生成草稿</a>
+    <a class="pill" href="/sys/module">系统管理</a>
+    <a class="pill" href="/hub">Hub</a>
+  </div>
+
+  <h2>工资凭证草稿：Run #{{ run_id }}</h2>
+
+  {% if error %}
+    <div class="muted">DB 未就绪：<span class="kv">{{ error }}</span></div>
+  {% endif %}
+
+  <div class="card">
+    <table>
+      <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>借方合计</th><th>贷方合计</th><th>备注</th></tr></thead>
+      <tbody>
+      {% if rows %}
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.voucher_type }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.total_debit }}</td>
+            <td>{{ r.total_credit }}</td>
+            <td class="muted">{{ r.note }}</td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr class="muted"><td colspan="6">暂无草稿（可点击“生成草稿”）。</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+    <div class="muted" style="margin-top:10px;">
+      本页为草稿层：不入账、不生成正式凭证号；下一步将接入总账凭证表与权限/审批流。
+    </div>
+  </div>
+</body></html>

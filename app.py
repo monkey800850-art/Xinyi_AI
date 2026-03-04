@@ -5650,3 +5650,88 @@ def sys_payroll_run_generate(run_id: int):
         # fallback to list page with error visible via query
         return redirect("/sys/payroll/runs?q=")
     return redirect(f"/sys/payroll/runs/{run_id}")
+
+
+
+@app.route("/sys/payroll/runs/<int:run_id>/vouchers")
+def sys_payroll_run_vouchers(run_id: int):
+    rows=[]
+    error=None
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+        res=db.session.execute(sa.text(
+            "SELECT id, voucher_type, status, total_debit, total_credit, note "
+            "FROM payroll_voucher_drafts WHERE run_id=:rid ORDER BY id ASC"
+        ), {"rid": run_id}).mappings().all()
+        class R: pass
+        for r in res:
+            o=R()
+            for k,v in r.items(): setattr(o,k,v)
+            rows.append(o)
+    except Exception as e:
+        error=str(e)
+    return render_template("sys_payroll_vouchers.html", run_id=run_id, rows=rows, error=error)
+
+
+@app.route("/sys/payroll/runs/<int:run_id>/vouchers/generate")
+def sys_payroll_run_vouchers_generate(run_id: int):
+    # Best-effort: if db not ready, just redirect back
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+        import json
+
+        # clear old drafts for idempotency
+        db.session.execute(sa.text("DELETE FROM payroll_voucher_drafts WHERE run_id=:rid"), {"rid": run_id})
+
+        # totals from run_lines
+        totals=db.session.execute(sa.text(
+            "SELECT "
+            "COALESCE(SUM(gross_pay),0) AS total_gross, "
+            "COALESCE(SUM(total_deductions),0) AS total_ded, "
+            "COALESCE(SUM(net_pay),0) AS total_net "
+            "FROM payroll_run_lines WHERE run_id=:rid"
+        ), {"rid": run_id}).mappings().first()
+
+        total_gross=float(totals["total_gross"])
+        total_net=float(totals["total_net"])
+
+        # minimal policy mapping snapshot (placeholders)
+        policy = {
+            "expense_account": "6001-工资费用(placeholder)",
+            "payable_account": "2211-应付职工薪酬(placeholder)",
+            "bank_account": "1002-银行存款(placeholder)"
+        }
+
+        # accrual voucher lines
+        accrual_lines = [
+            {"dc":"D","account":policy["expense_account"],"amount":total_gross,"memo":"计提工资"},
+            {"dc":"C","account":policy["payable_account"],"amount":total_gross,"memo":"应付职工薪酬"},
+        ]
+        # payment voucher lines
+        payment_lines = [
+            {"dc":"D","account":policy["payable_account"],"amount":total_net,"memo":"发放工资"},
+            {"dc":"C","account":policy["bank_account"],"amount":total_net,"memo":"银行代发"},
+        ]
+
+        def ins(vtype, lines, note):
+            td=sum(x["amount"] for x in lines if x["dc"]=="D")
+            tc=sum(x["amount"] for x in lines if x["dc"]=="C")
+            db.session.execute(sa.text(
+                "INSERT INTO payroll_voucher_drafts (run_id, voucher_type, status, total_debit, total_credit, accounting_policy_json, lines_json, note) "
+                "VALUES (:rid,:vt,'draft',:td,:tc,:pj,:lj,:note)"
+            ), {
+                "rid": run_id, "vt": vtype, "td": td, "tc": tc,
+                "pj": json.dumps(policy, ensure_ascii=False),
+                "lj": json.dumps(lines, ensure_ascii=False),
+                "note": note
+            })
+
+        ins("accrual", accrual_lines, "工资计提（草稿）")
+        ins("payment", payment_lines, "工资发放（草稿）")
+
+        db.session.commit()
+    except Exception:
+        pass
+    return redirect(f"/sys/payroll/runs/{run_id}/vouchers")
