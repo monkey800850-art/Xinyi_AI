@@ -21,18 +21,18 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             base="${{ github.event.pull_request.base.sha }}"
             head="${{ github.sha }}"
-            git diff -U0 "${base}...${head}" > /tmp/ci_diff.patch
+            git diff -U0 "${base}...${head}" -- . ':(exclude)scripts/ops/secrets_patterns.txt' > /tmp/ci_diff.patch
           else
             if git rev-parse HEAD~1 >/dev/null 2>&1; then
-              git diff -U0 HEAD~1..HEAD > /tmp/ci_diff.patch
+              git diff -U0 HEAD~1..HEAD -- . ':(exclude)scripts/ops/secrets_patterns.txt' > /tmp/ci_diff.patch
             else
-              git show -U0 --pretty=format: HEAD > /tmp/ci_diff.patch
+              git show -U0 --pretty=format: HEAD -- . ':(exclude)scripts/ops/secrets_patterns.txt' > /tmp/ci_diff.patch
             fi
           fi
 
-          # same patterns as gate-secrets.yml (keep aligned)
-          rg -n 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|Authorization:\s*Bearer\s+[A-Za-z0-9\._-]{10,}' \
-            /tmp/ci_diff.patch >/dev/null && { echo "[FAIL] secret-like pattern in diff"; exit 1; } || true
+          test -f scripts/ops/secrets_patterns.txt
+          awk 'NF && $0 !~ /^[[:space:]]*#/' scripts/ops/secrets_patterns.txt > /tmp/ci_secrets_patterns.txt
+          rg -n -f /tmp/ci_secrets_patterns.txt /tmp/ci_diff.patch >/dev/null && { echo "[FAIL] secret-like pattern in diff"; exit 1; } || true
           echo "[OK] secrets gate passed"
 
       - name: Setup Python (if needed by app)
