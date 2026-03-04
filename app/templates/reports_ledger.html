@@ -175,3 +175,13 @@ async function executeQuery(buildParamsFn, outEl){
 })();
 </script>
 {% endblock %}
+
+function renderTree(node, depth){
+  let html=""
+  for(const k in node){
+     const n=node[k]
+     html+="<div style='margin-left:"+ (depth*20) +"px'>"+k+" : "+n._value+"</div>"
+     html+=renderTree(n._children,depth+1)
+  }
+  return html
+}

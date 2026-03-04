@@ -1,3 +1,4 @@
+from app.services.report_result_tree import rows_to_tree
 import hashlib
 import io
 import os
@@ -5874,7 +5875,7 @@ def trial_balance_query():
             run = run_plan(plan).__dict__
         except Exception as e:
             run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
-    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run})
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None)})
 
 
 @app.get("/reports/ledger/query")
@@ -5913,7 +5914,7 @@ def ledger_query():
             run = run_plan(plan).__dict__
         except Exception as e:
             run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
-    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run})
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None)})
 
 
 @app.get("/api/reports/dimensions")
