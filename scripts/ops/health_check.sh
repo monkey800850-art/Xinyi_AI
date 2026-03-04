@@ -2,59 +2,100 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$ROOT_DIR"
+cd "${ROOT_DIR}"
 
-echo "=== git status -sb ==="
-git status -sb
+HOST="${HOST:-127.0.0.1}"
+PORT="${PORT:-5000}"
+BASE_URL="${BASE_URL:-http://${HOST}:${PORT}}"
+LOG_PATH_HINT="${LOG_PATH_HINT:-/tmp/xinyi_app_500.log}"
 
-echo
-echo "=== untracked by top-level dir ==="
-git status --porcelain=v1 -uall | awk '
-BEGIN {
-  dirs["app/"]=0; dirs["tests/"]=0; dirs["migrations/"]=0;
-  dirs["templates/"]=0; dirs["static/"]=0; dirs["docs/"]=0;
-  dirs["scripts/"]=0; dirs["other"]=0;
+fail() { echo "[FAIL] $*"; exit 1; }
+warn() { echo "[WARN] $*"; }
+ok()   { echo "[OK] $*"; }
+
+http_status() {
+  local url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl --noproxy '*' -sS -o /dev/null -w '%{http_code}' --max-time 3 "${url}" || echo "000"
+    return
+  fi
+
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$url" <<'PY'
+import sys
+import socket
+from urllib.parse import urlparse
+
+raw = sys.argv[1]
+u = urlparse(raw)
+host = u.hostname or "127.0.0.1"
+port = u.port or (443 if u.scheme == "https" else 80)
+path = (u.path or "/") + (("?" + u.query) if u.query else "")
+
+try:
+    with socket.create_connection((host, port), timeout=3) as s:
+        req = f"GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
+        s.sendall(req.encode("ascii", "ignore"))
+        line = b""
+        while not line.endswith(b"\r\n"):
+            chunk = s.recv(1)
+            if not chunk:
+                break
+            line += chunk
+        parts = line.decode("iso-8859-1", "replace").strip().split()
+        if len(parts) >= 2 and parts[1].isdigit():
+            print(parts[1])
+        else:
+            print("000")
+except Exception:
+    print("000")
+PY
+    return
+  fi
+
+  echo "000"
 }
-/^\?\? / {
-  path=substr($0,4)
-  if (index(path,"app/")==1) dirs["app/"]++;
-  else if (index(path,"tests/")==1) dirs["tests/"]++;
-  else if (index(path,"migrations/")==1) dirs["migrations/"]++;
-  else if (index(path,"templates/")==1) dirs["templates/"]++;
-  else if (index(path,"static/")==1) dirs["static/"]++;
-  else if (index(path,"docs/")==1) dirs["docs/"]++;
-  else if (index(path,"scripts/")==1) dirs["scripts/"]++;
-  else dirs["other"]++;
-}
-END {
-  printf("app/: %d\n", dirs["app/"]);
-  printf("tests/: %d\n", dirs["tests/"]);
-  printf("migrations/: %d\n", dirs["migrations/"]);
-  printf("templates/: %d\n", dirs["templates/"]);
-  printf("static/: %d\n", dirs["static/"]);
-  printf("docs/: %d\n", dirs["docs/"]);
-  printf("scripts/: %d\n", dirs["scripts/"]);
-  printf("other: %d\n", dirs["other"]);
-}'
 
-echo
-echo "=== abnormal file scan ==="
-zone_count="$(find . -type f -name '*:Zone.Identifier' | wc -l | tr -d ' ')"
-dir_count="$(find . -maxdepth 2 -type d \( -name '_selfcheck' -o -name '_health' \) | wc -l | tr -d ' ')"
-mapfile -t colon_files < <(find . -name '*:*' | grep -Ev '^\./https?://')
-colon_count="${#colon_files[@]}"
+echo "== health_check =="
+date '+%Y-%m-%d %H:%M (%z)'
+echo "pwd=$(pwd)"
+echo "git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+echo "git_head=$(git rev-parse --short HEAD 2>/dev/null || true)"
+echo ""
 
-echo "zone_identifier_count=${zone_count}"
-echo "diagnostic_dir_count=${dir_count}"
-echo "colon_filename_count=${colon_count}"
-echo "colon_filename_sample(top20):"
-if (( colon_count > 0 )); then
-  printf '%s\n' "${colon_files[@]}" | head -n 20
+echo "== listen check (:${PORT}) =="
+if command -v ss >/dev/null 2>&1; then
+  ss -ltnp | grep -E ":${PORT}\\b" || warn "ss: not listening on :${PORT}"
+elif command -v netstat >/dev/null 2>&1; then
+  netstat -ltnp 2>/dev/null | grep -E ":${PORT}\\b" || warn "netstat: not listening on :${PORT}"
+elif command -v lsof >/dev/null 2>&1; then
+  lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ":${PORT}\\b" || warn "lsof: not listening on :${PORT}"
 else
-  echo "(none)"
+  warn "ss/netstat/lsof not found; skip listen check."
 fi
+echo ""
 
-if (( zone_count > 0 || dir_count > 0 || colon_count > 0 )); then
-  exit 2
+echo "== http root =="
+ROOT_STATUS="$(http_status "${BASE_URL}/")"
+echo "GET / -> ${ROOT_STATUS}"
+[[ "${ROOT_STATUS}" =~ ^(200|302|401|403)$ ]] || fail "root not reachable or unexpected status: ${ROOT_STATUS}"
+echo ""
+
+echo "== api /api/system/users (reachable check) =="
+USERS_STATUS="$(http_status "${BASE_URL}/api/system/users")"
+echo "GET /api/system/users -> ${USERS_STATUS}"
+[[ "${USERS_STATUS}" =~ ^(200|401|403)$ ]] || fail "users endpoint not reachable or unexpected status: ${USERS_STATUS}"
+echo ""
+
+echo "== log path hint =="
+echo "LOG_PATH_HINT=${LOG_PATH_HINT}"
+if [[ -f "${LOG_PATH_HINT}" ]]; then
+  ok "log file exists: ${LOG_PATH_HINT}"
+  echo "-- tail(50) --"
+  tail -n 50 "${LOG_PATH_HINT}" || true
+else
+  warn "log file not found at hint path (this may be OK if logging config differs): ${LOG_PATH_HINT}"
 fi
-exit 0
+echo ""
+
+ok "health_check completed."
