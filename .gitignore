@@ -70,3 +70,6 @@ var/run/ops.env
 # runtime artifacts
 *.pid
 /tmp/
+
+# Task evidence (generated locally)
+evidence/**
