@@ -1,0 +1,505 @@
+{
+  "summary": {
+    "spec_count": 60,
+    "model_count": 1,
+    "db_count": 84,
+    "missing_in_model_count": 60,
+    "missing_in_db_count": 57,
+    "mismatch_count": 1
+  },
+  "missing_in_model": [
+    "absent_days",
+    "annual_bonus_separate_tax_flag",
+    "annual_leave_balance",
+    "attendance_bonus",
+    "attendance_days",
+    "bank_account_no",
+    "bank_branch_info",
+    "base_salary",
+    "commission",
+    "cost_center_code",
+    "current_withholding_tax",
+    "department_id",
+    "employee_no",
+    "employer_social_total",
+    "employment_type",
+    "fixed_performance",
+    "heat_allowance",
+    "hire_date",
+    "housing_fund_base",
+    "id_card_no",
+    "injury_base",
+    "job_grade",
+    "late_early_count",
+    "maternity_base",
+    "medical_base",
+    "name",
+    "ot_hours_holiday",
+    "ot_hours_weekday",
+    "ot_hours_weekend",
+    "other_adjustment",
+    "overtime_pay",
+    "pay_batch_no",
+    "pay_status",
+    "payable_days",
+    "payroll_payable_subject",
+    "pension_base",
+    "performance_bonus",
+    "personal_leave_hours",
+    "position_allowance",
+    "quick_deduction",
+    "seniority_pay",
+    "sick_leave_hours",
+    "social_housing_payable_subject",
+    "social_housing_rate",
+    "social_security_city",
+    "tax_payable_subject",
+    "tax_rate",
+    "tax_residency",
+    "termination_date",
+    "unemployment_base",
+    "voucher_gen_status",
+    "voucher_no",
+    "work_location",
+    "ytd_income",
+    "ytd_other_legal_deduction",
+    "ytd_social_housing_deduction",
+    "ytd_special_additional_deduction",
+    "ytd_standard_deduction",
+    "ytd_tax_exempt_income",
+    "ytd_taxable_income"
+  ],
+  "missing_in_db": [
+    "annual_bonus_separate_tax_flag",
+    "annual_leave_balance",
+    "attendance_bonus",
+    "bank_account_no",
+    "bank_branch_info",
+    "base_salary",
+    "commission",
+    "cost_center_code",
+    "current_withholding_tax",
+    "department_id",
+    "employee_no",
+    "employer_social_total",
+    "employment_type",
+    "fixed_performance",
+    "heat_allowance",
+    "hire_date",
+    "housing_fund_base",
+    "id_card_no",
+    "injury_base",
+    "job_grade",
+    "late_early_count",
+    "maternity_base",
+    "medical_base",
+    "name",
+    "ot_hours_holiday",
+    "ot_hours_weekday",
+    "ot_hours_weekend",
+    "other_adjustment",
+    "overtime_pay",
+    "pay_batch_no",
+    "pay_status",
+    "payable_days",
+    "payroll_payable_subject",
+    "pension_base",
+    "performance_bonus",
+    "personal_leave_hours",
+    "position_allowance",
+    "quick_deduction",
+    "seniority_pay",
+    "sick_leave_hours",
+    "social_housing_payable_subject",
+    "social_housing_rate",
+    "social_security_city",
+    "tax_payable_subject",
+    "tax_residency",
+    "termination_date",
+    "unemployment_base",
+    "voucher_gen_status",
+    "voucher_no",
+    "work_location",
+    "ytd_income",
+    "ytd_other_legal_deduction",
+    "ytd_social_housing_deduction",
+    "ytd_special_additional_deduction",
+    "ytd_standard_deduction",
+    "ytd_tax_exempt_income",
+    "ytd_taxable_income"
+  ],
+  "mismatch": [
+    {
+      "spec": "bank_account_no",
+      "maybe_db": [
+        "bank_account"
+      ]
+    }
+  ],
+  "samples": {
+    "model_fields_sample": [
+      "foo"
+    ],
+    "db_fields_sample": [
+      "absent_days",
+      "accounting_amount",
+      "alert_type",
+      "amount",
+      "attendance_days",
+      "attendance_ref",
+      "bank_account",
+      "batch_id",
+      "batch_no",
+      "bonus_amount",
+      "book_id",
+      "buyer_name",
+      "calc_version",
+      "category",
+      "city",
+      "created_at",
+      "created_by",
+      "declaration_code",
+      "deduction_amount",
+      "department",
+      "diff_amount",
+      "effective_from",
+      "effective_to",
+      "employee_id",
+      "employee_name",
+      "expression",
+      "file_name",
+      "gross_amount",
+      "housing_base_max",
+      "housing_base_min",
+      "housing_fund",
+      "housing_rate",
+      "id",
+      "import_hash",
+      "invoice_code",
+      "invoice_date",
+      "invoice_no",
+      "is_enabled",
+      "locked_at",
+      "locked_by",
+      "message",
+      "net_amount",
+      "note",
+      "overtime_amount",
+      "paid_at",
+      "pay_amount",
+      "payment_request_id",
+      "payment_status",
+      "period",
+      "rate",
+      "reason_code",
+      "reduction_rate",
+      "reduction_type",
+      "ref_id",
+      "ref_type",
+      "region",
+      "remark",
+      "seller_name",
+      "severity",
+      "slip_id",
+      "snapshot_json",
+      "social_base_max",
+      "social_base_min",
+      "social_insurance",
+      "social_rate",
+      "source_file",
+      "source_key",
+      "source_type",
+      "status",
+      "tax_amount",
+      "tax_method",
+      "tax_rate",
+      "tax_subject",
+      "tax_type",
+      "taxable_base",
+      "total_amount",
+      "total_count",
+      "updated_at",
+      "verification_message",
+      "verification_status"
+    ]
+  },
+  "evidence": {
+    "model_evidence": {
+      "foo": [
+        "scripts/payroll/audit_payroll_fields_struct.py"
+      ]
+    },
+    "db_evidence": {
+      "total_count": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "pay_amount": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "housing_rate": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "file_name": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "batch_id": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "social_rate": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "status": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "book_id": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "ytd_tax_withheld": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "created_at": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "social_base_min": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "employee_name": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "id": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "bank_account": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "total_amount": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "slip_id": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "tax_method": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "updated_at": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "created_by": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "housing_base_min": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "employee_id": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "housing_base_max": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "city": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "social_base_max": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "batch_no": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "period": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py",
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "ytd_taxable_base": [
+        "migrations/versions/20260303_000044_payroll_enhancements.py"
+      ],
+      "amount": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "effective_to": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "reduction_rate": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "seller_name": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "severity": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "reduction_type": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "region": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "source_file": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "ref_id": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "rate": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "import_hash": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "alert_type": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "message": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "is_enabled": [
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "invoice_no": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "tax_rate": [
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000036_consolidation_parameters_tax_rate.py"
+      ],
+      "tax_amount": [
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py",
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "effective_from": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "invoice_code": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "buyer_name": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "category": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "ref_type": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "invoice_date": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "tax_type": [
+        "migrations/versions/20260227_000011_tax_module.py",
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "note": [
+        "migrations/versions/20260227_000011_tax_module.py"
+      ],
+      "housing_fund": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "locked_at": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "attendance_ref": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "department": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "net_amount": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "overtime_amount": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "deduction_amount": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "taxable_base": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "social_insurance": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "bonus_amount": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "absent_days": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "snapshot_json": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "calc_version": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "gross_amount": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "attendance_days": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "locked_by": [
+        "migrations/versions/20260303_000042_payroll_mvp.py"
+      ],
+      "verified_at": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "source_key": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "tax_subject": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "remark": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "declaration_code": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "source_type": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "reason_code": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "verification_status": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "worksheet_cell": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "verification_message": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "diff_amount": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "accounting_amount": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "expression": [
+        "migrations/versions/20260303_000045_tax_enhancements.py"
+      ],
+      "payment_status": [
+        "migrations/versions/20260303_000043_payroll_payment_link_fields.py"
+      ],
+      "paid_at": [
+        "migrations/versions/20260303_000043_payroll_payment_link_fields.py"
+      ],
+      "payment_request_id": [
+        "migrations/versions/20260303_000043_payroll_payment_link_fields.py"
+      ]
+    }
+  }
+}
