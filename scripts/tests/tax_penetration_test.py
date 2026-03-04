@@ -116,3 +116,102 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# ---- DB wiring (optional) -----------------------------------------------------
+import os, json as _json
+import pathlib
+from datetime import date as _date, datetime as _dt
+
+def _load_map() -> dict:
+    mp = pathlib.Path("app/config/tax_voucher_map.json")
+    return _json.loads(mp.read_text(encoding="utf-8"))
+
+def build_voucher_payload(vat_payable: Decimal, surtax_total: Decimal) -> dict:
+    mp = _load_map()
+    lines = build_expected_voucher(vat_payable, surtax_total)
+    return {
+        "source_type": mp["voucher_source_type"],
+        "voucher_date": _date.today().isoformat(),
+        "summary": f'{mp["voucher_summary_prefix"]} { _date.today().isoformat() }',
+        "lines": [
+            {"subject_code": sub, "debit": str(dr), "credit": str(cr)}
+            for sub, dr, cr in lines
+        ]
+    }
+
+def write_preview(payload: dict) -> str:
+    out = pathlib.Path("artifacts/tax_voucher_preview.json")
+    out.write_text(_json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return str(out)
+
+def main_db_wire() -> None:
+    # Always create preview artifact
+    out = [VatInvoice(D("100000.00"), D("13000.00"), D("0.13"), "normal", "n/a", "taxable")]
+    inn = [
+        VatInvoice(D("50000.00"), D("6500.00"), D("0.13"), "normal", "certified", "deductible", transfer_out=D("0.00")),
+        VatInvoice(D("0.00"), D("0.00"), D("0.00"), "normal", "certified", "deductible", transfer_out=D("1000.00")),
+    ]
+    vat = calc_vat(inn, out)
+    surtax = calc_surtax(vat["vat_payable"], {"city": D("0.07"), "edu": D("0.03"), "local_edu": D("0.02")})
+    payload = build_voucher_payload(vat["vat_payable"], surtax["total"])
+    preview_path = write_preview(payload)
+    print(f"[preview] wrote {preview_path}")
+
+    # Optional DB write (requires mysqlclient/pymysql or your existing DB layer; keep portable)
+    # We only attempt if env TAX_GL_WRITE=1 and pymysql exists.
+    if os.environ.get("TAX_GL_WRITE", "0") != "1":
+        print("[db] TAX_GL_WRITE!=1, skip db write.")
+        return
+    try:
+        import pymysql  # type: ignore
+    except Exception as e:
+        print(f"[db] pymysql missing, skip db write. err={e}")
+        return
+
+    db = {
+        "host": os.environ.get("DB_HOST","127.0.0.1"),
+        "port": int(os.environ.get("DB_PORT","3306")),
+        "user": os.environ.get("DB_USER","root"),
+        "password": os.environ.get("DB_PASSWORD",""),
+        "database": os.environ.get("DB_NAME","xinyi_ai"),
+        "charset": "utf8mb4",
+        "autocommit": False,
+    }
+    print(f"[db] connecting {db['host']}:{db['port']}/{db['database']} user={db['user']}")
+    conn = pymysql.connect(**db)
+    try:
+        with conn.cursor() as cur:
+            # Minimal insert: assumes gl_vouchers/gl_voucher_entries exist.
+            # You may need to adapt column names; we keep it best-effort and fail-fast.
+            cur.execute(
+                "INSERT INTO gl_vouchers (ledger_id, voucher_date, source_type, source_id, status, created_at) "
+                "VALUES (%s,%s,%s,%s,%s,NOW())",
+                (1, payload["voucher_date"], payload["source_type"], 0, "posted"),
+            )
+            voucher_id = cur.lastrowid
+            line_no = 1
+            for ln in payload["lines"]:
+                # subject lookup by code
+                cur.execute("SELECT id FROM gl_subjects WHERE ledger_id=%s AND code=%s", (1, ln["subject_code"]))
+                row = cur.fetchone()
+                if not row:
+                    raise RuntimeError(f"subject code not found: {ln['subject_code']}")
+                subject_id = row[0]
+                cur.execute(
+                    "INSERT INTO gl_voucher_entries (voucher_id, line_no, subject_id, summary, debit_amount, credit_amount, created_at) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,NOW())",
+                    (voucher_id, line_no, subject_id, payload["summary"], ln["debit"], ln["credit"])
+                )
+                line_no += 1
+        conn.commit()
+        print(f"[db] wrote voucher_id={voucher_id}")
+    finally:
+        conn.close()
+
+# Execute DB wire in addition to existing main
+if __name__ == "__main__":
+    try:
+        main_db_wire()
+    except Exception as e:
+        print(f"[wire] FAIL: {e}")

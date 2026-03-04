@@ -1,0 +1,8 @@
+{
+  "vat_payable_subject_code": "vat_payable",
+  "vat_expense_subject_code": "tax_expense_vat",
+  "surtax_payable_subject_code": "surtax_payable",
+  "surtax_expense_subject_code": "tax_expense_surtax",
+  "voucher_source_type": "tax",
+  "voucher_summary_prefix": "税务计提"
+}

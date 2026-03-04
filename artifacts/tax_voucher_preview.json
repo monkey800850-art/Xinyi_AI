@@ -1,0 +1,27 @@
+{
+  "source_type": "tax",
+  "voucher_date": "2026-03-04",
+  "summary": "税务计提 2026-03-04",
+  "lines": [
+    {
+      "subject_code": "tax_expense_vat",
+      "debit": "7500.00",
+      "credit": "0.00"
+    },
+    {
+      "subject_code": "vat_payable",
+      "debit": "0.00",
+      "credit": "7500.00"
+    },
+    {
+      "subject_code": "tax_expense_surtax",
+      "debit": "900.00",
+      "credit": "0.00"
+    },
+    {
+      "subject_code": "surtax_payable",
+      "debit": "0.00",
+      "credit": "900.00"
+    }
+  ]
+}
