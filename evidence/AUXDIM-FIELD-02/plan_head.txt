@@ -1,0 +1,21 @@
+# AUXDIM-FIELD-01 补充完善计划（Patch Plan）
+
+## aux_parties  <- 单位(客户/供应商) (source=doc)
+- missing_in_db: 0
+- missing_in_model: 0
+
+## aux_persons  <- 个人(员工/往来主体) (source=doc)
+- missing_in_db: 0
+- missing_in_model: 0
+
+## aux_bank_accounts  <- 银行账户 (source=doc)
+- missing_in_db: 0
+- missing_in_model: 0
+
+## aux_projects  <- 项目 (source=assumption)
+- missing_in_db: 0
+- missing_in_model: 0
+
+## Notes
+- 本卡仅生成补充完善计划，不做迁移/建模落库。下一卡 AUXDIM-FIELD-02 执行落地（新表+模型+最小CRUD）。
+- 项目维度字段为 assumption，可用你的项目字段规范替换后再落地。
