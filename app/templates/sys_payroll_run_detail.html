@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>批次明细</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; margin:18px;}
+.pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:inherit; margin-right:8px;}
+.card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
+.muted{opacity:.7;}
+table{border-collapse:collapse; width:100%; margin-top:12px;}
+th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
+th{background:#fafafa;}
+.kv{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px;}
+</style></head>
+<body>
+  <div>
+    <a class="pill" href="/sys/payroll/runs">返回 批次列表</a>
+    <a class="pill" href="/sys/payroll/runs/{{ run_id }}/generate">重新生成明细</a>
+    <a class="pill" href="/sys/module">返回 系统管理</a>
+  </div>
+
+  <h2>批次明细：#{{ run_id }}</h2>
+  {% if error %}
+    <div class="muted">DB 未就绪：<span class="kv">{{ error }}</span></div>
+  {% endif %}
+
+  <div class="card">
+    <table>
+      <thead><tr><th>员工ID</th><th>应发</th><th>扣款</th><th>实发</th></tr></thead>
+      <tbody>
+      {% if rows %}
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.employee_id }}</td>
+            <td>{{ r.gross_pay }}</td>
+            <td>{{ r.total_deductions }}</td>
+            <td>{{ r.net_pay }}</td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr class="muted"><td colspan="4">暂无明细（请先生成）。</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</body></html>

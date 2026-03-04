@@ -202,6 +202,20 @@
           "title": "Module",
           "key": "module",
           "path": "/hub#tpl-modules-payroll-html"
+        },
+        {
+          "key": "payroll_employees",
+          "title": "员工",
+          "path": "/sys/payroll/employees",
+          "status": "active",
+          "source": "route"
+        },
+        {
+          "key": "payroll_runs",
+          "title": "发薪批次",
+          "path": "/sys/payroll/runs",
+          "status": "active",
+          "source": "route"
         }
       ]
     },

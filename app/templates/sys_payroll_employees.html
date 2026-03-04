@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>工资管理-员工</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; margin:18px;}
+.pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:inherit; margin-right:8px;}
+.card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
+.muted{opacity:.7;}
+table{border-collapse:collapse; width:100%; margin-top:12px;}
+th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
+th{background:#fafafa;}
+input{padding:8px 10px; border:1px solid #ddd; border-radius:10px; width:320px; max-width:70vw;}
+button{padding:8px 12px; border:1px solid #ddd; border-radius:10px; background:#fff;}
+.kv{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px;}
+</style></head>
+<body>
+  <div>
+    <a class="pill" href="/sys/module">返回 系统管理</a>
+    <a class="pill" href="/hub">返回 Hub</a>
+  </div>
+
+  <h2>工资管理-员工</h2>
+  <div class="card">
+    <form method="get" action="/sys/payroll/employees">
+      <label>搜索（工号/姓名）：</label>
+      <input name="q" value="{{ q or '' }}" placeholder="例如：E0001 / 张三">
+      <button type="submit">查询</button>
+      <a class="pill" href="/sys/payroll/employees">重置</a>
+    </form>
+
+    {% if error %}
+      <div class="muted" style="margin-top:10px;">DB 未就绪：<span class="kv">{{ error }}</span></div>
+    {% endif %}
+
+    <table>
+      <thead><tr>
+        <th>工号</th><th>姓名</th><th>部门</th><th>状态</th><th>基础</th><th>津补</th><th>扣款</th>
+      </tr></thead>
+      <tbody>
+      {% if rows %}
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.employee_no }}</td>
+            <td>{{ r.employee_name }}</td>
+            <td>{{ r.department_id }}</td>
+            <td>{{ r.status }}</td>
+            <td>{{ r.base_salary }}</td>
+            <td>{{ r.allowance_total }}</td>
+            <td>{{ r.deduction_total }}</td>
+          </tr>
+        {% endfor %}
+      {% else %}
+        <tr class="muted"><td colspan="7">暂无数据（或 DB 未就绪）。</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</body></html>

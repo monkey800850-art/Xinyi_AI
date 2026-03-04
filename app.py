@@ -97,7 +97,7 @@ def _init_file_logging(app_logger: logging.Logger) -> str:
     return log_path
 
 try:
-    from flask import Flask, jsonify, request, send_file, session, render_template, redirect
+    from flask import Flask, jsonify, request, send_file, session, render_template, redirect, url_for
 
     from sqlalchemy import text
     from werkzeug.exceptions import HTTPException
@@ -5508,3 +5508,127 @@ def sys_fa_assets():
 @app.route("/sys/fa/depreciation-books")
 def sys_fa_depreciation_books():
     return render_template("sys_fa_depreciation_books.html")
+
+
+
+@app.route("/sys/payroll/employees")
+def sys_payroll_employees():
+    q = (request.args.get("q") or "").strip()
+    rows = []
+    error = None
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+        sql = "SELECT employee_no, employee_name, department_id, status, base_salary, allowance_total, deduction_total FROM payroll_employees"
+        params = {}
+        if q:
+            sql += " WHERE employee_no LIKE :q OR employee_name LIKE :q"
+            params["q"] = f"%{q}%"
+        sql += " ORDER BY id DESC LIMIT 50"
+        res = db.session.execute(sa.text(sql), params).mappings().all()
+        class R: pass
+        for r in res:
+            o=R()
+            for k,v in r.items(): setattr(o,k,v)
+            rows.append(o)
+    except Exception as e:
+        error = str(e)
+    return render_template("sys_payroll_employees.html", rows=rows, q=q, error=error)
+
+
+@app.route("/sys/payroll/runs/new", methods=["GET","POST"])
+def sys_payroll_run_new():
+    error=None
+    if request.method == "POST":
+        period=(request.form.get("period") or "").strip()
+        try:
+            from app import db  # type: ignore
+            import sqlalchemy as sa
+            db.session.execute(sa.text("INSERT INTO payroll_runs (period_yyyymm, status) VALUES (:p,'draft')"), {"p": period})
+            db.session.commit()
+            return redirect("/sys/payroll/runs")
+        except Exception as e:
+            error=str(e)
+    return render_template("sys_payroll_run_new.html", error=error)
+
+
+@app.route("/sys/payroll/runs")
+def sys_payroll_runs():
+    q = (request.args.get("q") or "").strip()
+    rows=[]
+    error=None
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+        sql="SELECT id, period_yyyymm, status FROM payroll_runs"
+        params={}
+        if q:
+            sql += " WHERE period_yyyymm LIKE :q"
+            params["q"]=f"%{q}%"
+        sql += " ORDER BY id DESC LIMIT 50"
+        res=db.session.execute(sa.text(sql), params).mappings().all()
+        class R: pass
+        for r in res:
+            o=R()
+            for k,v in r.items(): setattr(o,k,v)
+            rows.append(o)
+    except Exception as e:
+        error=str(e)
+    return render_template("sys_payroll_runs.html", rows=rows, q=q, error=error)
+
+
+@app.route("/sys/payroll/runs/<int:run_id>")
+def sys_payroll_run_detail(run_id: int):
+    rows=[]
+    error=None
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+        res=db.session.execute(
+            sa.text("SELECT employee_id, gross_pay, total_deductions, net_pay FROM payroll_run_lines WHERE run_id=:rid ORDER BY id ASC"),
+            {"rid": run_id}
+        ).mappings().all()
+        class R: pass
+        for r in res:
+            o=R()
+            for k,v in r.items(): setattr(o,k,v)
+            rows.append(o)
+    except Exception as e:
+        error=str(e)
+    return render_template("sys_payroll_run_detail.html", run_id=run_id, rows=rows, error=error)
+
+
+@app.route("/sys/payroll/runs/<int:run_id>/generate")
+def sys_payroll_run_generate(run_id: int):
+    error=None
+    try:
+        from app import db  # type: ignore
+        import sqlalchemy as sa
+
+        # clear old lines
+        db.session.execute(sa.text("DELETE FROM payroll_run_lines WHERE run_id=:rid"), {"rid": run_id})
+
+        # load employees
+        emps=db.session.execute(sa.text(
+            "SELECT id, COALESCE(base_salary,0) AS base_salary, COALESCE(allowance_total,0) AS allowance_total, COALESCE(deduction_total,0) AS deduction_total "
+            "FROM payroll_employees WHERE COALESCE(status,'active')='active'"
+        )).mappings().all()
+
+        # generate lines (gross=base+allowance, net=gross-deduction)
+        for e in emps:
+            gross=float(e["base_salary"]) + float(e["allowance_total"])
+            ded=float(e["deduction_total"])
+            net=gross - ded
+            db.session.execute(sa.text(
+                "INSERT INTO payroll_run_lines (run_id, employee_id, gross_pay, total_deductions, net_pay) "
+                "VALUES (:rid,:eid,:g,:d,:n)"
+            ), {"rid": run_id, "eid": e["id"], "g": gross, "d": ded, "n": net})
+
+        db.session.execute(sa.text("UPDATE payroll_runs SET status='generated' WHERE id=:rid"), {"rid": run_id})
+        db.session.commit()
+    except Exception as e:
+        error=str(e)
+    if error:
+        # fallback to list page with error visible via query
+        return redirect("/sys/payroll/runs?q=")
+    return redirect(f"/sys/payroll/runs/{run_id}")
