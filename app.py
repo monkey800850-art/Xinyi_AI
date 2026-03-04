@@ -5661,7 +5661,7 @@ def sys_payroll_run_vouchers(run_id: int):
         from app import db  # type: ignore
         import sqlalchemy as sa
         res=db.session.execute(sa.text(
-            "SELECT id, voucher_type, status, total_debit, total_credit, note "
+            "SELECT id, voucher_type, status, total_debit, total_credit, note, lines_json "
             "FROM payroll_voucher_drafts WHERE run_id=:rid ORDER BY id ASC"
         ), {"rid": run_id}).mappings().all()
         class R: pass
@@ -5728,8 +5728,8 @@ def sys_payroll_run_vouchers_generate(run_id: int):
                 "note": note
             })
 
-        ins("accrual", accrual_lines, "工资计提（草稿）")
-        ins("payment", payment_lines, "工资发放（草稿）")
+        ins("accrual", accrual_lines, f"工资计提（草稿）| lines={len(emps)} gross={total_gross:.2f} net={total_net:.2f}")
+        ins("payment", payment_lines, f"工资发放（草稿）| lines={len(emps)} gross={total_gross:.2f} net={total_net:.2f}")
 
         db.session.commit()
     except Exception:

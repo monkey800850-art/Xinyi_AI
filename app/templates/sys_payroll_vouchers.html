@@ -27,7 +27,7 @@ th{background:#fafafa;}
 
   <div class="card">
     <table>
-      <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>借方合计</th><th>贷方合计</th><th>备注</th></tr></thead>
+      <thead><tr><th>ID</th><th>类型</th><th>状态</th><th>借方合计</th><th>贷方合计</th><th>备注</th><th>明细</th></tr></thead>
       <tbody>
       {% if rows %}
         {% for r in rows %}
@@ -38,10 +38,13 @@ th{background:#fafafa;}
             <td>{{ r.total_debit }}</td>
             <td>{{ r.total_credit }}</td>
             <td class="muted">{{ r.note }}</td>
+            <td>
+              <a class="pill" href="#" data-action="toggle" data-lines-json='{{ (r.lines_json or "") | e }}'>查看</a>
+            </td>
           </tr>
         {% endfor %}
       {% else %}
-        <tr class="muted"><td colspan="6">暂无草稿（可点击“生成草稿”）。</td></tr>
+        <tr class="muted"><td colspan="7">暂无草稿（可点击“生成草稿”）。</td></tr>
       {% endif %}
       </tbody>
     </table>
@@ -49,4 +52,45 @@ th{background:#fafafa;}
       本页为草稿层：不入账、不生成正式凭证号；下一步将接入总账凭证表与权限/审批流。
     </div>
   </div>
+
+<script>
+(function(){
+  function safeParse(s){
+    try{ return JSON.parse(s); }catch(e){ return null; }
+  }
+  document.addEventListener('click', function(ev){
+    const a = ev.target.closest('a[data-action="toggle"]');
+    if(!a) return;
+    ev.preventDefault();
+    const tr = a.closest('tr');
+    if(!tr) return;
+
+    // toggle existing detail row
+    const next = tr.nextElementSibling;
+    if(next && next.getAttribute('data-detail-row') === '1'){
+      next.remove();
+      return;
+    }
+
+    const raw = a.getAttribute('data-lines-json') || '';
+    const arr = safeParse(raw) || [];
+    const wrap = document.createElement('tr');
+    wrap.setAttribute('data-detail-row','1');
+    const td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.background = '#fafafa';
+
+    const pre = document.createElement('pre');
+    pre.style.margin = '10px';
+    pre.style.fontSize = '12px';
+    pre.style.whiteSpace = 'pre-wrap';
+    pre.textContent = Array.isArray(arr) ? JSON.stringify(arr, null, 2) : raw;
+
+    td.appendChild(pre);
+    wrap.appendChild(td);
+    tr.parentNode.insertBefore(wrap, tr.nextSibling);
+  });
+})();
+</script>
+
 </body></html>
