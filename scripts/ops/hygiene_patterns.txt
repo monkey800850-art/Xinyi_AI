@@ -2,3 +2,8 @@
 :[Zz]one\.Identifier
 (^|/)\.env(\.|$)
 \.(pem|key|p12|pfx|crt|cer|der)$
+
+# block runtime artifacts
+^var/(log|run)/
+\.pid$
+\.log$

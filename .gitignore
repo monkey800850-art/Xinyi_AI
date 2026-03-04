@@ -66,3 +66,7 @@ var/log/
 
 # ops local env (DO NOT COMMIT)
 var/run/ops.env
+
+# runtime artifacts
+*.pid
+/tmp/
