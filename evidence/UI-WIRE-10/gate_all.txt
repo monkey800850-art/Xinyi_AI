@@ -1,0 +1,15 @@
+== gate_all ==
+2026-03-04 18:59 (+0800)
+repo=/home/x1560/Xinyi_AI
+branch=main
+head=6cd7160
+OSK_PROFILE=local OSK_ENABLE_DB_GATES=0 OSK_ENABLE_RELEASE_GATES=0
+
+[gate] secrets scan...
+[OK] secrets scan passed.
+[gate] hygiene scan...
+[OK] hygiene scan passed.
+[SKIP] release/consolidation gates disabled by profile
+[SKIP] DB/service bound smoke disabled by profile
+[OK] gate_all passed.
+OK mode=groups entries=17

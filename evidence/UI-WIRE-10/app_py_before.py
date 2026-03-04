@@ -5425,10 +5425,3 @@ if __name__ == "__main__":
 def home():
     return redirect("/hub")
 
-
-
-
-@app.route("/sys/module")
-def sys_module():
-    return render_template("hub.html")
-

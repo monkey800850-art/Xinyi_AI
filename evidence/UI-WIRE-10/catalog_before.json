@@ -35,11 +35,11 @@
           "template": "hub.html",
           "file": "/home/x1560/Xinyi_AI/app/templates/hub.html",
           "group": "系统管理",
-          "source": "route",
-          "status": "active",
+          "source": "template",
+          "status": "stub",
           "title": "Module",
           "key": "module",
-          "path": "/sys/module"
+          "path": "/hub#tpl-hub-html"
         },
         {
           "template": "modules/system.html",

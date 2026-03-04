@@ -1,0 +1,4 @@
+routes: 1
+templates: 2
+[T1] key=module title=Module path=/hub#tpl-hub-html status=stub source=template
+[T2] key=module title=Module path=/hub#tpl-modules-system-html status=stub source=template

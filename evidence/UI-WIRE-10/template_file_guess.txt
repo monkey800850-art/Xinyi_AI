@@ -1,0 +1,5 @@
+key= module
+title= Module
+hits= 2
+- app/templates/hub.html
+- app/templates/modules/others.html

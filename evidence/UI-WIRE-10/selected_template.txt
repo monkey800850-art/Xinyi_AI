@@ -1,0 +1,4 @@
+key= module
+title= Module
+old_path= /hub#tpl-hub-html
+Selected stub key: module
