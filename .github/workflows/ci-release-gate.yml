@@ -1,9 +1,10 @@
+# DEPRECATED: replaced by .github/workflows/osk-gate-all.yml
+# Kept for history only; triggers disabled to avoid duplicate runs.
+
 name: ci-release-gate
 
 on:
-  push:
-  pull_request:
-
+  workflow_dispatch:
 jobs:
   release-gate:
     runs-on: ubuntu-latest
