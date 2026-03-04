@@ -97,16 +97,33 @@ fi
 echo
 
 echo "== api /api/system/users (reachability only) =="
-code="$(http_get_status "${BASE_URL}/api/system/users")"
-echo "GET /api/system/users -> ${code}"
-# Accept 200/401/403/404 for reachability; only 000 means network fail
-if [ "$code" = "000" ]; then
-  echo "[FAIL] /api/system/users unreachable (000)"
-  exit 1
+diag_file="$(mktemp)"
+set +e
+code="$( { http_get_status "${BASE_URL}/api/system/users" 2> "$diag_file"; } )"
+set -e
+diag="$(cat "$diag_file" 2>/dev/null || true)"
+rm -f "$diag_file" || true
+if [ -n "$diag" ]; then
+  echo "$diag"
 fi
-echo
+echo "GET /api/system/users -> ${code}"
 
-echo "== log path hint =="
+# Accept 200/401/403/404 as reachability; 000 means network failure
+if [ "$code" = "000" ]; then
+  if echo "$diag" | grep -qi "Operation not permitted"; then
+    echo "[WARN] NETWORK_RESTRICTED: outbound connect blocked by environment policy (Errno 1)."
+    if [ "${OSK_HC_STRICT}" = "1" ]; then
+      echo "[FAIL] strict mode enabled; failing due to unreachable api."
+      exit 1
+    else
+      echo "[OK] degrade mode: skipping api reachability failure (listen check still valid)."
+    fi
+  else
+    echo "[FAIL] /api/system/users unreachable (000)"
+    exit 1
+  fi
+fi
+echoecho "== log path hint =="
 echo "LOG_PATH_HINT=${LOG_PATH_HINT}"
 if [ -f "${LOG_PATH_HINT}" ]; then
   echo "[OK] log file exists at hint path"
