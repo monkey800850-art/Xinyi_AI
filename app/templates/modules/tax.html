@@ -3,3 +3,62 @@
 {% block content %}
 <h1>税务</h1><p><a href="/hub">返回 Hub</a></p><p>以下为已注册路由清单：</p><ul><li><a href="/api/authorizations/&lt;int:authorization_id&gt;/activate">/api/authorizations/&lt;int:authorization_id&gt;/activate</a> <small><code>PATCH</code> <code>api_consolidation_authorization_activate</code></small></li><li><a href="/api/tax/alerts">/api/tax/alerts</a> <small><code>GET</code> <code>api_tax_alerts_list</code></small></li><li><a href="/api/tax/alerts/build">/api/tax/alerts/build</a> <small><code>GET</code> <code>api_tax_alerts_build</code></small></li><li><a href="/api/tax/calc/labor-service">/api/tax/calc/labor-service</a> <small><code>POST</code> <code>api_tax_calc_labor_service</code></small></li><li><a href="/api/tax/calc/year-end-bonus">/api/tax/calc/year-end-bonus</a> <small><code>POST</code> <code>api_tax_calc_year_end_bonus</code></small></li><li><a href="/api/tax/declaration-mappings">/api/tax/declaration-mappings</a> <small><code>POST</code> <code>api_tax_declaration_mapping_save</code></small></li><li><a href="/api/tax/declaration-mappings">/api/tax/declaration-mappings</a> <small><code>GET</code> <code>api_tax_declaration_mapping_list</code></small></li><li><a href="/api/tax/declaration-mappings/build">/api/tax/declaration-mappings/build</a> <small><code>POST</code> <code>api_tax_declaration_mapping_build</code></small></li><li><a href="/api/tax/diff-ledger">/api/tax/diff-ledger</a> <small><code>POST</code> <code>api_tax_diff_ledger_create</code></small></li><li><a href="/api/tax/diff-ledger">/api/tax/diff-ledger</a> <small><code>GET</code> <code>api_tax_diff_ledger_list</code></small></li><li><a href="/api/tax/invoices">/api/tax/invoices</a> <small><code>GET</code> <code>api_tax_invoices</code></small></li><li><a href="/api/tax/invoices/import">/api/tax/invoices/import</a> <small><code>POST</code> <code>api_tax_invoices_import</code></small></li><li><a href="/api/tax/invoices/verify">/api/tax/invoices/verify</a> <small><code>POST</code> <code>api_tax_invoice_verify</code></small></li><li><a href="/api/tax/rules">/api/tax/rules</a> <small><code>GET</code> <code>api_tax_rules</code></small></li><li><a href="/api/tax/rules">/api/tax/rules</a> <small><code>POST</code> <code>api_tax_rules_create</code></small></li><li><a href="/api/tax/summary">/api/tax/summary</a> <small><code>GET</code> <code>api_tax_summary</code></small></li><li><a href="/api/tax/validate">/api/tax/validate</a> <small><code>GET</code> <code>api_tax_validate</code></small></li><li><a href="/tax/invoices">/tax/invoices</a> <small><code>GET</code> <code>core_pages.tax_invoices_page</code></small></li><li><a href="/tax/rules">/tax/rules</a> <small><code>GET</code> <code>core_pages.tax_rules_page</code></small></li><li><a href="/tax/summary">/tax/summary</a> <small><code>GET</code> <code>core_pages.tax_summary_page</code></small></li></ul>
 {% endblock %}
+
+
+<!-- TAX_FORMS_RENDER_BLOCK -->
+<hr>
+<h3>税务申报表（行次）</h3>
+<p style="color:#666">数据来源：artifacts/tax_forms_YYYYMM.json（本地生成，可审计）</p>
+
+<div id="tax-forms-box">
+  <button type="button" onclick="loadTaxForms()">加载最新申报表</button>
+  <pre id="tax-forms-meta" style="background:#f7f7f7;padding:10px;white-space:pre-wrap;"></pre>
+  <table id="tax-forms-table" border="1" cellpadding="6" style="border-collapse:collapse;width:100%;display:none;">
+    <thead>
+      <tr>
+        <th>表</th><th>行次</th><th>名称</th><th>金额</th><th>来源</th><th>Trace</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+async function loadTaxForms() {
+  const meta = document.getElementById('tax-forms-meta');
+  const table = document.getElementById('tax-forms-table');
+  const tbody = table.querySelector('tbody');
+  meta.textContent = 'loading...';
+  tbody.innerHTML = '';
+  table.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/tax/forms/latest', { credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      meta.textContent = JSON.stringify({status: res.status, ...data}, null, 2);
+      return;
+    }
+    meta.textContent = JSON.stringify({period: data.period, pack_id: data.pack_id, source: data._source_path}, null, 2);
+
+    for (const f of (data.forms || [])) {
+      for (const ln of (f.lines || [])) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${f.form_code || ''}</td>
+          <td>${ln.line_no || ''}</td>
+          <td>${ln.name || ''}</td>
+          <td style="text-align:right">${ln.amount || ''}</td>
+          <td>${ln.source || ''}</td>
+          <td><code>${ln.trace || ''}</code></td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    table.style.display = '';
+  } catch (e) {
+    meta.textContent = JSON.stringify({error: String(e)}, null, 2);
+  }
+}
+</script>
+

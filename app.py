@@ -5474,6 +5474,27 @@ def debug_routes():
 
 
 
+
+# --- TAX: forms API (file-based, portable) -----------------------------------
+from pathlib import Path as _Path
+import json as _json
+from flask import jsonify as _jsonify
+
+@app.get("/api/tax/forms/latest")
+def api_tax_forms_latest():
+    forms = sorted(_Path("artifacts").glob("tax_forms_*.json"))
+    if not forms:
+        return _jsonify({"error": "tax_forms_not_found", "hint": "run TAX-FORM-MAP-04 to generate artifacts/tax_forms_YYYYMM.json"}), 404
+    fp = forms[-1]
+    try:
+        data = _json.loads(fp.read_text(encoding="utf-8"))
+    except Exception as e:
+        return _jsonify({"error": "tax_forms_read_failed", "path": str(fp), "detail": str(e)}), 500
+    data["_source_path"] = str(fp)
+    return _jsonify(data), 200
+
+
+
 if __name__ == "__main__":
     cli_exit_code = _run_cli_task()
     if cli_exit_code is not None:
