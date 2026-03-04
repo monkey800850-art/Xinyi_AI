@@ -62,3 +62,9 @@ echo "[OK] gate_all passed."
 
 # [UI-WIRE] catalog schema gate
 python3 scripts/ui/check_modules_catalog.py
+# --- HOOK: REPORTS-QUERY-13 invariants (no Flask dependency) ---
+if [ -f "tests/scripts/reports_query_13_invariants.py" ]; then
+  echo "[gate] running REPORTS-QUERY-13 invariants..."
+  python3 tests/scripts/reports_query_13_invariants.py
+fi
+# --- END HOOK ---
