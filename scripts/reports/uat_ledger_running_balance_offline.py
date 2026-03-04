@@ -12,10 +12,15 @@ entries = [
 ]
 
 rows = enrich_running_balance(entries)
-assert rows[-1]["running_direction"] == "credit"
-assert rows[-1]["running_credit"] ==  - (100-20-50) if False else 0  # keep readable; actual below
-# actual: debit=100, credit=70 => debit 30
-assert rows[-1]["running_direction"] == "debit"
-assert rows[-1]["running_debit"] == 30.0
+# Expect: debit=100, credit=70 => debit balance 30
+assert rows[0]["running_direction"] == "debit"
+assert rows[0]["running_debit"] == 100.0
+
+assert rows[1]["running_direction"] == "debit"
+assert rows[1]["running_debit"] == 80.0
+
+assert rows[2]["running_direction"] == "debit"
+assert rows[2]["running_debit"] == 30.0
+
 print("PASS ledger running balance offline")
 print(json.dumps(rows[-1], ensure_ascii=False, indent=2))
