@@ -77,6 +77,15 @@ else
   mark_skip "gate_secrets" "missing"
 fi
 
+# 1.5) hygiene gate (staged names like .env / Zone.Identifier / cert files)
+if [[ -f scripts/ops/gate_hygiene.sh ]]; then
+  run_step "gate_hygiene" "bash scripts/ops/gate_hygiene.sh"
+  echo "- gate_hygiene: DONE" >> "${idx}"
+else
+  echo "- gate_hygiene: SKIP (missing)" >> "${idx}"
+fi
+
+
 # 2) start_app (best-effort bootstrap before checks)
 if [[ -x scripts/ops/start_app.sh ]]; then
   run_step "start_app" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" bash scripts/ops/start_app.sh"
