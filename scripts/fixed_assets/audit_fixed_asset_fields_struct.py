@@ -1,6 +1,5 @@
 import os, re, json
 from pathlib import Path
-from collections import defaultdict
 
 OUT_JSON = Path("evidence/FA-FIELD-01/fa_struct_audit.json")
 OUT_MD   = Path("evidence/FA-FIELD-01/fa_struct_audit.md")
@@ -11,17 +10,13 @@ SCAN_EXT = {".py",".sql"}
 SCAN_DIRS = ["app","migrations","scripts"]
 
 # ===== Spec fields (derived from uploaded doc “固定资产管理功能字段”) =====
-# 来源：基础标识与分类、价值税务、实物责任、电子凭证合规、扩展字段、2026注意事项（多法人/多账簿/审计追溯等） :contentReference[oaicite:1]{index=1}
-# 命名采用 snake_case（落地时可做映射，但本卡先用统一命名做审计与计划）
+# 规范点：资产卡片、价值税务、责任与盘点、电子凭证合规、多法人、多账簿折旧建议分表等。
 SPEC = {
   "fa_assets": {
     "spec_source": "doc",
     "fields": [
-      # 一、基础标识与分类
       "asset_code","asset_name","spec_model","asset_category","uom","quantity",
       "in_service_date","economic_use","use_status",
-
-      # 二、价值与税务
       "book_date","capitalized_date",
       "original_cost_excl_tax","input_vat_amount","original_cost_incl_tax",
       "salvage_rate","salvage_value",
@@ -29,40 +24,30 @@ SPEC = {
       "accumulated_depreciation","impairment_reserve","net_book_value",
       "funding_source",
       "gl_asset_subject","gl_acc_dep_subject","gl_dep_expense_subject",
-
-      # 三、实物管理与责任
       "using_department_id","storage_location_id",
       "responsible_person_id","custodian_person_id",
       "vendor_name","purchase_contract_no",
       "warranty_end_date","next_inventory_date",
       "tag_qr_payload",
-
-      # 四、电子凭证与合规（财会〔2025〕9号导向）
       "invoice_number","invoice_code",
       "e_voucher_xml_ofd_path",
       "acceptance_doc_no",
       "posting_voucher_no",
       "archive_status",
-
-      # 五、扩展与自定义
       "project_code",
       "env_safety_level",
       "tech_params_json",
       "remarks",
-
-      # 六、2026特别注意事项（字段落位建议）
-      "legal_entity_id",                 # 归属法人实体
-      "audit_trail_required_flag",       # 审计追溯启用标识（也可作为系统级配置）
-      "multi_book_depreciation_flag"     # 多账簿折旧启用标识
+      "legal_entity_id",
+      "audit_trail_required_flag",
+      "multi_book_depreciation_flag"
     ]
   },
-
-  # 多账簿折旧：文档要求同一资产支持法定账簿/管理账簿两套折旧字段（建议分表） :contentReference[oaicite:2]{index=2}
   "fa_depreciation_books": {
     "spec_source": "doc",
     "fields": [
       "asset_id",
-      "book_type",                 # statutory / management
+      "book_type",
       "depreciation_method",
       "useful_life_months",
       "salvage_rate",
@@ -75,22 +60,20 @@ SPEC = {
 }
 
 ALIASES = {
-  "asset_code":["asset_code","fa_code","资产编码"],
-  "asset_name":["asset_name","name","资产名称"],
-  "spec_model":["spec_model","model","规格型号"],
-  "asset_category":["asset_category","category","资产类别"],
-  "in_service_date":["in_service_date","start_use_date","启用日期"],
-  "use_status":["use_status","status","使用状态"],
-  "original_cost_excl_tax":["original_cost_excl_tax","original_cost","原值","不含税原值"],
-  "input_vat_amount":["input_vat_amount","vat_amount","进项税额"],
-  "salvage_rate":["salvage_rate","residual_rate","预计净残值率"],
-  "depreciation_method":["depreciation_method","dep_method","折旧方法"],
-  "useful_life_months":["useful_life_months","useful_life","预计使用年限","月数"],
-  "accumulated_depreciation":["accumulated_depreciation","acc_dep","累计折旧"],
-  "net_book_value":["net_book_value","nbv","净值"],
-  "legal_entity_id":["legal_entity_id","entity_id","归属法人实体"],
-  "invoice_number":["invoice_number","fapiao_no","发票号码"],
-  "invoice_code":["invoice_code","fapiao_code","发票代码"],
+  "asset_code":["asset_code","fa_code"],
+  "asset_name":["asset_name","name"],
+  "spec_model":["spec_model","model"],
+  "asset_category":["asset_category","category"],
+  "in_service_date":["in_service_date","start_use_date"],
+  "original_cost_excl_tax":["original_cost_excl_tax","original_cost"],
+  "input_vat_amount":["input_vat_amount","vat_amount"],
+  "depreciation_method":["depreciation_method","dep_method"],
+  "useful_life_months":["useful_life_months","useful_life"],
+  "accumulated_depreciation":["accumulated_depreciation","acc_dep"],
+  "net_book_value":["net_book_value","nbv"],
+  "legal_entity_id":["legal_entity_id","entity_id"],
+  "invoice_number":["invoice_number","fapiao_no"],
+  "invoice_code":["invoice_code","fapiao_code"],
 }
 
 def iter_files():
@@ -131,11 +114,7 @@ def extract_migration_fields(text: str):
 
 def is_related(p: Path):
   s=str(p).lower()
-  kws=[
-    "fixed","asset","fa_","depreciation","dep_","inventory",
-    "voucher","invoice",
-    "固定资产","资产","折旧","盘点","处置","报废"
-  ]
+  kws=["fixed","asset","fa_","depreciation","dep_","inventory","invoice","voucher","固定资产","资产","折旧","盘点","处置","报废"]
   return any(k in s for k in kws)
 
 def flatten_spec():
@@ -196,10 +175,6 @@ def main():
     "missing_in_db": missing_in_db,
     "mismatch": mismatch,
     "per_table": per,
-    "samples":{
-      "model_fields_sample": sorted(list(model_fields))[:140],
-      "db_fields_sample": sorted(list(db_fields))[:140],
-    }
   }
 
   OUT_JSON.write_text(json.dumps(res,ensure_ascii=False,indent=2),encoding="utf-8")
@@ -217,7 +192,7 @@ def main():
   md.append("")
   md.append("## 分表缺口")
   for t,v in per.items():
-    md.append(f"\n### {t} (spec={v['spec_count']}, source={v['spec_source']})")
+    md.append(f"\n### {t} (spec={v['spec_count']})")
     md.append(f"- missing_in_model: {len(v['missing_in_model'])}")
     md.append(f"- missing_in_db: {len(v['missing_in_db'])}")
   md.append("\n## 命名疑似不一致（alias 命中）")
@@ -225,33 +200,29 @@ def main():
     md.append(f"- spec `{it['spec']}` -> maybe {it.get('maybe_model') or it.get('maybe_db')}")
   OUT_MD.write_text("\n".join(md),encoding="utf-8")
 
-  # Patch plan: recommend new tables (no actual migration in this card)
   plan={"tables":{}, "notes":[]}
   for t,v in per.items():
     plan["tables"][t]={
-      "spec_source": v["spec_source"],
       "missing_in_db": v["missing_in_db"],
       "missing_in_model": v["missing_in_model"],
       "suggest_primary_key": "id",
-      "suggest_indexes": ["asset_code"] if t=="fa_assets" else ["asset_id","book_type"]
+      "suggest_indexes": ["asset_code"] if t=="fa_assets" else ["asset_id","book_type"],
     }
-  plan["notes"].append("本卡仅生成审计与补齐计划，不执行迁移/建模落地。下一卡 FA-FIELD-02 执行落地（新表+模型+最小页面/接口）。")
-  plan["notes"].append("强建议折旧多账簿分表（fa_depreciation_books），避免 fa_assets 巨表且满足法定/管理账簿差异。")
+  plan["notes"].append("本卡仅审计+计划；下一卡 FA-FIELD-02 执行落地（新表+模型+最小入口）。")
+  plan["notes"].append("强建议折旧多账簿分表（fa_depreciation_books）。")
   PLAN_JSON.write_text(json.dumps(plan,ensure_ascii=False,indent=2),encoding="utf-8")
 
   mdp=[]
   mdp.append("# FA-FIELD-01 补充完善计划（Patch Plan）")
-  mdp.append("")
   for t,info in plan["tables"].items():
-    mdp.append(f"## {t} (source={info['spec_source']})")
+    mdp.append(f"\n## {t}")
     mdp.append(f"- missing_in_db: {len(info['missing_in_db'])}")
     mdp.append(f"- missing_in_model: {len(info['missing_in_model'])}")
-    if info["missing_in_db"][:25]:
+    if info["missing_in_db"][:20]:
       mdp.append("### 缺失字段（DB，抽样）")
-      for f in info["missing_in_db"][:25]:
+      for f in info["missing_in_db"][:20]:
         mdp.append(f"- `{f}`")
-    mdp.append("")
-  mdp.append("## Notes")
+  mdp.append("\n## Notes")
   for n in plan["notes"]:
     mdp.append(f"- {n}")
   PLAN_MD.write_text("\n".join(mdp),encoding="utf-8")
