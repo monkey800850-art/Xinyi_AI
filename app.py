@@ -1,3 +1,4 @@
+from app.services.report_result_subtotals import tree_to_lines, overall_total
 from app.services.report_result_tree import rows_to_tree
 import hashlib
 import io
@@ -5875,7 +5876,7 @@ def trial_balance_query():
             run = run_plan(plan).__dict__
         except Exception as e:
             run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
-    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None)})
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None), "tree_lines": (tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[]))) if run else []), "tree_total": (overall_total(tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[])))) if run else 0)})
 
 
 @app.get("/reports/ledger/query")
@@ -5914,7 +5915,7 @@ def ledger_query():
             run = run_plan(plan).__dict__
         except Exception as e:
             run = {"ok": False, "rows": [], "warnings": [f"runner_failed: {e}"], "engine": "none"}
-    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None)})
+    return jsonify({"query_spec": spec.__dict__, "plan": plan, "run": run, "tree": (rows_to_tree(run.get("rows",[]), plan.get("group_by",[])) if run else None), "tree_lines": (tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[]))) if run else []), "tree_total": (overall_total(tree_to_lines(rows_to_tree(run.get("rows",[]), plan.get("group_by",[])))) if run else 0)})
 
 
 @app.get("/api/reports/dimensions")

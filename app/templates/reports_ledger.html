@@ -131,6 +131,27 @@
 
   
 // REPORTS-QUERY-03: render rows and execute query
+
+// REPORTS-QUERY-05: render subtotal lines
+function renderTreeLines(lines, total){
+  const box = document.getElementById("treeLines");
+  const t = document.getElementById("treeTotal");
+  if (!box || !t) return;
+  t.textContent = "总计: " + (total===undefined? "" : String(total));
+  if (!lines || !lines.length){
+    box.innerHTML = "";
+    return;
+  }
+  let html = "";
+  lines.forEach(l=>{
+    const pad = "&nbsp;".repeat((l.level||0)*4);
+    const isSub = l.kind === "subtotal";
+    const style = isSub ? "color:#666;" : "";
+    html += "<div style='"+style+"'>" + pad + (isSub ? "└ " : "• ") + l.label + " : " + (l.value===undefined?"":String(l.value)) + "</div>";
+  });
+  box.innerHTML = html;
+}
+
 function renderRows(run){
   const meta = document.getElementById("rowsMeta");
   const tbl = document.getElementById("rowsTable");
