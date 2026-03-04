@@ -19,7 +19,7 @@ jobs:
         run: |
           OSK_PROFILE=local bash ops-safety-kit/scripts/gate_all.sh
       - name: Payroll offline UAT (no deps)
-        run: python3 scripts/payroll/uat_payroll_mvp_offline.py
+        run: scripts/ops/run_and_tee.sh "python3 scripts/payroll/uat_payroll_mvp_offline.py" "evidence/ci/payroll_offline_uat.log"
 
       - name: Install deps for full payroll UAT
         run: |
@@ -28,4 +28,4 @@ jobs:
 
       - name: Payroll full UAT (best-effort)
         continue-on-error: true
-        run: python3 scripts/payroll/uat_payroll_mvp.py
+        run: scripts/ops/run_and_tee.sh "python3 scripts/payroll/uat_payroll_mvp.py" "evidence/ci/payroll_full_uat.log"
