@@ -1,6 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
+# PORT_OWNERSHIP_CHECK
+port_owner() {
+  local port="$1"
+  # Prefer ss, fallback to lsof
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltnp 2>/dev/null | rg -n ":${port}\\b" || true
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"${port}" -sTCP:LISTEN 2>/dev/null || true
+  else
+    echo "[WARN] neither ss nor lsof available to detect port owner"
+    return 0
+  fi
+}
+
+port_owned_by_this_app() {
+  local port="$1"
+  # Heuristic: python process and repo path name appears
+  local o
+  o="$(port_owner "${port}")"
+  echo "${o}" | rg -q "python" && echo "${o}" | rg -q "app\.py|Xinyi_AI|xinyi" && return 0
+  return 1
+}
+
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-5000}"
 BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT}}"
@@ -78,7 +102,14 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 if is_listening "${PORT}" >/dev/null 2>&1; then
-  echo "[WARN] port :${PORT} already listening by another process; recording without restart"
+  echo "[WARN] port :${PORT} already listening; checking ownership
+  if port_owned_by_this_app "${PORT}"; then
+    echo "[OK] port ${PORT} seems owned by this app; will not restart"
+  else
+    echo "[FAIL] port ${PORT} is occupied by another process; stop it first." >&2
+    port_owner "${PORT}" >&2 || true
+    exit 1
+  fi"
   if command -v ss >/dev/null 2>&1; then
     ss -ltnp 2>/dev/null | rg ":${PORT}\\b" || true
   fi
