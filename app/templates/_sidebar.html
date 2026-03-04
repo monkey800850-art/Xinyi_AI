@@ -13,6 +13,8 @@ a.toggle, a.sidebar-toggle, a.menu-toggle, a.nav-toggle {
 {% block content %}
 {# Sidebar: driven by injected `catalog` (modules_catalog.json). #}
 <div class="nav">
+<button id="btnToggleSidebar" type="button" class="sidebar-toggle" aria-label="Toggle sidebar">&lt;&lt;</button>
+
   <div class="nav-group" data-recent-block="1" style="display:none;">
     <div class="nav-group-title">最近</div>
     <div data-recent-list="1"></div>

@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}Layout{% endblock %}
+</div>
 {% block head_extra %}
 <style>
 /* UI-UNIFY-LAYOUT-01: defensive hide for legacy sidebar/toggle remnants (page-local) */
@@ -10,6 +11,7 @@ a.toggle, a.sidebar-toggle, a.menu-toggle, a.nav-toggle {
 </style>
 {% endblock %}
 
+<div id="main">
 {% block content %}
 <div class="app">
   <aside id="sidebar" class="sidebar">
@@ -198,3 +200,33 @@ a.toggle, a.sidebar-toggle, a.menu-toggle, a.nav-toggle {
 })();
 </script>
 {% endblock %}
+
+
+<script>
+/* UI-SIDEBAR-TOGGLE-01: robust sidebar collapse toggle */
+(function() {
+  function qs(id) { return document.getElementById(id); }
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+    try { localStorage.setItem("sidebarCollapsed", collapsed ? "1" : "0"); } catch(e) {}
+    var btn = qs("btnToggleSidebar");
+    if (btn) btn.textContent = collapsed ? ">>" : "<<";
+  }
+  document.addEventListener("DOMContentLoaded", function() {
+    var btn = qs("btnToggleSidebar");
+    var sidebar = qs("sidebar");
+    // if layout uses different structure, still allow toggle by body class
+    if (!btn) return;
+    btn.addEventListener("click", function(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var collapsed = document.body.classList.contains("sidebar-collapsed");
+      setCollapsed(!collapsed);
+    });
+    var init = "0";
+    try { init = localStorage.getItem("sidebarCollapsed") || "0"; } catch(e) {}
+    setCollapsed(init === "1");
+  });
+})();
+</script>
+
