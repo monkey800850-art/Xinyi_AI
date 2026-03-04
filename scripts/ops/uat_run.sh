@@ -6,65 +6,99 @@ PORT="${PORT:-5000}"
 BASE_URL="${BASE_URL:-http://${HOST}:${PORT}}"
 NO_PROXY_OPT="${NO_PROXY_OPT:---noproxy '*'}"
 
-OUT="${OUT:-/tmp/evidence_uat_run.txt}"
+OUT="${OUT:-/tmp/evidence_uat_run2.txt}"
 : > "${OUT}"
 
 log(){ echo "$*" | tee -a "${OUT}"; }
 ok(){ log "[OK] $*"; }
 warn(){ log "[WARN] $*"; }
-fail(){ log "[FAIL] $*"; exit 1; }
+fail(){ log "[FAIL] $*"; }
 
 code(){
   curl ${NO_PROXY_OPT} -sS -o /dev/null -w '%{http_code}' --max-time 6 "$1" || echo "000"
 }
-
-json_get(){
+get_body(){
   curl ${NO_PROXY_OPT} -sS --max-time 8 "$1" || true
 }
 
-log "== UAT RUN =="
+# Config lines:
+# PATH|ALLOWED_CODES(comma)|JSON_KEYS(optional, comma; only checked when 200)
+CHECKS=(
+  "/|200,302,401,403|"
+  "/api/system/users|200,401,403|items,username"
+  "/api/dashboard/task-status|200,401,403|status,items,data"
+  "/login|200,302,401,403,404|"
+  "/reports/trial_balance|200,302,401,403,404|"
+  "/tax/summary|200,302,401,403,404|"
+  "/dashboard|200,302,401,403,404|"
+)
+
+log "== UAT RUN (configurable) =="
 log "$(date '+%Y-%m-%d %H:%M (%z)')"
 log "BASE_URL=${BASE_URL}"
 log ""
 
-# 0) Basic reachability
-log "== STEP 0: ROOT =="
-c="$(code "${BASE_URL}/")"
-log "GET / -> ${c}"
-[[ "${c}" =~ ^(200|302|401|403)$ ]] || fail "root not reachable: ${c}"
-ok "root reachable"
-log ""
+fails=0
+fail_list=()
 
-# 1) System API reachability (anonymous expected 401)
-log "== STEP 1: /api/system/users (reachable) =="
-c="$(code "${BASE_URL}/api/system/users")"
-log "GET /api/system/users -> ${c}"
-[[ "${c}" =~ ^(200|401|403)$ ]] || fail "unexpected status: ${c}"
-ok "system api reachable (auth may be required)"
-log ""
+check_one(){
+  local path="$1" allowed="$2" keys="$3"
+  local url="${BASE_URL}${path}"
+  local c
+  c="$(code "${url}")"
+  log "GET ${path} -> ${c} (allow: ${allowed})"
 
-# 2) Dashboard API (anonymous allowed)
-DASH_API="${DASH_API:-/api/dashboard/task-status}"
-log "== STEP 2: ${DASH_API} =="
-c="$(code "${BASE_URL}${DASH_API}")"
-log "GET ${DASH_API} -> ${c}"
-[[ "${c}" =~ ^(200|401|403)$ ]] || warn "dashboard api status unusual: ${c}"
-if [[ "${c}" == "200" ]]; then
-  body="$(json_get "${BASE_URL}${DASH_API}")"
-  echo "$body" | head -c 240 | tee -a "${OUT}"; echo "" | tee -a "${OUT}"
-  echo "$body" | rg -q '^\s*[\{\[]' && ok "dashboard returns JSON" || warn "dashboard 200 but not JSON-like"
-fi
-log ""
+  if ! echo ",${allowed}," | rg -q ",${c},"; then
+    fails=$((fails+1))
+    fail_list+=("${path}=${c} not_in(${allowed})")
+    fail "unexpected status for ${path}: ${c}"
+    log ""
+    return 0
+  fi
 
-# 3) UI pages (best-effort)
-paths=("/login" "/reports/trial_balance" "/tax/summary" "/dashboard")
-log "== STEP 3: UI pages (best-effort) =="
-for p in "${paths[@]}"; do
-  c="$(code "${BASE_URL}${p}")"
-  log "GET ${p} -> ${c}"
+  # Optional JSON key assertions (only when 200)
+  if [[ "${c}" == "200" && -n "${keys}" ]]; then
+    body="$(get_body "${url}")"
+    # keep evidence light: show first 240 chars only
+    echo "${body}" | head -c 240 | tee -a "${OUT}"; echo "" | tee -a "${OUT}"
+    # JSON-like check
+    if ! echo "${body}" | rg -q '^\s*[\{\[]'; then
+      fails=$((fails+1))
+      fail_list+=("${path}=200 but not JSON-like")
+      fail "body not JSON-like"
+      log ""
+      return 0
+    fi
+    IFS=',' read -r -a arr <<< "${keys}"
+    for k in "${arr[@]}"; do
+      k="$(echo "$k" | xargs)"
+      [[ -n "$k" ]] || continue
+      if ! echo "${body}" | rg -q "\"${k}\"\\s*:"; then
+        fails=$((fails+1))
+        fail_list+=("${path} missing_key(${k})")
+        fail "missing json key: ${k}"
+      fi
+    done
+  fi
+
+  ok "${path} ok"
+  log ""
+}
+
+log "== checks =="
+for line in "${CHECKS[@]}"; do
+  IFS='|' read -r p allowed keys <<< "${line}"
+  check_one "${p}" "${allowed}" "${keys}"
 done
-ok "ui page probe completed"
-log ""
 
-log "== RESULT =="
-ok "UAT run skeleton completed. For authenticated flows, run smoke_auth/smoke_dashboard with ops.env."
+log "== SUMMARY =="
+if [[ "${fails}" -eq 0 ]]; then
+  ok "UAT RUN PASS (all checks satisfied)"
+  exit 0
+fi
+
+fail "UAT RUN FAIL: ${fails} issue(s)"
+for item in "${fail_list[@]}"; do
+  log " - ${item}"
+done
+exit 1
