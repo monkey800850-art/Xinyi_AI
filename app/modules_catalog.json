@@ -78,6 +78,20 @@
           "path": "/sys/aux/bank-accounts",
           "status": "active",
           "source": "route"
+        },
+        {
+          "key": "fa_assets",
+          "title": "固定资产卡片",
+          "path": "/sys/fa/assets",
+          "status": "active",
+          "source": "route"
+        },
+        {
+          "key": "fa_dep_books",
+          "title": "折旧账簿",
+          "path": "/sys/fa/depreciation-books",
+          "status": "active",
+          "source": "route"
         }
       ]
     },

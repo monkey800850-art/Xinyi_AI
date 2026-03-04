@@ -5466,3 +5466,13 @@ def sys_aux_projects():
 @app.route("/sys/aux/bank-accounts")
 def sys_aux_bank_accounts():
     return render_template("sys_aux_bank_accounts.html")
+
+
+@app.route("/sys/fa/assets")
+def sys_fa_assets():
+    return render_template("sys_fa_assets.html")
+
+
+@app.route("/sys/fa/depreciation-books")
+def sys_fa_depreciation_books():
+    return render_template("sys_fa_depreciation_books.html")

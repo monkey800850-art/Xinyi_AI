@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><title>固定资产卡片</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial; margin:18px;}
+.pill{display:inline-block; padding:6px 10px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:inherit; margin-right:8px;}
+.card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
+.muted{opacity:.7;}
+table{border-collapse:collapse; width:100%; margin-top:12px;}
+th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
+</style></head>
+<body>
+  <div>
+    <a class="pill" href="/sys/module">返回 系统管理</a>
+    <a class="pill" href="/hub">返回 Hub</a>
+  </div>
+
+  <h2>固定资产卡片</h2>
+  <div class="card">
+    <div class="muted">占位页：已挂载入口。下一步将接入 fa_assets 表的列表/新增/编辑，并提供折旧生成凭证入口。</div>
+    <table>
+      <thead>
+        <tr>
+          <th>资产编码</th><th>资产名称</th><th>类别</th><th>启用日期</th>
+          <th>原值(不含税)</th><th>累计折旧</th><th>净值</th><th>部门</th><th>责任人</th><th>状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="muted"><td colspan="10">尚未接入数据库，下一卡将实现列表读。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</body></html>
