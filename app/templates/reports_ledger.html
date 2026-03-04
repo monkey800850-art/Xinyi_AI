@@ -54,7 +54,8 @@
 
   <div class="card" style="margin-top:12px;">
     <div class="card-body">
-      <h3>查询计划（Explain / Plan）</h3>
+      <div class='muted'>REPORTS-QUERY-11：点击任意行可展开原始 JSON</div>
+<h3>查询计划（Explain / Plan）</h3>
       <pre id="planOutLedger" style="white-space:pre-wrap;"></pre>
     </div>
   </div>
@@ -250,6 +251,13 @@ function renderTreeLines(lines, total){
   box.innerHTML = html;
 }
 
+// REPORTS-QUERY-11: expandable row JSON
+function toggleRowJson(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = (el.style.display === "none" ? "block" : "none");
+}
+
 function renderRows(run){
   const meta = document.getElementById("rowsMeta");
   const tbl = document.getElementById("rowsTable");
@@ -265,7 +273,10 @@ function renderRows(run){
     tbl.innerHTML = "";
     return;
   }
-  const cols = Object.keys(rows[0]);
+  // REPORTS-QUERY-11: prefer ledger columns when present
+  const prefer = ["biz_date","subject_code","note","dc_direction","debit_amount","credit_amount","running_direction","running_debit","running_credit"];
+  const hasAll = prefer.every(c => Object.prototype.hasOwnProperty.call(rows[0], c));
+  const cols = hasAll ? prefer : Object.keys(rows[0]);
   let html = "<thead><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr></thead>";
   html += "<tbody>";
   rows.forEach(r=>{
@@ -292,6 +303,8 @@ async function executeQuery(buildParamsFn, outEl){
     document.getElementById("btnResetLedger").addEventListener("click", reset);
   });
 })();
+
+// REPORTS-QUERY-11
 </script>
 {% endblock %}
 

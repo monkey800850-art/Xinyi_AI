@@ -1,3 +1,4 @@
+from app.services.ledger_running_balance import enrich_running_balance
 from app.services.report_result_subtotals_vector import tree_to_lines_vector, overall_total_vector
 from app.services.report_result_tree_vector import rows_to_tree_vector
 from app.services.ledger_engine import compute_trial_balance_from_entries
@@ -5952,6 +5953,33 @@ def ledger_query():
         date_to=date_to,
     )
     plan = build_sql_plan_best_effort(spec)
+
+    mode = request.args.get("mode", "plan").strip()
+    engine = None
+    if mode == "engine":
+        try:
+            filters = {}
+            for k in ("subject","person","project","department","bank_account"):
+                vals = request.args.getlist(k)
+                if vals:
+                    filters[k] = vals
+            entries, warns, backend = fetch_entries_best_effort(
+                date_from=request.args.get("date_from"),
+                date_to=request.args.get("date_to"),
+                filters=filters,
+                limit=5000
+            )
+            # sort entries by biz_date then subject_code for stable running balance
+            entries_sorted = sorted(entries, key=lambda e: (str(e.get("biz_date") or ""), str(e.get("subject_code") or "")))
+            ledger_rows = enrich_running_balance(entries_sorted)
+            engine = {
+                "backend": backend,
+                "warnings": warns,
+                "entries_len": len(entries),
+                "rows": ledger_rows[:1000],
+            }
+        except Exception as e:
+            engine = {"backend":"none","warnings":[f"engine_failed: {e}"],"entries_len":0,"rows":[]}
 
     execute = request.args.get("execute", "0").strip() in ("1","true","True","yes","Y")
     run = None
