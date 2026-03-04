@@ -5470,7 +5470,39 @@ def sys_aux_bank_accounts():
 
 @app.route("/sys/fa/assets")
 def sys_fa_assets():
-    return render_template("sys_fa_assets.html")
+    q = (request.args.get("q") or "").strip()
+    rows = []
+    error = None
+
+    # DB-safe query:
+    # 1) try SQLAlchemy db.session
+    # 2) fallback to db.engine
+    # 3) on failure: render with error message
+    try:
+        from app import db  # type: ignore
+        try:
+            # ORM text query avoids needing model import wiring
+            import sqlalchemy as sa
+            sql = "SELECT asset_code, asset_name, asset_category, in_service_date, original_cost_excl_tax, accumulated_depreciation, net_book_value, using_department_id, responsible_person_id, use_status FROM fa_assets"
+            params = {}
+            if q:
+                sql += " WHERE asset_code LIKE :q OR asset_name LIKE :q"
+                params["q"] = f"%{q}%"
+            sql += " ORDER BY id DESC LIMIT 50"
+            res = db.session.execute(sa.text(sql), params).mappings().all()
+            # mappings() yields dict-like; convert to simple objects for template
+            class R: pass
+            for r in res:
+                o = R()
+                for k,v in r.items(): setattr(o,k,v)
+                rows.append(o)
+        except Exception as e1:
+            error = f"db.session query failed: {e1}"
+    except Exception as e0:
+        error = f"db import failed: {e0}"
+
+    return render_template("sys_fa_assets.html", rows=rows, q=q, error=error)
+
 
 
 @app.route("/sys/fa/depreciation-books")

@@ -7,7 +7,11 @@ body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ar
 .card{border:1px solid #ddd; border-radius:14px; padding:12px; margin-top:14px;}
 .muted{opacity:.7;}
 table{border-collapse:collapse; width:100%; margin-top:12px;}
-th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
+th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px; vertical-align:top;}
+th{background:#fafafa;}
+input{padding:8px 10px; border:1px solid #ddd; border-radius:10px; width:320px; max-width:70vw;}
+button{padding:8px 12px; border:1px solid #ddd; border-radius:10px; background:#fff;}
+.kv{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:12px;}
 </style></head>
 <body>
   <div>
@@ -16,17 +20,47 @@ th,td{border:1px solid #eee; padding:8px; text-align:left; font-size:13px;}
   </div>
 
   <h2>固定资产卡片</h2>
+
   <div class="card">
-    <div class="muted">占位页：已挂载入口。下一步将接入 fa_assets 表的列表/新增/编辑，并提供折旧生成凭证入口。</div>
+    <form method="get" action="/sys/fa/assets">
+      <label>搜索（资产编码/名称）：</label>
+      <input name="q" value="{{ q or '' }}" placeholder="例如：FA-0001 / 电脑 / 设备">
+      <button type="submit">查询</button>
+      <a class="pill" href="/sys/fa/assets">重置</a>
+    </form>
+
+    {% if error %}
+      <div class="muted" style="margin-top:10px;">DB 未就绪：<span class="kv">{{ error }}</span></div>
+      <div class="muted">提示：需完成迁移并连接数据库后，本页将显示 fa_assets 数据。</div>
+    {% endif %}
+
     <table>
       <thead>
         <tr>
           <th>资产编码</th><th>资产名称</th><th>类别</th><th>启用日期</th>
-          <th>原值(不含税)</th><th>累计折旧</th><th>净值</th><th>部门</th><th>责任人</th><th>状态</th>
+          <th>原值(不含税)</th><th>累计折旧</th><th>净值</th>
+          <th>部门</th><th>责任人</th><th>状态</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="muted"><td colspan="10">尚未接入数据库，下一卡将实现列表读。</td></tr>
+        {% if rows %}
+          {% for r in rows %}
+            <tr>
+              <td>{{ r.asset_code }}</td>
+              <td>{{ r.asset_name }}</td>
+              <td>{{ r.asset_category }}</td>
+              <td>{{ r.in_service_date }}</td>
+              <td>{{ r.original_cost_excl_tax }}</td>
+              <td>{{ r.accumulated_depreciation }}</td>
+              <td>{{ r.net_book_value }}</td>
+              <td>{{ r.using_department_id }}</td>
+              <td>{{ r.responsible_person_id }}</td>
+              <td>{{ r.use_status }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr class="muted"><td colspan="10">暂无数据（或 DB 未就绪）。</td></tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
