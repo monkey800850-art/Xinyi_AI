@@ -45,6 +45,21 @@ collect() {
   fi
 }
 
+collect_glob() {
+  local pattern="$1"
+  local matched=0
+  shopt -s nullglob
+  for f in ${pattern}; do
+    matched=1
+    cp -f "$f" "${OUT}/" || true
+    echo "- $(basename "$f"): $(basename "$f")" >> "${OUT}/INDEX.md"
+  done
+  shopt -u nullglob
+  if [[ "${matched}" -eq 0 ]]; then
+    echo "- ${pattern}: (missing)" >> "${OUT}/INDEX.md"
+  fi
+}
+
 echo "" >> "${OUT}/INDEX.md"
 echo "## Evidence files" >> "${OUT}/INDEX.md"
 collect /tmp/evidence_smoke_auth.txt
@@ -52,6 +67,9 @@ collect /tmp/evidence_health_check.txt
 collect /tmp/evidence_smoke_dashboard.txt
 collect /tmp/evidence_secret_history_scan.txt
 collect /tmp/evidence_secret_history_hits.txt
+collect_glob "/tmp/evidence_uat_run*.txt"
+collect_glob "/tmp/evidence_uat_auth_run*.txt"
+collect_glob "/tmp/evidence_ui_smoke*.txt"
 
 # Local keyword scan (working tree) - filenames only
 {
