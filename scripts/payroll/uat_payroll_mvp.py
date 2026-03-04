@@ -19,9 +19,40 @@ def main():
     lines.append(f"- ts: {datetime.now().isoformat(timespec='seconds')}")
     lines.append("")
 
+    # DB resolver: prefer app.py module import (import app), then app package (from app import db)
     try:
-        from app import db  # type: ignore
-        import sqlalchemy as sa
+        import importlib, sys, os
+        db = None
+        sa = None
+
+        # 1) app.py style: import app (loads app.py)
+        try:
+            app_mod = importlib.import_module("app")
+            db = getattr(app_mod, "db", None)
+        except Exception as e1:
+            db = None
+
+        # 2) package style: from app import db (already covered by import_module for most cases),
+        # but keep explicit fallback for clarity
+        if db is None:
+            try:
+                from app import db as _db  # type: ignore
+                db = _db
+            except Exception:
+                db = None
+
+        import sqlalchemy as sa  # type: ignore
+
+        if db is None:
+            # diagnostics
+            here = os.getcwd()
+            lines = []
+            lines.append("DB import failed: cannot resolve db from app entry.")
+            lines.append(f"cwd={here}")
+            lines.append(f"sys.path[0:5]={sys.path[0:5]}")
+            lines.append(f"exists(app.py)={os.path.exists(os.path.join(here,'app.py'))}")
+            lines.append(f"exists(app/__init__.py)={os.path.exists(os.path.join(here,'app','__init__.py'))}")
+            fail("\n".join(lines))
     except Exception as e:
         fail(f"DB import failed: {e}")
 
