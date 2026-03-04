@@ -56,3 +56,6 @@ ghp_*
 *.crt
 *.cer
 *.der
+
+# runtime logs
+var/log/

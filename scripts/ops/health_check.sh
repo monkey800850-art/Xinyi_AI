@@ -7,7 +7,24 @@ cd "${ROOT_DIR}"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-5000}"
 BASE_URL="${BASE_URL:-http://${HOST}:${PORT}}"
-LOG_PATH_HINT="${LOG_PATH_HINT:-/tmp/xinyi_app_500.log}"
+LOG_DIR="${LOG_DIR:-var/log}"
+LOG_FILE="${LOG_FILE:-xinyi_app.log}"
+LOG_PATH_HINT="${LOG_PATH_HINT:-${LOG_DIR}/${LOG_FILE}}"
+EFFECTIVE_LOG_PATH="${XINYI_EFFECTIVE_LOG_PATH:-${LOG_PATH:-}}"
+
+if [[ -z "${EFFECTIVE_LOG_PATH}" ]]; then
+  if [[ -n "${LOG_FILE}" && -n "${LOG_DIR}" ]]; then
+    EFFECTIVE_LOG_PATH="${LOG_DIR}/${LOG_FILE}"
+  elif [[ -n "${LOG_FILE}" ]]; then
+    EFFECTIVE_LOG_PATH="var/log/${LOG_FILE}"
+  else
+    EFFECTIVE_LOG_PATH="var/log/xinyi_app.log"
+  fi
+fi
+
+if [[ ! -f "${EFFECTIVE_LOG_PATH}" && -f "/tmp/xinyi_app.log" ]]; then
+  EFFECTIVE_LOG_PATH="/tmp/xinyi_app.log"
+fi
 
 fail() { echo "[FAIL] $*"; exit 1; }
 warn() { echo "[WARN] $*"; }
@@ -88,13 +105,14 @@ echo "GET /api/system/users -> ${USERS_STATUS}"
 echo ""
 
 echo "== log path hint =="
-echo "LOG_PATH_HINT=${LOG_PATH_HINT}"
-if [[ -f "${LOG_PATH_HINT}" ]]; then
-  ok "log file exists: ${LOG_PATH_HINT}"
+LOG_PATH="${EFFECTIVE_LOG_PATH:-${LOG_PATH_HINT}}"
+echo "LOG_PATH=${LOG_PATH}"
+if [[ -n "${LOG_PATH}" && -f "${LOG_PATH}" ]]; then
+  ok "log file exists: ${LOG_PATH}"
   echo "-- tail(50) --"
-  tail -n 50 "${LOG_PATH_HINT}" || true
+  tail -n 50 "${LOG_PATH}" || true
 else
-  warn "log file not found at hint path (this may be OK if logging config differs): ${LOG_PATH_HINT}"
+  warn "log file not found at LOG_PATH (may be OK if logging disabled): ${LOG_PATH}"
 fi
 echo ""
 

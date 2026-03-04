@@ -3,18 +3,97 @@ import os
 import calendar
 import argparse
 import json
+import logging
 from copy import deepcopy
 from fnmatch import fnmatch
+from logging.handlers import RotatingFileHandler
 import re
 import sys
+from pathlib import Path
 from argparse import Namespace
 from datetime import date, datetime, timedelta, timezone
 
-from flask import Flask, jsonify, request, send_file, session
-from sqlalchemy import text
-from werkzeug.exceptions import HTTPException
+def _bootstrap_local_site_packages() -> None:
+    project_root = Path(__file__).resolve().parent
+    lib_root = project_root / "venv" / "lib"
+    if not lib_root.exists():
+        return
 
-from app.config import DatabaseConfigError, load_env
+    for site_pkg in sorted(lib_root.glob("python*/site-packages")):
+        site_pkg_str = str(site_pkg)
+        if site_pkg.is_dir() and site_pkg_str not in sys.path:
+            sys.path.insert(0, site_pkg_str)
+
+
+_bootstrap_local_site_packages()
+
+
+def _resolve_log_path() -> str:
+    log_path = str(os.getenv("LOG_PATH", "")).strip()
+    log_dir = str(os.getenv("LOG_DIR", "")).strip()
+    log_file = str(os.getenv("LOG_FILE", "")).strip()
+
+    if log_path:
+        candidate = log_path
+    elif log_file and log_dir:
+        candidate = os.path.join(log_dir, log_file)
+    elif log_file:
+        candidate = os.path.join("var", "log", log_file)
+    else:
+        candidate = os.path.join("var", "log", "xinyi_app.log")
+
+    try:
+        dir_path = os.path.dirname(candidate) or "."
+        os.makedirs(dir_path, exist_ok=True)
+        with open(candidate, "a", encoding="utf-8"):
+            pass
+        return candidate
+    except Exception:
+        fallback = "/tmp/xinyi_app.log"
+        try:
+            with open(fallback, "a", encoding="utf-8"):
+                pass
+            return fallback
+        except Exception:
+            return ""
+
+
+def _init_file_logging(app_logger: logging.Logger) -> str:
+    log_path = _resolve_log_path()
+    if not log_path:
+        return ""
+
+    abs_path = os.path.abspath(log_path)
+    for handler in list(app_logger.handlers):
+        base_name = getattr(handler, "baseFilename", "")
+        if base_name and os.path.abspath(str(base_name)) == abs_path:
+            os.environ["XINYI_EFFECTIVE_LOG_PATH"] = log_path
+            return log_path
+
+    handler = RotatingFileHandler(log_path, maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8")
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.INFO)
+    app_logger.propagate = False
+    app_logger.info("logging initialized: %s", log_path)
+    os.environ["XINYI_EFFECTIVE_LOG_PATH"] = log_path
+    return log_path
+
+try:
+    from flask import Flask, jsonify, request, send_file, session
+    from sqlalchemy import text
+    from werkzeug.exceptions import HTTPException
+except ModuleNotFoundError as err:
+    missing_name = getattr(err, "name", "") or "unknown"
+    print(
+        "Python dependency missing: "
+        f"{missing_name}. Please install requirements or fix local venv bootstrap.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+from app.config import DatabaseConfigError, get_startup_env_missing, load_env
 from app.db import test_db_connection
 from app.db_router import clear_request_route_context, get_connection_provider, set_request_route_context
 from app.routes import consolidation_bp, core_pages_bp
@@ -558,6 +637,16 @@ def _build_shell_nav(nav_groups: list[dict], current_path: str) -> tuple[list[di
 
 def create_app() -> Flask:
     app_env = load_env()
+    missing_env = get_startup_env_missing()
+    if missing_env:
+        print("[BOOTSTRAP] 环境变量缺项清单:", file=sys.stderr)
+        for key in missing_env:
+            print(f" - {key}", file=sys.stderr)
+        print(
+            "[BOOTSTRAP] 请补齐后重试（DATABASE_URL 可替代 DB_HOST/DB_PORT/DB_NAME/DB_USER/DB_PASSWORD）。",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     try:
         host, port, name = test_db_connection()
@@ -566,10 +655,17 @@ def create_app() -> Flask:
         print(str(err), file=sys.stderr)
         sys.exit(1)
     except Exception as err:
-        print(str(err), file=sys.stderr)
-        sys.exit(1)
+        print(
+            "[BOOTSTRAP] 数据库连接预检失败，服务继续启动；"
+            f"运行期访问数据库相关接口时会报错。detail={err}",
+            file=sys.stderr,
+        )
 
     app = Flask(__name__)
+    effective_log_path = _init_file_logging(app.logger)
+    app.config["XINYI_LOG_PATH"] = effective_log_path
+    if not effective_log_path:
+        print("[BOOTSTRAP] logging init skipped: no writable log path", file=sys.stderr)
 
 
 
