@@ -5446,3 +5446,23 @@ def sys_module():
         items = None
     return render_template("sys_modules.html", sys_items=items)
 
+
+
+@app.route("/sys/aux/parties")
+def sys_aux_parties():
+    return render_template("sys_aux_parties.html")
+
+
+@app.route("/sys/aux/persons")
+def sys_aux_persons():
+    return render_template("sys_aux_persons.html")
+
+
+@app.route("/sys/aux/projects")
+def sys_aux_projects():
+    return render_template("sys_aux_projects.html")
+
+
+@app.route("/sys/aux/bank-accounts")
+def sys_aux_bank_accounts():
+    return render_template("sys_aux_bank_accounts.html")

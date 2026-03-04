@@ -50,6 +50,34 @@
           "title": "Module",
           "key": "module",
           "path": "/hub#tpl-modules-system-html"
+        },
+        {
+          "key": "aux_parties",
+          "title": "往来单位",
+          "path": "/sys/aux/parties",
+          "status": "active",
+          "source": "route"
+        },
+        {
+          "key": "aux_persons",
+          "title": "个人",
+          "path": "/sys/aux/persons",
+          "status": "active",
+          "source": "route"
+        },
+        {
+          "key": "aux_projects",
+          "title": "项目",
+          "path": "/sys/aux/projects",
+          "status": "active",
+          "source": "route"
+        },
+        {
+          "key": "aux_bank_accounts",
+          "title": "银行账户",
+          "path": "/sys/aux/bank-accounts",
+          "status": "active",
+          "source": "route"
         }
       ]
     },
