@@ -12,6 +12,25 @@ echo "branch: $(git rev-parse --abbrev-ref HEAD)"
 echo "head: $(git rev-parse --short HEAD)"
 echo ""
 
+echo "== Working tree status (dirty?) =="
+git status --short || true
+echo ""
+
+echo "== RISK SCAN (filenames only) =="
+echo "-- .env files --"
+git ls-files -o --exclude-standard 2>/dev/null | rg -n '(^|/)\.env(\.|$)' || true
+git ls-files 2>/dev/null | rg -n '(^|/)\.env(\.|$)' || true
+echo "-- Zone.Identifier artifacts --"
+find . -type f -name '*:Zone.Identifier*' -print 2>/dev/null | head -n 50 || true
+echo "-- key/cert-like files --"
+git ls-files 2>/dev/null | rg -n '\.(pem|key|p12|pfx|crt|cer|der)$' || true
+echo ""
+
+echo "== Recommended next action =="
+echo "1) If risky files appear: run scripts/ops/gate_hygiene.sh and scripts/ops/gate_secrets.sh"
+echo "2) To capture a snapshot for window switch: run scripts/ops/gate_all.sh"
+echo ""
+
 echo "== Recent commits =="
 git log -5 --oneline
 echo ""
