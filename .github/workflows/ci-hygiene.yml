@@ -1,0 +1,46 @@
+name: ci-hygiene
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build changed file list
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.sha }}"
+            git diff --name-only "${base}...${head}" > /tmp/changed_files.txt
+          else
+            if git rev-parse HEAD~1 >/dev/null 2>&1; then
+              git diff --name-only HEAD~1..HEAD > /tmp/changed_files.txt
+            else
+              git show --name-only --pretty=format: HEAD > /tmp/changed_files.txt
+            fi
+          fi
+          echo "[ci] changed_files_count=$(wc -l < /tmp/changed_files.txt | tr -d ' ')"
+
+      - name: Hygiene scan (filenames)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f scripts/ops/hygiene_patterns.txt
+          PAT_TMP=/tmp/hygiene_patterns.txt
+          awk 'NF && $0 !~ /^[[:space:]]*#/' scripts/ops/hygiene_patterns.txt > "$PAT_TMP"
+          if rg -n -f "$PAT_TMP" /tmp/changed_files.txt >/dev/null; then
+            echo "[FAIL] hygiene-blocked filenames detected (.env / Zone.Identifier / key/cert)"
+            # Print only filenames (safe)
+            rg -n -f "$PAT_TMP" /tmp/changed_files.txt || true
+            exit 1
+          fi
+          echo "[OK] hygiene scan passed."

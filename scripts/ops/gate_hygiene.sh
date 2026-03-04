@@ -3,27 +3,21 @@ set -euo pipefail
 
 echo "[gate] hygiene scan..."
 
+PAT_FILE="scripts/ops/hygiene_patterns.txt"
+if [[ ! -f "${PAT_FILE}" ]]; then
+  echo "[FAIL] patterns file missing: ${PAT_FILE}"
+  exit 1
+fi
+
 # staged file list
 staged="$(git diff --cached --name-only || true)"
 
 fail() { echo "[FAIL] $*"; exit 1; }
 
-# (A) Block Zone.Identifier artifacts
-if echo "$staged" | rg -n ':[Zz]one\.Identifier' >/dev/null; then
-  echo "$staged" | rg -n ':[Zz]one\.Identifier' || true
-  fail "staged contains Zone.Identifier artifacts"
-fi
-
-# (B) Block .env (any)
-if echo "$staged" | rg -n '(^|/)\.env(\.|$)' >/dev/null; then
-  echo "$staged" | rg -n '(^|/)\.env(\.|$)' || true
-  fail "staged contains .env files (must not be committed)"
-fi
-
-# (C) Block key/cert-like files by name
-if echo "$staged" | rg -n '\.(pem|key|p12|pfx|crt|cer|der)$' >/dev/null; then
-  echo "$staged" | rg -n '\.(pem|key|p12|pfx|crt|cer|der)$' || true
-  fail "staged contains key/cert-like files"
+# Unified scan using patterns file (filenames only)
+if echo "$staged" | rg -n -f "${PAT_FILE}" >/dev/null; then
+  echo "$staged" | rg -n -f "${PAT_FILE}" || true
+  fail "staged contains hygiene-blocked files (.env / Zone.Identifier / key/cert)"
 fi
 
 echo "[OK] hygiene scan passed."

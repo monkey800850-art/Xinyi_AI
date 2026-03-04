@@ -1,0 +1,4 @@
+# Hygiene patterns for filenames (regex)
+:[Zz]one\.Identifier
+(^|/)\.env(\.|$)
+\.(pem|key|p12|pfx|crt|cer|der)$
