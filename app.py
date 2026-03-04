@@ -676,6 +676,7 @@ def create_app() -> Flask:
             "assets",
             "tax",
             "reports",
+            "voucher",
             "system",
             "consolidation",
             "others",
