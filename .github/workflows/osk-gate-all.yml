@@ -15,6 +15,6 @@ jobs:
           chmod +x ops-safety-kit/scripts/*.sh || true
           chmod +x ops-safety-kit/.githooks/pre-commit || true
 
-      - name: Run OSK gate_all
+      - name: Run OSK gate_all (local profile)
         run: |
-          bash ops-safety-kit/scripts/gate_all.sh
+          OSK_PROFILE=local bash ops-safety-kit/scripts/gate_all.sh
