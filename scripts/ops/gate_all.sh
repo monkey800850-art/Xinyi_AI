@@ -100,6 +100,13 @@ else
   mark_skip "health_check" "missing or not executable"
 fi
 
+# 3.5) smoke_ui (curl-based UI reachability)
+if [[ -x scripts/ops/smoke_ui.sh ]]; then
+  run_step "smoke_ui" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" bash scripts/ops/smoke_ui.sh"
+else
+  mark_skip "smoke_ui" "missing or not executable"
+fi
+
 # 4) smoke_auth (requires admin password)
 if [[ -x scripts/ops/smoke_auth.sh ]]; then
   if [[ -n "${ADMIN_PASSWORD:-}" || -n "${ADMIN_PASS:-}" ]]; then
@@ -129,7 +136,7 @@ fi
 } >> "${idx}"
 
 overall_fail=0
-for name in gate_secrets start_app health_check smoke_auth smoke_dashboard; do
+for name in gate_secrets start_app health_check smoke_ui smoke_auth smoke_dashboard; do
   rc="${STEP_RC[$name]:-}"
   if [[ -z "${rc}" ]]; then
     note="${STEP_NOTE[$name]:-SKIP}"

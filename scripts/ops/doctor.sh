@@ -85,6 +85,12 @@ else
   exit 1
 fi
 
+# 2.5) UI smoke (optional)
+if [[ -x scripts/ops/smoke_ui.sh ]]; then
+  run_step "smoke_ui" "HOST=${HOST} PORT=${PORT} BASE_URL=${BASE_URL} NO_PROXY_OPT=\"${NO_PROXY_OPT}\" bash scripts/ops/smoke_ui.sh" || true
+  echo "- smoke_ui: DONE" >> "${idx}"
+fi
+
 # 3) smokes (optional)
 if [[ -x scripts/ops/smoke_auth.sh ]]; then
   if [[ -n "${ADMIN_PASSWORD:-}" || -n "${ADMIN_PASS:-}" ]]; then
