@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ERP2 - 建账</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:24px;}
+    .card{border:1px solid #ddd; border-radius:10px; padding:16px; max-width:720px;}
+    .row{display:flex; gap:12px; margin:10px 0; flex-wrap:wrap;}
+    label{font-size:12px; color:#444; display:block; margin-bottom:6px;}
+    input,select{padding:8px; border:1px solid #ccc; border-radius:8px; min-width:240px;}
+    button{padding:10px 14px; border:1px solid #333; border-radius:10px; background:#111; color:#fff; cursor:pointer;}
+    button.secondary{background:#fff; color:#111; border-color:#ccc;}
+    pre{background:#fafafa; border:1px solid #eee; padding:10px; border-radius:8px; overflow:auto;}
+    .err{color:#b00020; margin-top:8px;}
+    .ok{color:#0a7a2f; margin-top:8px;}
+  </style>
+</head>
+<body>
+  <h1>建账（创建账套）</h1>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>账套名称</label>
+        <input id="book_name" placeholder="例如：心易智能测试账套"/>
+      </div>
+      <div>
+        <label>启用期间（YYYY-MM）</label>
+        <input id="start_period" placeholder="2026-01"/>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>会计准则（占位）</label>
+        <select id="standard">
+          <option value="enterprise">企业会计准则</option>
+          <option value="small">小企业会计准则</option>
+        </select>
+      </div>
+      <div>
+        <label>本位币（占位）</label>
+        <select id="currency">
+          <option value="CNY">CNY</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="btn_create">创建账套</button>
+      <a href="/erp2/subjects"><button class="secondary" type="button">进入科目导入</button></a>
+      <a href="/erp2"><button class="secondary" type="button">返回 ERP2</button></a>
+    </div>
+
+    <div id="msg" class=""></div>
+    <div id="err" class="err"></div>
+    <pre id="resp" style="display:none;"></pre>
+  </div>
+
+<script>
+async function createBook(){
+  const name = document.getElementById("book_name").value.trim();
+  const start = document.getElementById("start_period").value.trim();
+  const standard = document.getElementById("standard").value;
+  const currency = document.getElementById("currency").value;
+
+  const errEl = document.getElementById("err");
+  const msgEl = document.getElementById("msg");
+  const preEl = document.getElementById("resp");
+
+  errEl.textContent = "";
+  msgEl.textContent = "";
+  msgEl.className = "";
+  preEl.style.display = "none";
+
+  if(!name){ errEl.textContent = "请输入账套名称"; return; }
+  if(!/^\d{4}-\d{2}$/.test(start)){ errEl.textContent = "启用期间格式应为 YYYY-MM"; return; }
+
+  const payload = {
+    book_name: name,
+    start_period: start,
+    standard: standard,
+    currency: currency
+  };
+
+  const ok = confirm("确认创建账套？\n" + name + " / " + start);
+  if(!ok) return;
+
+  const t0 = performance.now();
+  const r = await fetch("/api/books", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    credentials: "same-origin",
+    body: JSON.stringify(payload)
+  });
+  const t1 = performance.now();
+  const ms = Math.round(t1 - t0);
+
+  const text = await r.text();
+  let shown = text;
+  try{ shown = JSON.stringify(JSON.parse(text), null, 2); }catch(e){}
+
+  preEl.textContent = shown;
+  preEl.style.display = "block";
+
+  if(r.ok){
+    msgEl.textContent = `创建成功（${ms}ms）。建议下一步：导入科目。`;
+    msgEl.className = "ok";
+  }else{
+    errEl.textContent = `创建失败：HTTP ${r.status}。请查看响应详情。`;
+  }
+}
+
+document.getElementById("btn_create").addEventListener("click", createBook);
+</script>
+</body>
+</html>

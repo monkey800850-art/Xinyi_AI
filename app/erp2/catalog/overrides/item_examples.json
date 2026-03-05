@@ -1,0 +1,29 @@
+{
+  "POST /api/books": {
+    "book_name": "测试账套",
+    "start_period": "2026-01"
+  },
+
+  "POST /api/subjects": {
+    "subject_code": "1001",
+    "subject_name": "库存现金",
+    "direction": "debit"
+  },
+
+  "POST /api/vouchers": {
+    "voucher_date": "2026-01-01",
+    "summary": "测试凭证",
+    "entries": [
+      {
+        "subject_code": "1001",
+        "debit": 1000,
+        "credit": 0
+      },
+      {
+        "subject_code": "2001",
+        "debit": 0,
+        "credit": 1000
+      }
+    ]
+  }
+}

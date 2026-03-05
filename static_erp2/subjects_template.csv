@@ -1,0 +1,7 @@
+subject_code,subject_name,direction,level,parent_code,is_enabled
+1001,库存现金,debit,1,,1
+1002,银行存款,debit,1,,1
+2001,短期借款,credit,1,,1
+3001,实收资本,credit,1,,1
+6001,主营业务收入,credit,1,,1
+6401,主营业务成本,debit,1,,1

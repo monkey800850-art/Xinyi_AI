@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ERP2 - 会计科目导入</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:24px;}
+    .card{border:1px solid #ddd; border-radius:10px; padding:16px; max-width:900px;}
+    .row{display:flex; gap:12px; margin:10px 0; flex-wrap:wrap; align-items:center;}
+    button{padding:10px 14px; border:1px solid #333; border-radius:10px; background:#111; color:#fff; cursor:pointer;}
+    button.secondary{background:#fff; color:#111; border-color:#ccc;}
+    input[type=file]{padding:8px; border:1px solid #ccc; border-radius:8px; background:#fff;}
+    pre{background:#fafafa; border:1px solid #eee; padding:10px; border-radius:8px; overflow:auto; min-height:140px;}
+    .err{color:#b00020; margin-top:8px;}
+    .ok{color:#0a7a2f; margin-top:8px;}
+    .muted{color:#666; font-size:12px;}
+    code{background:#f3f3f3; padding:2px 6px; border-radius:6px;}
+  </style>
+</head>
+<body>
+  <h1>会计科目（导入）</h1>
+
+  <div class="card">
+    <div class="row">
+      <a href="/erp2/static/subjects_template.csv">
+        <button class="secondary" type="button">下载科目导入模板（CSV）</button>
+      </a>
+      <span class="muted">先用模板跑通导入；字段不一致时我再按真实 API 调整。</span>
+    </div>
+
+    <div class="row">
+      <input id="file" type="file" accept=".csv"/>
+      <button id="btn_import">导入</button>
+      <a href="/erp2/books"><button class="secondary" type="button">返回建账</button></a>
+      <a href="/erp2"><button class="secondary" type="button">返回 ERP2</button></a>
+    </div>
+
+    <div class="muted">默认导入接口尝试：<code>POST /api/subjects/import</code>（如你系统不同，我会给补丁卡对齐）。</div>
+
+    <div id="msg" class=""></div>
+    <div id="err" class="err"></div>
+    <pre id="resp"></pre>
+  </div>
+
+<script>
+function pretty(text){
+  try { return JSON.stringify(JSON.parse(text), null, 2); } catch(e){ return text; }
+}
+
+async function doImport(){
+  const f = document.getElementById("file").files[0];
+  const errEl = document.getElementById("err");
+  const msgEl = document.getElementById("msg");
+  const preEl = document.getElementById("resp");
+
+  errEl.textContent = "";
+  msgEl.textContent = "";
+  msgEl.className = "";
+  preEl.textContent = "";
+
+  if(!f){
+    errEl.textContent = "请选择 CSV 文件";
+    return;
+  }
+
+  const ok = confirm("确认导入会计科目？\n文件：" + f.name);
+  if(!ok) return;
+
+  const fd = new FormData();
+  fd.append("file", f);
+
+  const t0 = performance.now();
+  const r = await fetch("/api/subjects/import", {
+    method: "POST",
+    credentials: "same-origin",
+    body: fd
+  });
+  const t1 = performance.now();
+  const ms = Math.round(t1 - t0);
+
+  const text = await r.text();
+  preEl.textContent = pretty(text);
+
+  if(r.ok){
+    msgEl.textContent = `导入完成（${ms}ms）。请查看返回结果。`;
+    msgEl.className = "ok";
+  }else{
+    errEl.textContent = `导入失败：HTTP ${r.status}。请查看返回内容（可能是接口路径或字段不匹配）。`;
+  }
+}
+
+document.getElementById("btn_import").addEventListener("click", doImport);
+</script>
+</body>
+</html>

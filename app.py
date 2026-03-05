@@ -108,6 +108,26 @@ except ModuleNotFoundError as err:
 # Create Flask app once at import time so decorators can bind safely.
 app = Flask(__name__)
 
+
+# =======================
+# XINYI_ERP2_TEMPLATES_LOADER (TASK-ERP2-04-C1)
+# Add templates_erp2 to Jinja search path WITHOUT breaking existing templates.
+# =======================
+from jinja2 import ChoiceLoader, FileSystemLoader
+import os as _os
+
+try:
+    _base_dir = _os.path.dirname(_os.path.abspath(__file__))
+    _erp2_tpl_dir = _os.path.join(_base_dir, "templates_erp2")
+    if _os.path.isdir(_erp2_tpl_dir):
+        app.jinja_loader = ChoiceLoader([
+            app.jinja_loader,
+            FileSystemLoader(_erp2_tpl_dir),
+        ])
+except Exception as _e:
+    # keep server running even if loader patch fails
+    pass
+
 # ENV-IMPORT-01: make app.py importable even if app.config is missing/broken
 try:
     from app.config import DatabaseConfigError, get_startup_env_missing, load_env
@@ -1063,6 +1083,21 @@ def create_app() -> Flask:
 
     @app.before_request
     def _bind_route_context():
+        ## XINYI_DEV_BOOTSTRAP_AUTH_BYPASS
+        import os
+        from flask import request
+        # DEV bootstrap bypass: allow one-time seed without session
+        if request.path == '/api/system/init/bootstrap-seed':
+            token = (os.getenv('DEV_BOOTSTRAP_TOKEN') or '').strip()
+            hdr = (request.headers.get('X-DEV-BOOTSTRAP-TOKEN') or '').strip()
+            if token and hdr == token:
+                return None  # allow request to continue
+
+        # AUTH-BASELINE-02: auth-exempt bypass
+        from flask import request
+        if is_auth_exempt(request.path):
+            return None
+
         path = request.path or "/"
         tenant_id, book_id = _extract_route_context()
         set_request_route_context(tenant_id=tenant_id, book_id=book_id)
@@ -1358,7 +1393,13 @@ def create_app() -> Flask:
 
     @app.post("/api/system/init/reset-and-seed")
     def api_system_init_reset_and_seed():
-        operator, role = _get_operator_from_headers()
+        # DEV_BOOTSTRAP_TOKEN_BYPASS
+        token = os.getenv("DEV_BOOTSTRAP_TOKEN", "").strip()
+        hdr = (request.headers.get("X-DEV-BOOTSTRAP-TOKEN") or "").strip()
+        if token and hdr and hdr == token:
+            operator, role = "dev_bootstrap", "admin"
+        else:
+            operator, role = _get_operator_from_headers()
         role = str(role or "").strip().lower()
         if role not in ("admin", "tester"):
             return jsonify({"error": "forbidden"}), 403
@@ -5501,6 +5542,52 @@ if __name__ == "__main__":
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=False)
 
+## XINYI_DEV_LOGIN_APP_ROUTE
+@app.get("/dev/login")
+def dev_login_page_app():
+    return render_template("dev_login.html")
+
+## XINYI_WORKBENCH_AUTO_APP_ROUTES
+@app.get("/workbench/auto")
+def workbench_auto_page_app():
+    return render_template("workbench_auto.html")
+
+@app.get("/workbench/catalog.json")
+def workbench_catalog_json_app():
+    from flask import send_from_directory
+    return send_from_directory("static", "workbench_catalog.json")
+
+## XINYI_ERP2_ROUTES
+
+# =======================
+# ERP2 SUBJECTS PAGE (TASK-ERP2-04-D)
+# =======================
+@app.get("/erp2/subjects")
+def erp2_subjects():
+    return render_template("erp2_subjects.html")
+
+@app.get("/erp2")
+def erp2_shell():
+    from flask import send_file
+    return send_file("templates_erp2/erp2_shell.html")
+
+@app.get("/erp2/books")
+def erp2_books():
+    return render_template("erp2_books.html")
+
+@app.get("/erp2/catalog.json")
+def erp2_catalog():
+    from flask import send_file
+    return send_file("app/erp2/catalog/erp2_catalog.json", mimetype="application/json")
+
+@app.get("/erp2/static/<path:fname>")
+def erp2_static(fname):
+    from flask import send_from_directory
+    return send_from_directory("static_erp2", fname)
+
+
+
+
 
 
 @app.route("/")
@@ -6019,7 +6106,33 @@ def reports_ledger():
 
 from app.services.report_query_runner import run_plan
 from app.routes.reports_health import bp_reports_health
+from app.security.auth_exempt import is_auth_exempt
 
 # === SAFE BLUEPRINT REGISTRATION (auto) ===
 app.register_blueprint(bp_reports_health)
 # === END SAFE BLUEPRINT REGISTRATION (auto) ===
+
+
+# DEV_BOOTSTRAP_SEED_ROUTE
+@app.route("/api/system/init/bootstrap-seed", methods=["POST"])
+def dev_bootstrap_seed():
+    """DEV ONLY: bootstrap seeding to avoid auth deadlock.
+    Requires header X-DEV-BOOTSTRAP-TOKEN matching env DEV_BOOTSTRAP_TOKEN.
+    """
+    token = (os.getenv("DEV_BOOTSTRAP_TOKEN") or "").strip()
+    hdr = (request.headers.get("X-DEV-BOOTSTRAP-TOKEN") or "").strip()
+    if not token or hdr != token:
+        return jsonify({"error":"unauthorized"}), 401
+
+    # XINYI_BOOTSTRAP_SEED_DISPATCH
+    # Dispatch by URL rule to avoid NameError from function scope/order.
+    from flask import current_app
+    target = None
+    for ep, fn in current_app.view_functions.items():
+        rules = current_app.url_map._rules_by_endpoint.get(ep) or []
+        if any(str(r.rule) == "/api/system/init/reset-and-seed" for r in rules):
+            target = fn
+            break
+    if target is None:
+        return jsonify({"ok": False, "message": "bootstrap_target_not_found"}), 500
+    return target()

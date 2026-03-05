@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>凭证录入</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:20px
+}
+
+table{
+border-collapse:collapse;
+width:100%
+}
+
+th,td{
+border:1px solid #ccc;
+padding:6px
+}
+
+input{
+width:100%
+}
+
+button{
+margin-top:10px;
+padding:6px 12px
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>凭证录入</h1>
+
+日期
+<input id="date" type="date">
+
+摘要
+<input id="summary">
+
+<table id="entries">
+
+<thead>
+<tr>
+<th>科目</th>
+<th>借方</th>
+<th>贷方</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td><input class="subject"></td>
+<td><input class="debit"></td>
+<td><input class="credit"></td>
+</tr>
+
+</tbody>
+
+</table>
+
+<button onclick="addRow()">新增分录</button>
+
+<br>
+
+借方合计：
+<span id="debit_total">0</span>
+
+贷方合计：
+<span id="credit_total">0</span>
+
+<br>
+
+<button onclick="saveVoucher()">保存凭证</button>
+
+<pre id="resp"></pre>
+
+<script>
+
+function addRow(){
+
+let tr=document.createElement("tr")
+
+tr.innerHTML=
+`
+<td><input class="subject"></td>
+<td><input class="debit"></td>
+<td><input class="credit"></td>
+`
+
+document.querySelector("#entries tbody").appendChild(tr)
+
+}
+
+function calc(){
+
+let d=0
+let c=0
+
+document.querySelectorAll(".debit").forEach(x=>{
+d+=Number(x.value||0)
+})
+
+document.querySelectorAll(".credit").forEach(x=>{
+c+=Number(x.value||0)
+})
+
+document.getElementById("debit_total").textContent=d
+document.getElementById("credit_total").textContent=c
+
+}
+
+document.addEventListener("input",calc)
+
+async function saveVoucher(){
+
+let entries=[]
+
+let rows=document.querySelectorAll("#entries tbody tr")
+
+rows.forEach(r=>{
+
+let subject=r.querySelector(".subject").value
+let debit=r.querySelector(".debit").value
+let credit=r.querySelector(".credit").value
+
+if(subject){
+
+entries.push({
+subject_code:subject,
+debit:Number(debit||0),
+credit:Number(credit||0)
+})
+
+}
+
+})
+
+const payload={
+date:document.getElementById("date").value,
+summary:document.getElementById("summary").value,
+entries:entries
+}
+
+const r=await fetch("/api/vouchers",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(payload)
+})
+
+document.getElementById("resp").textContent=await r.text()
+
+}
+
+</script>
+
+</body>
+</html>

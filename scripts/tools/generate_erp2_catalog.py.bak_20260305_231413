@@ -1,0 +1,54 @@
+import json, re
+from pathlib import Path
+from datetime import datetime
+
+idx = json.loads(Path("docs/evidence_erp2/api_index.json").read_text(encoding="utf-8"))
+items = idx["items"]
+
+RULES = [
+  ("系统管理", r"^/api/system/"),
+  ("鉴权与会话", r"^/api/auth/"),
+  ("账套", r"^/api/books"),
+  ("会计-凭证", r"^/api/vouchers"),
+  ("会计-科目与账簿", r"^/api/subjects|^/api/subject_ledger|^/api/trial_balance|^/api/reports/"),
+  ("会计-辅助核算", r"^/api/aux_|^/api/masters/|^/api/autocomplete"),
+  ("资金票据", r"^/api/bank_transactions|^/api/reconcile/"),
+  ("费用与付款", r"^/api/reimbursements|^/api/payments"),
+  ("资产", r"^/api/assets"),
+  ("税务合规", r"^/api/tax/"),
+  ("工资", r"^/api/payroll/|^/api/attendance/"),
+  ("应收应付", r"^/api/ar_ap/"),
+  ("合并", r"^/api/consolidation/"),
+  ("运维与导出", r"^/api/health|^/api/ux/|^/api/exports/"),
+]
+
+compiled=[(n,re.compile(p)) for n,p in RULES]
+groups={n:[] for n,_ in RULES}
+groups["其他"]=[]
+
+for it in items:
+    p=it["path"]
+    if not p.startswith("/api/"):
+        continue
+    placed=False
+    for name,rx in compiled:
+        if rx.search(p):
+            groups[name].append(it); placed=True; break
+    if not placed:
+        groups["其他"].append(it)
+
+menus=[]
+for name,_ in RULES:
+    if groups[name]:
+        menus.append({"name":name,"items":groups[name]})
+if groups["其他"]:
+    menus.append({"name":"其他","items":groups["其他"]})
+
+catalog={
+  "generated_at": datetime.now().isoformat(timespec="seconds"),
+  "count": sum(len(m["items"]) for m in menus),
+  "menus": menus,
+  "overrides_hint": "Put manual overrides under app/erp2/catalog/overrides/*.json"
+}
+Path("app/erp2/catalog/erp2_catalog.json").write_text(json.dumps(catalog,ensure_ascii=False,indent=2),encoding="utf-8")
+print("OK erp2_catalog.json menus=",len(menus),"count=",catalog["count"])

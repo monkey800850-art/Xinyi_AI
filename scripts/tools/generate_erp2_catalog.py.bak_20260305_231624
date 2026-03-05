@@ -1,0 +1,266 @@
+
+# =======================
+# XINYI_ERP2_ARGPARSE (TASK-ERP2-02-C1)
+# =======================
+from __future__ import annotations
+
+import argparse, json, os, hashlib
+from dataclasses import dataclass
+from datetime import datetime, timezone, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+
+TZ_UTC8 = timezone(timedelta(hours=8))
+
+def _read_json(p: str) -> Any:
+    with open(p, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def _maybe_read_json(p: str) -> Optional[Any]:
+    try:
+        return _read_json(p)
+    except Exception:
+        return None
+
+def _load_overrides(dir_path: Optional[str]) -> Dict[str, Any]:
+    # =======================
+    # XINYI_ERP2_OVERRIDES
+    # =======================
+    if not dir_path or not os.path.isdir(dir_path):
+        return {"applied": False, "groups_order": None, "groups_titles": None, "hidden_paths": None}
+    def j(name):
+        return _maybe_read_json(os.path.join(dir_path, name))
+    return {
+        "applied": True,
+        "groups_order": j("groups_order.json") or [],
+        "groups_titles": j("groups_titles.json") or {},
+        "hidden_paths": j("hidden_paths.json") or [],
+        "item_titles": j("item_titles.json") or {},
+    }
+
+def _is_hidden(path: str, hidden_rules: List[str]) -> bool:
+    for r in hidden_rules:
+        if not r:
+            continue
+        if path == r or path.startswith(r.rstrip("/") + "/") or path.startswith(r):
+            return True
+    return False
+
+def _stable_sort_groups(groups: List[Dict[str, Any]], order: List[str]) -> List[Dict[str, Any]]:
+    idx = {gid: i for i, gid in enumerate(order or [])}
+    def key(g):
+        gid = g.get("id") or ""
+        return (idx.get(gid, 10**9), gid)
+    return sorted(groups, key=key)
+
+def _stable_sort_items(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def key(it):
+        api = it.get("api") or {}
+        return (api.get("path") or "", api.get("method") or "", it.get("id") or "")
+    return sorted(items, key=key)
+
+def _write_meta(catalog: Dict[str, Any], api_index_path: str, total_routes: int, api_routes: int, overrides_applied: bool) -> None:
+    meta = catalog.get("meta") or {}
+    meta["schema_version"] = "erp2-catalog-0.2"
+    meta["generated_at"] = datetime.now(TZ_UTC8).isoformat()
+    meta["source_api_index"] = api_index_path
+    meta["counts"] = {
+        "total_routes_in_index": int(total_routes),
+        "api_routes_in_catalog": int(api_routes),
+    }
+    meta["overrides_applied"] = bool(overrides_applied)
+    catalog["meta"] = meta
+
+def _sha16_of_file(p: str) -> str:
+    b = open(p, "rb").read()
+    return hashlib.sha256(b).hexdigest()[:16]
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(description="Generate ERP2 catalog from api_index.json (with overrides).")
+    ap.add_argument("--api-index", dest="api_index", default=None, help="Path to api_index.json")
+    ap.add_argument("--out", dest="out", default=None, help="Output path for erp2_catalog.json")
+    ap.add_argument("--overrides", dest="overrides", default=None, help="Overrides directory (json files)")
+    ap.add_argument("--only-api-prefix", dest="only_api_prefix", default="/api", help="Filter paths by prefix (default /api)")
+    ap.add_argument("--stable", dest="stable", action="store_true", help="Enable stable sorting for groups/items")
+    return ap
+
+import json, re
+from pathlib import Path
+from datetime import datetime
+
+idx = json.loads(Path("docs/evidence_erp2/api_index.json").read_text(encoding="utf-8"))
+items = idx["items"]
+
+RULES = [
+  ("系统管理", r"^/api/system/"),
+  ("鉴权与会话", r"^/api/auth/"),
+  ("账套", r"^/api/books"),
+  ("会计-凭证", r"^/api/vouchers"),
+  ("会计-科目与账簿", r"^/api/subjects|^/api/subject_ledger|^/api/trial_balance|^/api/reports/"),
+  ("会计-辅助核算", r"^/api/aux_|^/api/masters/|^/api/autocomplete"),
+  ("资金票据", r"^/api/bank_transactions|^/api/reconcile/"),
+  ("费用与付款", r"^/api/reimbursements|^/api/payments"),
+  ("资产", r"^/api/assets"),
+  ("税务合规", r"^/api/tax/"),
+  ("工资", r"^/api/payroll/|^/api/attendance/"),
+  ("应收应付", r"^/api/ar_ap/"),
+  ("合并", r"^/api/consolidation/"),
+  ("运维与导出", r"^/api/health|^/api/ux/|^/api/exports/"),
+]
+
+compiled=[(n,re.compile(p)) for n,p in RULES]
+groups={n:[] for n,_ in RULES}
+groups["其他"]=[]
+
+for it in items:
+    p=it["path"]
+    if not p.startswith("/api/"):
+        continue
+    placed=False
+    for name,rx in compiled:
+        if rx.search(p):
+            groups[name].append(it); placed=True; break
+    if not placed:
+        groups["其他"].append(it)
+
+menus=[]
+for name,_ in RULES:
+    if groups[name]:
+        menus.append({"name":name,"items":groups[name]})
+if groups["其他"]:
+    menus.append({"name":"其他","items":groups["其他"]})
+
+catalog={
+  "generated_at": datetime.now().isoformat(timespec="seconds"),
+  "count": sum(len(m["items"]) for m in menus),
+  "menus": menus,
+  "overrides_hint": "Put manual overrides under app/erp2/catalog/overrides/*.json"
+}
+Path("app/erp2/catalog/erp2_catalog.json").write_text(json.dumps(catalog,ensure_ascii=False,indent=2),encoding="utf-8")
+print("OK erp2_catalog.json menus=",len(menus),"count=",catalog["count"])
+
+
+
+def main(argv=None):
+    """
+    Backward compatible:
+    - If called with args, use them.
+    - If called without args, keep original behavior (existing script paths).
+    """
+    ap = _build_arg_parser()
+    args = ap.parse_args(argv)
+
+    # If user explicitly calls --help, argparse exits before here.
+    # Determine whether args were provided: if api_index/out are None, we keep old script behavior.
+    if args.api_index is None and args.out is None and args.overrides is None and args.only_api_prefix == "/api" and not args.stable:
+        # Old behavior: run the original script body as-is.
+        return None
+
+    # Otherwise, we expect the original script to have a callable function or at least variables we can reuse.
+    # We'll attempt to load api_index and then call a helper function if present; else, we implement a minimal generator here.
+    api_index_path = args.api_index
+    out_path = args.out
+    if not api_index_path or not out_path:
+        raise SystemExit("ERROR: --api-index and --out are required when using CLI mode.")
+
+    api_index = _read_json(api_index_path)
+
+    # Normalize api_index into list of routes: support common shapes
+    routes = []
+    if isinstance(api_index, dict) and "routes" in api_index and isinstance(api_index["routes"], list):
+        routes = api_index["routes"]
+    elif isinstance(api_index, list):
+        routes = api_index
+    elif isinstance(api_index, dict):
+        # fallback: collect values if they look like routes
+        for v in api_index.values():
+            if isinstance(v, list) and v and isinstance(v[0], dict) and ("path" in v[0] or "rule" in v[0]):
+                routes.extend(v)
+    total_routes = len(routes)
+
+    only_prefix = args.only_api_prefix or "/api"
+    overrides = _load_overrides(args.overrides)
+    hidden_rules = overrides.get("hidden_paths") or []
+    group_titles = overrides.get("groups_titles") or {}
+    groups_order = overrides.get("groups_order") or []
+
+    # Route item extraction
+    # Accept keys: path/method OR rule/methods
+    api_items = []
+    for r in routes:
+        if not isinstance(r, dict):
+            continue
+        path = r.get("path") or r.get("rule") or ""
+        if not isinstance(path, str):
+            continue
+        if not path.startswith(only_prefix):
+            continue
+        if _is_hidden(path, hidden_rules):
+            continue
+
+        method = r.get("method")
+        if method is None:
+            ms = r.get("methods")
+            if isinstance(ms, list) and ms:
+                # choose each method separately
+                for m in ms:
+                    if m in ("HEAD","OPTIONS"):
+                        continue
+                    api_items.append({"path": path, "method": m})
+                continue
+        if isinstance(method, str):
+            if method in ("HEAD","OPTIONS"):
+                continue
+            api_items.append({"path": path, "method": method})
+
+    # Grouping by /api/{group}/...
+    groups_map: Dict[str, Dict[str, Any]] = {}
+    for it in api_items:
+        p = it["path"]
+        parts = p.split("/")
+        gid = parts[2] if len(parts) > 2 else "misc"  # ['', 'api', '{gid}', ...]
+        if not gid:
+            gid = "misc"
+        g = groups_map.setdefault(gid, {"id": gid, "title": gid, "items": []})
+        g["items"].append({
+            "id": f"{gid}.{it['method'].lower()}.{p}",
+            "title": p,
+            "api": {"method": it["method"], "path": p},
+            "ui": {"type": "runner"}
+        })
+
+    groups = list(groups_map.values())
+
+    # Apply group title overrides
+    for g in groups:
+        gid = g.get("id")
+        if gid in group_titles:
+            g["title"] = group_titles[gid]
+
+    # Stable sort
+    if args.stable:
+        for g in groups:
+            g["items"] = _stable_sort_items(g.get("items") or [])
+        groups = _stable_sort_groups(groups, groups_order)
+
+    catalog = {
+        "version": "erp2-0.2",
+        "groups": groups
+    }
+    _write_meta(catalog, api_index_path, total_routes, len(api_items), overrides.get("applied", False))
+
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(catalog, f, ensure_ascii=False, indent=2)
+
+    sha16 = _sha16_of_file(out_path)
+    print("OK erp2_catalog.json menus=", len(groups), "count=", len(api_items), "sha16=", sha16)
+    return None
+
+
+if __name__ == "__main__":
+    # If script is run without CLI args, keep old behavior (existing code body).
+    # If args are provided, run the new main() and then exit before old code executes.
+    import sys as _sys
+    if len(_sys.argv) > 1:
+        main()
+        raise SystemExit(0)

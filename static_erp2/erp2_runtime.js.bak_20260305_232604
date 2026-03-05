@@ -1,0 +1,106 @@
+
+
+// =======================
+// ERP2_SAFE_METHODS
+// =======================
+
+const SAFE_METHODS = ["GET","HEAD","OPTIONS"];
+
+function confirmDangerous(method,path){
+  if(SAFE_METHODS.includes(method)){
+    return true;
+  }
+
+  return confirm(
+    "危险操作确认:\n" +
+    method + " " + path + "\n\n" +
+    "该操作可能修改系统数据，是否继续？"
+  );
+}
+
+
+(async function(){
+  const $=id=>document.getElementById(id);
+  const menuEl=$("menu"), qEl=$("q"), reloadBtn=$("reload");
+  const mEl=$("m"), pEl=$("p"), bEl=$("b");
+  const sendBtn=$("send"), copyBtn=$("copy");
+  const curEl=$("cur"), hintEl=$("hint"), outEl=$("out"), stEl=$("st"), rtEl=$("rt");
+  let catalog=null, active=null;
+
+  function fmt(text){ try{return JSON.stringify(JSON.parse(text),null,2);}catch(_){return text;} }
+  function guessMethod(path){
+    const p=path.toLowerCase();
+    if (/(generate|build|import|validate|sync|commit|run|confirm|configure)/.test(p)) return "POST";
+    return "GET";
+  }
+  function buildMenu(filter){
+    const f=(filter||"").trim().toLowerCase();
+    menuEl.innerHTML="";
+    for(const sec of (catalog?.menus||[])){
+      const items=sec.items.filter(it => !f || it.path.toLowerCase().includes(f));
+      if(!items.length) continue;
+      const wrap=document.createElement("div"); wrap.className="sec";
+      const title=document.createElement("div"); title.className="sec-title"; title.textContent=`${sec.name} (${items.length})`;
+      wrap.appendChild(title);
+      for(const it of items){
+        const a=document.createElement("a"); a.className="item"; a.href="javascript:void(0)"; a.textContent=`${it.path}  [${it.methods.join(",")}]`;
+        a.onclick=()=>select(it,a);
+        wrap.appendChild(a);
+      }
+      menuEl.appendChild(wrap);
+    }
+  }
+  function select(it, link){
+    if(active) active.classList.remove("active");
+    active=link; active.classList.add("active");
+    curEl.textContent=it.path;
+    const m=it.methods.includes("GET") ? guessMethod(it.path) : it.methods[0];
+    mEl.value=m;
+    pEl.value=it.path;
+    hintEl.textContent=`methods=${it.methods.join(", ")}`;
+    if(m==="GET") bEl.value="";
+  }
+  async function load(){
+    const r=await fetch("/erp2/catalog.json",{cache:"no-store"});
+    catalog=await r.json();
+    buildMenu(qEl.value);
+  }
+  async function send(){
+    const method=mEl.value, path=pEl.value.trim();
+    if(!path) return;
+    const t0=performance.now();
+    stEl.textContent="..."; rtEl.textContent=""; outEl.textContent="请求中...";
+    try{
+      let body=null;
+      if(method!=="GET" && method!=="HEAD"){
+        const raw=bEl.value.trim();
+        body=raw?raw:"{}";
+      }
+      const r=await fetch(path,{method,headers:{"Content-Type":"application/json"},body,credentials:"same-origin"});
+      const t1=performance.now();
+      stEl.textContent="HTTP "+r.status; rtEl.textContent="rt="+Math.round(t1-t0)+"ms";
+      const text=await r.text();
+      outEl.textContent=fmt(text);
+    }catch(e){
+      const t1=performance.now();
+      stEl.textContent="ERR"; rtEl.textContent="rt="+Math.round(t1-t0)+"ms";
+      outEl.textContent=String(e);
+    }
+  }
+  function curlCmd(){
+    const method=mEl.value, path=pEl.value.trim();
+    let cmd=`curl -i -X ${method} http://127.0.0.1:5000${path} -H "Content-Type: application/json"`;
+    if(method!=="GET" && method!=="HEAD"){
+      const raw=bEl.value.trim()||"{}";
+      cmd+=` --data '${raw.replace(/'/g,"'\\''")}'`;
+    }
+    return cmd;
+  }
+
+  reloadBtn.onclick=()=>load().catch(e=>menuEl.innerHTML="<div class='muted'>load failed:"+e+"</div>");
+  qEl.oninput=()=>buildMenu(qEl.value);
+  sendBtn.onclick=send;
+  copyBtn.onclick=async ()=>{ const t=curlCmd(); try{await navigator.clipboard.writeText(t);}catch(_){} outEl.textContent=t; };
+
+  await load();
+})();
