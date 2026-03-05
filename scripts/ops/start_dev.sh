@@ -32,7 +32,7 @@ fi
 
 # 3) Migrate
 echo "[4/6] Running migration..."
-PYTHONPATH=. alembic upgrade head
+PYTHONPATH=. python -m alembic upgrade head
 
 # 4) Start server if not running
 echo "[5/6] Starting server..."
