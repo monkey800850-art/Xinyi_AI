@@ -39,6 +39,12 @@ echo "DB_HOST=${DB_HOST:-<missing>}"
 echo "DB_PORT=${DB_PORT:-<missing>}"
 echo "DB_USER=${DB_USER:-<missing>}"
 echo "DB_NAME=${DB_NAME:-<missing>}"
+if [ -n "${DB_PASSWORD:-}" ]; then
+  echo "DB_PASSWORD=<set>"
+else
+  echo "DB_PASSWORD=<missing>"
+fi
+echo "DB_SOCKET=${DB_SOCKET:-<missing>}"
 if [ -n "${DATABASE_URL:-}" ]; then
   echo "DATABASE_URL=<set>"
 else
@@ -70,31 +76,48 @@ fi
 python - <<'PY'
 import os, sys
 host = os.getenv("DB_HOST")
-port = os.getenv("DB_PORT", "3306")
+port = int(os.getenv("DB_PORT", "3306"))
 user = os.getenv("DB_USER")
-pwd = os.getenv("DB_PASSWORD", "")
+pwd = os.getenv("DB_PASSWORD")
 name = os.getenv("DB_NAME")
-if not all([host, user, name]):
-    print("FATAL: missing DB_* env; see .env.example")
+sock = os.getenv("DB_SOCKET", "/var/run/mysqld/mysqld.sock")
+
+missing = [k for k, v in [("DB_HOST", host), ("DB_USER", user), ("DB_PASSWORD", pwd), ("DB_NAME", name)] if not v]
+if missing:
+    print("FATAL: missing env:", ",".join(missing))
     sys.exit(2)
+
 try:
     import pymysql
 except Exception as e:
     print("FATAL: pymysql missing:", e)
     sys.exit(2)
+
+def try_tcp():
+    return pymysql.connect(host=host, port=port, user=user, password=pwd, database=name, connect_timeout=3)
+
+def try_sock():
+    return pymysql.connect(unix_socket=sock, user=user, password=pwd, database=name, connect_timeout=3)
+
 try:
-    conn = pymysql.connect(
-        host=host,
-        port=int(port),
-        user=user,
-        password=pwd,
-        database=name,
-        connect_timeout=3,
-    )
-    conn.close()
-    print("DB_CONNECT_OK")
+    c = try_tcp()
+    c.close()
+    print("DB_CONNECT_OK:TCP")
+    sys.exit(0)
 except Exception as e:
-    print("FATAL: mysql connect failed:", repr(e))
+    print("DB_CONNECT_TCP_FAIL:", repr(e))
+
+if os.path.exists(sock):
+    try:
+        c = try_sock()
+        c.close()
+        print("DB_CONNECT_OK:SOCKET")
+        sys.exit(0)
+    except Exception as e:
+        print("DB_CONNECT_SOCKET_FAIL:", repr(e))
+        sys.exit(2)
+else:
+    print("DB_SOCKET_NOT_FOUND:", sock)
     sys.exit(2)
 PY
 
