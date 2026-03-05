@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# OPS-PLANE-GUARD
+bash scripts/ops/plane_guard.sh
+guard_rc=$?
+if [ "$guard_rc" -ne 0 ]; then
+  echo "[FATAL] Restricted execution plane: missing Flask runtime. Switch to DEV plane and re-run."
+  exit $guard_rc
+fi
+
 # Always anchor to repo root (portable; avoids '~' issues)
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$ROOT"
