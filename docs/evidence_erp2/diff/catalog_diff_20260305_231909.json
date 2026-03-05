@@ -1,0 +1,18 @@
+{
+  "schema_version": "erp2-catalog-diff-0.1",
+  "generated_at": "2026-03-05T23:19:09.689337+08:00",
+  "base_snapshot": "docs/evidence_erp2/snapshots/erp2_catalog_20260305_231909.json",
+  "current": "app/erp2/catalog/erp2_catalog.json",
+  "summary": {
+    "added": 0,
+    "removed": 0,
+    "changed": 0,
+    "base_items": 193,
+    "current_items": 193
+  },
+  "items": {
+    "added": [],
+    "removed": [],
+    "changed": []
+  }
+}

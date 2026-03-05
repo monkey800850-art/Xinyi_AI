@@ -1,0 +1,2300 @@
+{
+  "version": "erp2-0.2",
+  "groups": [
+    {
+      "id": "system",
+      "title": "系统管理",
+      "items": [
+        {
+          "id": "system.get./api/system/audit",
+          "title": "/api/system/audit",
+          "api": {
+            "method": "GET",
+            "path": "/api/system/audit"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/init/bootstrap-seed",
+          "title": "/api/system/init/bootstrap-seed",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/init/bootstrap-seed"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/init/reset-and-seed",
+          "title": "/api/system/init/reset-and-seed",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/init/reset-and-seed"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.get./api/system/roles",
+          "title": "/api/system/roles",
+          "api": {
+            "method": "GET",
+            "path": "/api/system/roles"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/roles",
+          "title": "/api/system/roles",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/roles"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/roles/<int:role_id>/permissions",
+          "title": "/api/system/roles/<int:role_id>/permissions",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/roles/<int:role_id>/permissions"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.get./api/system/rules",
+          "title": "/api/system/rules",
+          "api": {
+            "method": "GET",
+            "path": "/api/system/rules"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/rules",
+          "title": "/api/system/rules",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/rules"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.get./api/system/users",
+          "title": "/api/system/users",
+          "api": {
+            "method": "GET",
+            "path": "/api/system/users"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/users",
+          "title": "/api/system/users",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/users"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/users/<int:user_id>/enabled",
+          "title": "/api/system/users/<int:user_id>/enabled",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/users/<int:user_id>/enabled"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "system.post./api/system/users/<int:user_id>/roles",
+          "title": "/api/system/users/<int:user_id>/roles",
+          "api": {
+            "method": "POST",
+            "path": "/api/system/users/<int:user_id>/roles"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "books",
+      "title": "账套管理",
+      "items": [
+        {
+          "id": "books.get./api/books",
+          "title": "/api/books",
+          "api": {
+            "method": "GET",
+            "path": "/api/books"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "books.get./api/books/<int:book_id>/backup-snapshot",
+          "title": "/api/books/<int:book_id>/backup-snapshot",
+          "api": {
+            "method": "GET",
+            "path": "/api/books/<int:book_id>/backup-snapshot"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "books.post./api/books/<int:book_id>/disable",
+          "title": "/api/books/<int:book_id>/disable",
+          "api": {
+            "method": "POST",
+            "path": "/api/books/<int:book_id>/disable"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "books.get./api/books/<int:book_id>/init-integrity",
+          "title": "/api/books/<int:book_id>/init-integrity",
+          "api": {
+            "method": "GET",
+            "path": "/api/books/<int:book_id>/init-integrity"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "books.post./api/books/backup-restore-verify",
+          "title": "/api/books/backup-restore-verify",
+          "api": {
+            "method": "POST",
+            "path": "/api/books/backup-restore-verify"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "subjects",
+      "title": "会计科目",
+      "items": [
+        {
+          "id": "subjects.get./api/subjects/aux",
+          "title": "/api/subjects/aux",
+          "api": {
+            "method": "GET",
+            "path": "/api/subjects/aux"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "subjects.post./api/subjects/aux",
+          "title": "/api/subjects/aux",
+          "api": {
+            "method": "POST",
+            "path": "/api/subjects/aux"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "subjects.get./api/subjects/aux/effective",
+          "title": "/api/subjects/aux/effective",
+          "api": {
+            "method": "GET",
+            "path": "/api/subjects/aux/effective"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "subjects.get./api/subjects/switchable",
+          "title": "/api/subjects/switchable",
+          "api": {
+            "method": "GET",
+            "path": "/api/subjects/switchable"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vouchers",
+      "title": "凭证管理",
+      "items": [
+        {
+          "id": "vouchers.post./api/vouchers",
+          "title": "/api/vouchers",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.get./api/vouchers/<int:voucher_id>",
+          "title": "/api/vouchers/<int:voucher_id>",
+          "api": {
+            "method": "GET",
+            "path": "/api/vouchers/<int:voucher_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/<int:voucher_id>/approve",
+          "title": "/api/vouchers/<int:voucher_id>/approve",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/<int:voucher_id>/approve"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/<int:voucher_id>/post",
+          "title": "/api/vouchers/<int:voucher_id>/post",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/<int:voucher_id>/post"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/<int:voucher_id>/unapprove",
+          "title": "/api/vouchers/<int:voucher_id>/unapprove",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/<int:voucher_id>/unapprove"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/<int:voucher_id>/unpost",
+          "title": "/api/vouchers/<int:voucher_id>/unpost",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/<int:voucher_id>/unpost"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/import/commit",
+          "title": "/api/vouchers/import/commit",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/import/commit"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/import/preview",
+          "title": "/api/vouchers/import/preview",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/import/preview"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.get./api/vouchers/import/template",
+          "title": "/api/vouchers/import/template",
+          "api": {
+            "method": "GET",
+            "path": "/api/vouchers/import/template"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/template-draft",
+          "title": "/api/vouchers/template-draft",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/template-draft"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/template-preview",
+          "title": "/api/vouchers/template-preview",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/template-preview"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "vouchers.post./api/vouchers/template-suggest",
+          "title": "/api/vouchers/template-suggest",
+          "api": {
+            "method": "POST",
+            "path": "/api/vouchers/template-suggest"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "reports",
+      "title": "财务报表",
+      "items": [
+        {
+          "id": "reports.get./api/reports/dimensions",
+          "title": "/api/reports/dimensions",
+          "api": {
+            "method": "GET",
+            "path": "/api/reports/dimensions"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reports.get./api/reports/health",
+          "title": "/api/reports/health",
+          "api": {
+            "method": "GET",
+            "path": "/api/reports/health"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tax",
+      "title": "税务",
+      "items": [
+        {
+          "id": "tax.get./api/tax/alerts",
+          "title": "/api/tax/alerts",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/alerts"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/alerts/build",
+          "title": "/api/tax/alerts/build",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/alerts/build"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/calc/labor-service",
+          "title": "/api/tax/calc/labor-service",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/calc/labor-service"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/calc/year-end-bonus",
+          "title": "/api/tax/calc/year-end-bonus",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/calc/year-end-bonus"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/declaration-mappings",
+          "title": "/api/tax/declaration-mappings",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/declaration-mappings"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/declaration-mappings",
+          "title": "/api/tax/declaration-mappings",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/declaration-mappings"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/declaration-mappings/build",
+          "title": "/api/tax/declaration-mappings/build",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/declaration-mappings/build"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/diff-ledger",
+          "title": "/api/tax/diff-ledger",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/diff-ledger"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/diff-ledger",
+          "title": "/api/tax/diff-ledger",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/diff-ledger"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/forms/latest",
+          "title": "/api/tax/forms/latest",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/forms/latest"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/invoices",
+          "title": "/api/tax/invoices",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/invoices"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/invoices/import",
+          "title": "/api/tax/invoices/import",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/invoices/import"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/invoices/verify",
+          "title": "/api/tax/invoices/verify",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/invoices/verify"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/rules",
+          "title": "/api/tax/rules",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/rules"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.post./api/tax/rules",
+          "title": "/api/tax/rules",
+          "api": {
+            "method": "POST",
+            "path": "/api/tax/rules"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/summary",
+          "title": "/api/tax/summary",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/summary"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "tax.get./api/tax/validate",
+          "title": "/api/tax/validate",
+          "api": {
+            "method": "GET",
+            "path": "/api/tax/validate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "assets",
+      "title": "固定资产",
+      "items": [
+        {
+          "id": "assets.get./api/assets",
+          "title": "/api/assets",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets",
+          "title": "/api/assets",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/<int:asset_id>",
+          "title": "/api/assets/<int:asset_id>",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/<int:asset_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>",
+          "title": "/api/assets/<int:asset_id>",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>/change",
+          "title": "/api/assets/<int:asset_id>/change",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>/change"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>/dispose",
+          "title": "/api/assets/<int:asset_id>/dispose",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>/dispose"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>/enabled",
+          "title": "/api/assets/<int:asset_id>/enabled",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>/enabled"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>/impairment",
+          "title": "/api/assets/<int:asset_id>/impairment",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>/impairment"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>/journal-entry",
+          "title": "/api/assets/<int:asset_id>/journal-entry",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>/journal-entry"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/<int:asset_id>/revalue",
+          "title": "/api/assets/<int:asset_id>/revalue",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/<int:asset_id>/revalue"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/categories",
+          "title": "/api/assets/categories",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/categories"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/categories",
+          "title": "/api/assets/categories",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/categories"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/categories/<int:category_id>",
+          "title": "/api/assets/categories/<int:category_id>",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/categories/<int:category_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/categories/<int:category_id>/enabled",
+          "title": "/api/assets/categories/<int:category_id>/enabled",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/categories/<int:category_id>/enabled"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/changes",
+          "title": "/api/assets/changes",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/changes"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/depreciation",
+          "title": "/api/assets/depreciation",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/depreciation"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/depreciation",
+          "title": "/api/assets/depreciation",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/depreciation"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/depreciation/<int:batch_id>",
+          "title": "/api/assets/depreciation/<int:batch_id>",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/depreciation/<int:batch_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/depreciation/detail",
+          "title": "/api/assets/depreciation/detail",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/depreciation/detail"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/depreciation/preview",
+          "title": "/api/assets/depreciation/preview",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/depreciation/preview"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/depreciation/summary",
+          "title": "/api/assets/depreciation/summary",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/depreciation/summary"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.post./api/assets/inventory-check",
+          "title": "/api/assets/inventory-check",
+          "api": {
+            "method": "POST",
+            "path": "/api/assets/inventory-check"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "assets.get./api/assets/ledger",
+          "title": "/api/assets/ledger",
+          "api": {
+            "method": "GET",
+            "path": "/api/assets/ledger"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "payroll",
+      "title": "薪酬",
+      "items": [
+        {
+          "id": "payroll.post./api/payroll/attendance/sync",
+          "title": "/api/payroll/attendance/sync",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/attendance/sync"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/disbursement-batches",
+          "title": "/api/payroll/disbursement-batches",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/disbursement-batches"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/disbursement-batches",
+          "title": "/api/payroll/disbursement-batches",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/disbursement-batches"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/disbursement-batches/<int:batch_id>/bank-file",
+          "title": "/api/payroll/disbursement-batches/<int:batch_id>/bank-file",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/disbursement-batches/<int:batch_id>/bank-file"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/periods",
+          "title": "/api/payroll/periods",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/periods"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/periods",
+          "title": "/api/payroll/periods",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/periods"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/periods/<int:period_id>/close",
+          "title": "/api/payroll/periods/<int:period_id>/close",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/periods/<int:period_id>/close"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/periods/<int:period_id>/reopen",
+          "title": "/api/payroll/periods/<int:period_id>/reopen",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/periods/<int:period_id>/reopen"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/policies/regions",
+          "title": "/api/payroll/policies/regions",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/policies/regions"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/policies/regions",
+          "title": "/api/payroll/policies/regions",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/policies/regions"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/slips",
+          "title": "/api/payroll/slips",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/slips"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/slips",
+          "title": "/api/payroll/slips",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/slips"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/slips/<int:slip_id>/confirm",
+          "title": "/api/payroll/slips/<int:slip_id>/confirm",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/slips/<int:slip_id>/confirm"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.post./api/payroll/slips/<int:slip_id>/create-payment-request",
+          "title": "/api/payroll/slips/<int:slip_id>/create-payment-request",
+          "api": {
+            "method": "POST",
+            "path": "/api/payroll/slips/<int:slip_id>/create-payment-request"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/slips/<int:slip_id>/payment-status",
+          "title": "/api/payroll/slips/<int:slip_id>/payment-status",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/slips/<int:slip_id>/payment-status"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payroll.get./api/payroll/slips/<int:slip_id>/voucher-suggestion",
+          "title": "/api/payroll/slips/<int:slip_id>/voucher-suggestion",
+          "api": {
+            "method": "GET",
+            "path": "/api/payroll/slips/<int:slip_id>/voucher-suggestion"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "reimbursements",
+      "title": "费用报销",
+      "items": [
+        {
+          "id": "reimbursements.get./api/reimbursements",
+          "title": "/api/reimbursements",
+          "api": {
+            "method": "GET",
+            "path": "/api/reimbursements"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.post./api/reimbursements",
+          "title": "/api/reimbursements",
+          "api": {
+            "method": "POST",
+            "path": "/api/reimbursements"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.delete./api/reimbursements/<int:reimbursement_id>",
+          "title": "/api/reimbursements/<int:reimbursement_id>",
+          "api": {
+            "method": "DELETE",
+            "path": "/api/reimbursements/<int:reimbursement_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.get./api/reimbursements/<int:reimbursement_id>",
+          "title": "/api/reimbursements/<int:reimbursement_id>",
+          "api": {
+            "method": "GET",
+            "path": "/api/reimbursements/<int:reimbursement_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.post./api/reimbursements/<int:reimbursement_id>/approve",
+          "title": "/api/reimbursements/<int:reimbursement_id>/approve",
+          "api": {
+            "method": "POST",
+            "path": "/api/reimbursements/<int:reimbursement_id>/approve"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.post./api/reimbursements/<int:reimbursement_id>/reject",
+          "title": "/api/reimbursements/<int:reimbursement_id>/reject",
+          "api": {
+            "method": "POST",
+            "path": "/api/reimbursements/<int:reimbursement_id>/reject"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.post./api/reimbursements/<int:reimbursement_id>/submit",
+          "title": "/api/reimbursements/<int:reimbursement_id>/submit",
+          "api": {
+            "method": "POST",
+            "path": "/api/reimbursements/<int:reimbursement_id>/submit"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.post./api/reimbursements/<int:reimbursement_id>/void",
+          "title": "/api/reimbursements/<int:reimbursement_id>/void",
+          "api": {
+            "method": "POST",
+            "path": "/api/reimbursements/<int:reimbursement_id>/void"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.get./api/reimbursements/sla-reminders",
+          "title": "/api/reimbursements/sla-reminders",
+          "api": {
+            "method": "GET",
+            "path": "/api/reimbursements/sla-reminders"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reimbursements.get./api/reimbursements/stats",
+          "title": "/api/reimbursements/stats",
+          "api": {
+            "method": "GET",
+            "path": "/api/reimbursements/stats"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "consolidation",
+      "title": "合并报表",
+      "items": [
+        {
+          "id": "consolidation.get./api/consolidation/adjustment_sets",
+          "title": "/api/consolidation/adjustment_sets",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/adjustment_sets"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/adjustment_sets/<string:set_id>/lock",
+          "title": "/api/consolidation/adjustment_sets/<string:set_id>/lock",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/adjustment_sets/<string:set_id>/lock"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/adjustment_sets/<string:set_id>/reopen",
+          "title": "/api/consolidation/adjustment_sets/<string:set_id>/reopen",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/adjustment_sets/<string:set_id>/reopen"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/adjustment_sets/<string:set_id>/review",
+          "title": "/api/consolidation/adjustment_sets/<string:set_id>/review",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/adjustment_sets/<string:set_id>/review"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/adjustments",
+          "title": "/api/consolidation/adjustments",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/adjustments"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/adjustments",
+          "title": "/api/consolidation/adjustments",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/adjustments"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/audit-permission/check",
+          "title": "/api/consolidation/audit-permission/check",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/audit-permission/check"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/control_decision",
+          "title": "/api/consolidation/control_decision",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/control_decision"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/disclosure-audit-package/generate",
+          "title": "/api/consolidation/disclosure-audit-package/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/disclosure-audit-package/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/eliminations/ic_asset_transfer/generate",
+          "title": "/api/consolidation/eliminations/ic_asset_transfer/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/eliminations/ic_asset_transfer/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/eliminations/unrealized_profit/inventory/generate",
+          "title": "/api/consolidation/eliminations/unrealized_profit/inventory/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/eliminations/unrealized_profit/inventory/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate",
+          "title": "/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/eliminations/unrealized_profit/inventory/reversal/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/enhancements",
+          "title": "/api/consolidation/enhancements",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/enhancements"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/equity_method/generate",
+          "title": "/api/consolidation/equity_method/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/equity_method/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/final_check_approval/run",
+          "title": "/api/consolidation/final_check_approval/run",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/final_check_approval/run"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/groups",
+          "title": "/api/consolidation/groups",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/groups"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/groups/<int:group_id>/members",
+          "title": "/api/consolidation/groups/<int:group_id>/members",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/groups/<int:group_id>/members"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/groups/<int:group_id>/members/effective",
+          "title": "/api/consolidation/groups/<int:group_id>/members/effective",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/groups/<int:group_id>/members/effective"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/members",
+          "title": "/api/consolidation/members",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/members"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/members/<int:member_id>/disable",
+          "title": "/api/consolidation/members/<int:member_id>/disable",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/members/<int:member_id>/disable"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/merge_journal/generate",
+          "title": "/api/consolidation/merge_journal/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/merge_journal/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/nci",
+          "title": "/api/consolidation/nci",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/nci"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/nci/generate",
+          "title": "/api/consolidation/nci/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/nci/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/onboarding/ic_match",
+          "title": "/api/consolidation/onboarding/ic_match",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/onboarding/ic_match"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/ownership",
+          "title": "/api/consolidation/ownership",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/ownership"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/ownership",
+          "title": "/api/consolidation/ownership",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/ownership"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/parameters",
+          "title": "/api/consolidation/parameters",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/parameters"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.put./api/consolidation/parameters",
+          "title": "/api/consolidation/parameters",
+          "api": {
+            "method": "PUT",
+            "path": "/api/consolidation/parameters"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/purchase_method/generate",
+          "title": "/api/consolidation/purchase_method/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/purchase_method/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/read_probe",
+          "title": "/api/consolidation/read_probe",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/read_probe"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/relations/non-legal-bind",
+          "title": "/api/consolidation/relations/non-legal-bind",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/relations/non-legal-bind"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/relations/overview",
+          "title": "/api/consolidation/relations/overview",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/relations/overview"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/reports/automate",
+          "title": "/api/consolidation/reports/automate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/reports/automate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/reports/generate",
+          "title": "/api/consolidation/reports/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/reports/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/rollover/generate",
+          "title": "/api/consolidation/rollover/generate",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/rollover/generate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/scope-criteria/configure",
+          "title": "/api/consolidation/scope-criteria/configure",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/scope-criteria/configure"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/type",
+          "title": "/api/consolidation/type",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/type"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/type",
+          "title": "/api/consolidation/type",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/type"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/virtual-entities",
+          "title": "/api/consolidation/virtual-entities",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/virtual-entities"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/virtual-entities",
+          "title": "/api/consolidation/virtual-entities",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/virtual-entities"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/virtual-entities/<int:virtual_id>",
+          "title": "/api/consolidation/virtual-entities/<int:virtual_id>",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/virtual-entities/<int:virtual_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.get./api/consolidation/virtual-entities/<int:virtual_id>/members",
+          "title": "/api/consolidation/virtual-entities/<int:virtual_id>/members",
+          "api": {
+            "method": "GET",
+            "path": "/api/consolidation/virtual-entities/<int:virtual_id>/members"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "consolidation.post./api/consolidation/virtual-entities/<int:virtual_id>/members",
+          "title": "/api/consolidation/virtual-entities/<int:virtual_id>/members",
+          "api": {
+            "method": "POST",
+            "path": "/api/consolidation/virtual-entities/<int:virtual_id>/members"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "title": "权限",
+      "items": [
+        {
+          "id": "auth.post./api/auth/login",
+          "title": "/api/auth/login",
+          "api": {
+            "method": "POST",
+            "path": "/api/auth/login"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "auth.post./api/auth/logout",
+          "title": "/api/auth/logout",
+          "api": {
+            "method": "POST",
+            "path": "/api/auth/logout"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ar_ap",
+      "title": "ar_ap",
+      "items": [
+        {
+          "id": "ar_ap.get./api/ar_ap/aging",
+          "title": "/api/ar_ap/aging",
+          "api": {
+            "method": "GET",
+            "path": "/api/ar_ap/aging"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "ar_ap.get./api/ar_ap/summary",
+          "title": "/api/ar_ap/summary",
+          "api": {
+            "method": "GET",
+            "path": "/api/ar_ap/summary"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "ar_ap.get./api/ar_ap/warnings",
+          "title": "/api/ar_ap/warnings",
+          "api": {
+            "method": "GET",
+            "path": "/api/ar_ap/warnings"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "attendance",
+      "title": "attendance",
+      "items": [
+        {
+          "id": "attendance.post./api/attendance/sync",
+          "title": "/api/attendance/sync",
+          "api": {
+            "method": "POST",
+            "path": "/api/attendance/sync"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "authorizations",
+      "title": "authorizations",
+      "items": [
+        {
+          "id": "authorizations.get./api/authorizations",
+          "title": "/api/authorizations",
+          "api": {
+            "method": "GET",
+            "path": "/api/authorizations"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "authorizations.post./api/authorizations",
+          "title": "/api/authorizations",
+          "api": {
+            "method": "POST",
+            "path": "/api/authorizations"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "authorizations.patch./api/authorizations/<int:authorization_id>/activate",
+          "title": "/api/authorizations/<int:authorization_id>/activate",
+          "api": {
+            "method": "PATCH",
+            "path": "/api/authorizations/<int:authorization_id>/activate"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "authorizations.patch./api/authorizations/<int:authorization_id>/revoke",
+          "title": "/api/authorizations/<int:authorization_id>/revoke",
+          "api": {
+            "method": "PATCH",
+            "path": "/api/authorizations/<int:authorization_id>/revoke"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "authorizations.patch./api/authorizations/<int:authorization_id>/suspend",
+          "title": "/api/authorizations/<int:authorization_id>/suspend",
+          "api": {
+            "method": "PATCH",
+            "path": "/api/authorizations/<int:authorization_id>/suspend"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "autocomplete",
+      "title": "autocomplete",
+      "items": [
+        {
+          "id": "autocomplete.get./api/autocomplete",
+          "title": "/api/autocomplete",
+          "api": {
+            "method": "GET",
+            "path": "/api/autocomplete"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "aux_balance",
+      "title": "aux_balance",
+      "items": [
+        {
+          "id": "aux_balance.get./api/aux_balance",
+          "title": "/api/aux_balance",
+          "api": {
+            "method": "GET",
+            "path": "/api/aux_balance"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "aux_ledger",
+      "title": "aux_ledger",
+      "items": [
+        {
+          "id": "aux_ledger.get./api/aux_ledger",
+          "title": "/api/aux_ledger",
+          "api": {
+            "method": "GET",
+            "path": "/api/aux_ledger"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bank_transactions",
+      "title": "bank_transactions",
+      "items": [
+        {
+          "id": "bank_transactions.get./api/bank_transactions",
+          "title": "/api/bank_transactions",
+          "api": {
+            "method": "GET",
+            "path": "/api/bank_transactions"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "bank_transactions.post./api/bank_transactions/import",
+          "title": "/api/bank_transactions/import",
+          "api": {
+            "method": "POST",
+            "path": "/api/bank_transactions/import"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "title": "dashboard",
+      "items": [
+        {
+          "id": "dashboard.get./api/dashboard/boss",
+          "title": "/api/dashboard/boss",
+          "api": {
+            "method": "GET",
+            "path": "/api/dashboard/boss"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "dashboard.get./api/dashboard/role-todos",
+          "title": "/api/dashboard/role-todos",
+          "api": {
+            "method": "GET",
+            "path": "/api/dashboard/role-todos"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "dashboard.post./api/dashboard/task-reminders",
+          "title": "/api/dashboard/task-reminders",
+          "api": {
+            "method": "POST",
+            "path": "/api/dashboard/task-reminders"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "dashboard.get./api/dashboard/task-status",
+          "title": "/api/dashboard/task-status",
+          "api": {
+            "method": "GET",
+            "path": "/api/dashboard/task-status"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "dashboard.get./api/dashboard/workbench",
+          "title": "/api/dashboard/workbench",
+          "api": {
+            "method": "GET",
+            "path": "/api/dashboard/workbench"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "exports",
+      "title": "exports",
+      "items": [
+        {
+          "id": "exports.get./api/exports/<report_key>",
+          "title": "/api/exports/<report_key>",
+          "api": {
+            "method": "GET",
+            "path": "/api/exports/<report_key>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "exports.get./api/exports/assets/<report_key>",
+          "title": "/api/exports/assets/<report_key>",
+          "api": {
+            "method": "GET",
+            "path": "/api/exports/assets/<report_key>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "masters",
+      "title": "masters",
+      "items": [
+        {
+          "id": "masters.get./api/masters/<string:kind>",
+          "title": "/api/masters/<string:kind>",
+          "api": {
+            "method": "GET",
+            "path": "/api/masters/<string:kind>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "masters.post./api/masters/<string:kind>",
+          "title": "/api/masters/<string:kind>",
+          "api": {
+            "method": "POST",
+            "path": "/api/masters/<string:kind>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "payments",
+      "title": "payments",
+      "items": [
+        {
+          "id": "payments.get./api/payments",
+          "title": "/api/payments",
+          "api": {
+            "method": "GET",
+            "path": "/api/payments"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.post./api/payments",
+          "title": "/api/payments",
+          "api": {
+            "method": "POST",
+            "path": "/api/payments"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.delete./api/payments/<int:payment_id>",
+          "title": "/api/payments/<int:payment_id>",
+          "api": {
+            "method": "DELETE",
+            "path": "/api/payments/<int:payment_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.get./api/payments/<int:payment_id>",
+          "title": "/api/payments/<int:payment_id>",
+          "api": {
+            "method": "GET",
+            "path": "/api/payments/<int:payment_id>"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.post./api/payments/<int:payment_id>/approve",
+          "title": "/api/payments/<int:payment_id>/approve",
+          "api": {
+            "method": "POST",
+            "path": "/api/payments/<int:payment_id>/approve"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.post./api/payments/<int:payment_id>/execute",
+          "title": "/api/payments/<int:payment_id>/execute",
+          "api": {
+            "method": "POST",
+            "path": "/api/payments/<int:payment_id>/execute"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.post./api/payments/<int:payment_id>/reject",
+          "title": "/api/payments/<int:payment_id>/reject",
+          "api": {
+            "method": "POST",
+            "path": "/api/payments/<int:payment_id>/reject"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.post./api/payments/<int:payment_id>/submit",
+          "title": "/api/payments/<int:payment_id>/submit",
+          "api": {
+            "method": "POST",
+            "path": "/api/payments/<int:payment_id>/submit"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "payments.post./api/payments/<int:payment_id>/void",
+          "title": "/api/payments/<int:payment_id>/void",
+          "api": {
+            "method": "POST",
+            "path": "/api/payments/<int:payment_id>/void"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "reconcile",
+      "title": "reconcile",
+      "items": [
+        {
+          "id": "reconcile.post./api/reconcile/auto",
+          "title": "/api/reconcile/auto",
+          "api": {
+            "method": "POST",
+            "path": "/api/reconcile/auto"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.post./api/reconcile/bulk-confirm",
+          "title": "/api/reconcile/bulk-confirm",
+          "api": {
+            "method": "POST",
+            "path": "/api/reconcile/bulk-confirm"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.post./api/reconcile/cancel",
+          "title": "/api/reconcile/cancel",
+          "api": {
+            "method": "POST",
+            "path": "/api/reconcile/cancel"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.post./api/reconcile/confirm",
+          "title": "/api/reconcile/confirm",
+          "api": {
+            "method": "POST",
+            "path": "/api/reconcile/confirm"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.get./api/reconcile/discrepancy-reasons",
+          "title": "/api/reconcile/discrepancy-reasons",
+          "api": {
+            "method": "GET",
+            "path": "/api/reconcile/discrepancy-reasons"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.get./api/reconcile/list",
+          "title": "/api/reconcile/list",
+          "api": {
+            "method": "GET",
+            "path": "/api/reconcile/list"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.get./api/reconcile/report",
+          "title": "/api/reconcile/report",
+          "api": {
+            "method": "GET",
+            "path": "/api/reconcile/report"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "reconcile.get./api/reconcile/rules",
+          "title": "/api/reconcile/rules",
+          "api": {
+            "method": "GET",
+            "path": "/api/reconcile/rules"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "subject_ledger",
+      "title": "subject_ledger",
+      "items": [
+        {
+          "id": "subject_ledger.get./api/subject_ledger",
+          "title": "/api/subject_ledger",
+          "api": {
+            "method": "GET",
+            "path": "/api/subject_ledger"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "trial_balance",
+      "title": "trial_balance",
+      "items": [
+        {
+          "id": "trial_balance.get./api/trial_balance",
+          "title": "/api/trial_balance",
+          "api": {
+            "method": "GET",
+            "path": "/api/trial_balance"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ux",
+      "title": "ux",
+      "items": [
+        {
+          "id": "ux.get./api/ux/error-message",
+          "title": "/api/ux/error-message",
+          "api": {
+            "method": "GET",
+            "path": "/api/ux/error-message"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "ux.get./api/ux/operation-guide",
+          "title": "/api/ux/operation-guide",
+          "api": {
+            "method": "GET",
+            "path": "/api/ux/operation-guide"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "ux.get./api/ux/wizard",
+          "title": "/api/ux/wizard",
+          "api": {
+            "method": "GET",
+            "path": "/api/ux/wizard"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    },
+    {
+      "id": "voucher-templates",
+      "title": "voucher-templates",
+      "items": [
+        {
+          "id": "voucher-templates.get./api/voucher-templates/detail",
+          "title": "/api/voucher-templates/detail",
+          "api": {
+            "method": "GET",
+            "path": "/api/voucher-templates/detail"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        },
+        {
+          "id": "voucher-templates.get./api/voucher-templates/search",
+          "title": "/api/voucher-templates/search",
+          "api": {
+            "method": "GET",
+            "path": "/api/voucher-templates/search"
+          },
+          "ui": {
+            "type": "runner"
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "schema_version": "erp2-catalog-0.2",
+    "generated_at": "2026-03-05T23:16:24.670218+08:00",
+    "source_api_index": "docs/evidence_erp2/api_index.json",
+    "counts": {
+      "total_routes_in_index": 285,
+      "api_routes_in_catalog": 193
+    },
+    "overrides_applied": true
+  }
+}

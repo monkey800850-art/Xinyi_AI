@@ -1,0 +1,16 @@
+{
+  "system": "系统管理",
+  "books": "账套管理",
+  "subjects": "会计科目",
+  "opening": "期初数据",
+  "vouchers": "凭证管理",
+  "reports": "财务报表",
+  "tax": "税务",
+  "bank": "资金管理",
+  "assets": "固定资产",
+  "payroll": "薪酬",
+  "reimbursements": "费用报销",
+  "consolidation": "合并报表",
+  "auth": "权限",
+  "misc": "其他"
+}
