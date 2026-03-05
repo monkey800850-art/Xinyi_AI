@@ -6029,3 +6029,8 @@ def reports_ledger():
         return f"ledger page render failed: {e}", 200
 
 from app.services.report_query_runner import run_plan
+from app.routes.reports_health import bp_reports_health
+
+# === SAFE BLUEPRINT REGISTRATION (auto) ===
+app.register_blueprint(bp_reports_health)
+# === END SAFE BLUEPRINT REGISTRATION (auto) ===
