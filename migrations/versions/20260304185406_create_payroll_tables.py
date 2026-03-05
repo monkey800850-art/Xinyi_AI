@@ -12,6 +12,12 @@ Goal tables:
 All columns should be created according to scripts/payroll/payroll_field_mapping.json.
 """
 
+# revision identifiers, used by Alembic.
+revision = "20260304185406"
+down_revision = "20260303_000049"
+branch_labels = None
+depends_on = None
+
 def upgrade():
     raise NotImplementedError("Fill with Alembic/Flask-Migrate operations")
 
