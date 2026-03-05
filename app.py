@@ -23,23 +23,6 @@ from pathlib import Path
 from argparse import Namespace
 from datetime import date, datetime, timedelta, timezone
 
-
-
-# APP-BOOT-ORDER-01: ensure `app` exists before any @app.* decorators (for tooling/static inspection)
-try:
-    app  # type: ignore[name-defined]
-except Exception:
-    # Create a minimal Flask app early so decorators can bind.
-    from flask import Flask
-    app = Flask(__name__)
-    for site_pkg in sorted(lib_root.glob("python*/site-packages")):
-        site_pkg_str = str(site_pkg)
-        if site_pkg.is_dir() and site_pkg_str not in sys.path:
-            sys.path.insert(0, site_pkg_str)
-
-
-_bootstrap_local_site_packages()
-
 _GIT_STAMP_CACHE = None
 
 
@@ -122,15 +105,21 @@ except ModuleNotFoundError as err:
     )
     sys.exit(1)
 
+# Create Flask app once at import time so decorators can bind safely.
+app = Flask(__name__)
+
 # ENV-IMPORT-01: make app.py importable even if app.config is missing/broken
 try:
     from app.config import DatabaseConfigError, get_startup_env_missing, load_env
 except Exception:
     # Fallback stubs (keep signatures minimal; used by startup diagnostics only)
+    DatabaseConfigError = Exception
+
     def get_startup_env_missing(*args, **kwargs):
         return []
-DatabaseConfigError = None
-load_env = None
+
+    def load_env(*args, **kwargs):
+        return {}
 
 from app.db import test_db_connection
 from app.db_router import clear_request_route_context, get_connection_provider, set_request_route_context
