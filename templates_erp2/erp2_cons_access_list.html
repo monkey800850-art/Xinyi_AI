@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>合并授权接入</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:18px;background:#f6f7fb}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+h1{margin:0}
+.hint{color:#6b7280;font-size:12px;line-height:1.5;margin-top:6px}
+.btn{display:inline-block;padding:8px 12px;border-radius:10px;border:1px solid #ddd;background:#fff;color:#111;text-decoration:none;font-weight:700;margin-left:6px}
+.btn.primary{background:#111;color:#fff;border-color:#111}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:12px}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th{font-size:12px;color:#6b7280;text-align:left;padding:6px 8px}
+td{background:#fff;border:1px solid #e5e7eb;padding:10px 8px;font-size:13px}
+tr td:first-child{border-radius:12px 0 0 12px}
+tr td:last-child{border-radius:0 12px 12px 0}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.badge{display:inline-block;padding:2px 8px;border:1px solid #ddd;border-radius:999px;font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1>合并授权接入</h1>
+    <div class="hint">用于管理“子公司授权接入 + 纳入母公司虚拟合并体系”的授权单。</div>
+  </div>
+  <div>
+    <a class="btn" href="/erp2">返回工作台</a>
+    <a class="btn primary" href="/erp2/consolidation/access-grants/new">新建授权单</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="hint">数据源：<span class="mono">GET /api/consolidation/access-grants</span></div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:80px;">ID</th>
+        <th style="width:180px;">授权单号</th>
+        <th>母公司 / 子公司</th>
+        <th style="width:140px;">模式</th>
+        <th style="width:120px;">状态</th>
+        <th style="width:160px;">创建时间</th>
+        <th style="width:100px;">操作</th>
+      </tr>
+    </thead>
+    <tbody id="tb"><tr><td colspan="7">加载中...</td></tr></tbody>
+  </table>
+</div>
+
+<script src="/erp2/static/erp2_fetch.js"></script>
+<script>
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
+function normalizeList(j){
+  if(Array.isArray(j)) return j;
+  if(j && Array.isArray(j.items)) return j.items;
+  if(j && Array.isArray(j.data)) return j.data;
+  return [];
+}
+async function load(){
+  const tb=document.getElementById("tb");
+  const r = await erp2FetchJson("GET","/api/consolidation/access-grants");
+  if(!r.ok && !r.data){
+    tb.innerHTML = `<tr><td colspan="7">加载失败</td></tr>`;
+    return;
+  }
+  const items = normalizeList(r.data);
+  if(items.length===0){
+    tb.innerHTML = `<tr><td colspan="7">暂无授权单（当前也可能是 stub 返回）</td></tr>`;
+    return;
+  }
+  tb.innerHTML="";
+  items.forEach(it=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${esc(it.id)}</td>
+      <td class="mono">${esc(it.authorization_no)}</td>
+      <td class="mono">P:${esc(it.parent_tenant_id)}/${esc(it.parent_book_id)} → C:${esc(it.child_tenant_id)}/${esc(it.child_book_id)}</td>
+      <td><span class="badge">${esc(it.grant_mode)}</span></td>
+      <td><span class="badge">${esc(it.status)}</span></td>
+      <td class="mono">${esc(it.created_at)}</td>
+      <td><a class="btn" href="/erp2/consolidation/access-grants/${encodeURIComponent(it.id)}">查看</a></td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+load();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS consolidation_access_grants (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    authorization_no VARCHAR(64) NOT NULL UNIQUE,
+    parent_tenant_id BIGINT NOT NULL,
+    parent_book_id BIGINT NOT NULL,
+    child_tenant_id BIGINT NOT NULL,
+    child_book_id BIGINT NOT NULL,
+    virtual_entity_id BIGINT NOT NULL,
+    grant_mode VARCHAR(32) NOT NULL DEFAULT 'consolidation_work',
+    status VARCHAR(32) NOT NULL DEFAULT 'draft',
+    effective_from DATE NULL,
+    effective_to DATE NULL,
+    approval_doc_no VARCHAR(128) NULL,
+    approval_doc_name VARCHAR(255) NULL,
+    authorization_basis TEXT NULL,
+    created_by BIGINT NULL,
+    approved_by BIGINT NULL,
+    revoked_by BIGINT NULL,
+    access_granted_at DATETIME NULL,
+    included_into_virtual_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>新建合并授权单</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:18px;background:#f6f7fb}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+h1{margin:0}
+.hint{color:#6b7280;font-size:12px;line-height:1.6;margin-top:6px}
+.btn{display:inline-block;padding:8px 12px;border-radius:10px;border:1px solid #ddd;background:#fff;color:#111;text-decoration:none;font-weight:700;margin-left:6px}
+.btn.primary{background:#111;color:#fff;border-color:#111}
+.page{max-width:1080px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 10px 0;font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;color:#6b7280;margin-top:10px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;margin-top:6px;box-sizing:border-box}
+textarea{min-height:100px}
+pre{background:#fafafa;border:1px solid #eee;border-radius:12px;padding:10px;white-space:pre-wrap}
+.badge{display:inline-block;padding:2px 8px;border:1px solid #ddd;border-radius:999px;font-size:12px;background:#fafafa}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="top">
+    <div>
+      <h1>新建合并授权单</h1>
+      <div class="hint">
+        用于完成“<b>子公司授权接入</b> + <b>纳入母公司虚拟合并体系</b>”的一体化申请。<br/>
+        当前阶段先录入关键业务字段，后续再接真实下拉数据源与审批流。
+      </div>
+    </div>
+    <div>
+      <a class="btn" href="/erp2/consolidation/access-grants">返回列表</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>业务规则说明</h3>
+    <div class="hint">
+      <span class="badge">默认隔离</span>
+      <span class="badge">授权接入</span>
+      <span class="badge">批准并纳入</span>
+      <span class="badge">审计留痕</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>母公司信息</h3>
+    <div class="grid">
+      <div>
+        <label>母公司租户 ID</label>
+        <input id="parent_tenant_id" placeholder="例如 1" />
+      </div>
+      <div>
+        <label>母公司账套 ID</label>
+        <input id="parent_book_id" placeholder="例如 1" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>被合并公司信息</h3>
+    <div class="grid">
+      <div>
+        <label>子公司租户 ID</label>
+        <input id="child_tenant_id" placeholder="例如 2" />
+      </div>
+      <div>
+        <label>子公司账套 ID</label>
+        <input id="child_book_id" placeholder="例如 3" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>合并纳入信息</h3>
+    <div class="grid">
+      <div>
+        <label>虚拟合并主体 ID</label>
+        <input id="virtual_entity_id" placeholder="例如 1" />
+      </div>
+      <div>
+        <label>授权模式</label>
+        <select id="grant_mode">
+          <option value="read_only">read_only（只读查看）</option>
+          <option value="consolidation_work" selected>consolidation_work（合并作业）</option>
+          <option value="controlled_edit">controlled_edit（受控编辑）</option>
+        </select>
+      </div>
+      <div>
+        <label>生效开始日期</label>
+        <input id="effective_from" type="date" />
+      </div>
+      <div>
+        <label>生效结束日期</label>
+        <input id="effective_to" type="date" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>授权依据与审批信息</h3>
+    <div class="grid">
+      <div>
+        <label>审批单编号</label>
+        <input id="approval_doc_no" placeholder="例如 APPR-20260306-001" />
+      </div>
+      <div>
+        <label>审批单名称</label>
+        <input id="approval_doc_name" placeholder="例如 合并授权接入审批单" />
+      </div>
+    </div>
+
+    <label>授权依据说明</label>
+    <textarea id="authorization_basis" placeholder="填写授权依据、授权用途、访问范围说明"></textarea>
+
+    <div style="margin-top:12px;">
+      <a class="btn primary" href="javascript:void(0)" onclick="save()">保存授权单</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>提交结果</h3>
+    <pre id="out">等待保存…</pre>
+  </div>
+</div>
+
+<script src="/erp2/static/erp2_fetch.js"></script>
+<script>
+function intv(id){
+  const v=document.getElementById(id).value.trim();
+  const n=parseInt(v,10);
+  return isNaN(n) ? null : n;
+}
+function strv(id){
+  return document.getElementById(id).value.trim();
+}
+async function save(){
+  const payload = {
+    parent_tenant_id: intv("parent_tenant_id"),
+    parent_book_id: intv("parent_book_id"),
+    child_tenant_id: intv("child_tenant_id"),
+    child_book_id: intv("child_book_id"),
+    virtual_entity_id: intv("virtual_entity_id"),
+    grant_mode: strv("grant_mode"),
+    effective_from: strv("effective_from") || null,
+    effective_to: strv("effective_to") || null,
+    approval_doc_no: strv("approval_doc_no"),
+    approval_doc_name: strv("approval_doc_name"),
+    authorization_basis: strv("authorization_basis")
+  };
+
+  const out=document.getElementById("out");
+  const r = await erp2FetchJson("POST","/api/consolidation/access-grants", payload);
+  out.textContent = "HTTP " + r.status + "\\n" + JSON.stringify(r.data,null,2);
+
+  const item = (r.data||{}).item || {};
+  if(item.id && item.id !== 0){
+    location.href = "/erp2/consolidation/access-grants/" + encodeURIComponent(item.id);
+  }
+}
+</script>
+
+</body>
+</html>

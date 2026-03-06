@@ -214,6 +214,22 @@ from app.services.consolidation_authorization_service import (
     list_authorizations,
     set_authorization_status,
 )
+from app.services.consolidation_access_service import (
+    list_access_grants,
+    create_access_grant,
+    get_access_grant,
+    approve_and_activate_access_grant,
+    revoke_access_grant,
+)
+
+
+# XINYI_CONS_ACCESS_BIND_DBEXEC
+try:
+    import app.services.consolidation_access_service as _cons_access_mod
+    if "_xinyi_job_exec" in globals():
+        _cons_access_mod.__dict__["_xinyi_job_exec"] = globals()["_xinyi_job_exec"]
+except Exception:
+    pass
 from app.services.consolidation_adjustment_service import (
     ConsolidationAdjustmentError,
     create_consolidation_adjustment,
@@ -5560,6 +5576,31 @@ def workbench_catalog_json_app():
 ## XINYI_ERP2_ROUTES
 
 # =======================
+# XINYI_CONS_OWNERSHIP_UI_ROUTES
+# 股权关系：V2 UI
+# =======================
+@app.get("/erp2/consolidation/ownership")
+def erp2_cons_ownership():
+    return render_template("erp2_cons_ownership.html")
+
+
+# =======================
+# XINYI_CONS_ACCESS_UI_ROUTES
+# 合并授权接入：V2 UI
+# =======================
+@app.get("/erp2/consolidation/access-grants")
+def erp2_cons_access_list():
+    return render_template("erp2_cons_access_list.html")
+
+@app.get("/erp2/consolidation/access-grants/new")
+def erp2_cons_access_new():
+    return render_template("erp2_cons_access_new.html")
+
+@app.get("/erp2/consolidation/access-grants/<int:grant_id>")
+def erp2_cons_access_detail(grant_id: int):
+    return render_template("erp2_cons_access_detail.html", grant_id=grant_id)
+
+# =======================
 # ERP2 SUBJECTS PAGE (TASK-ERP2-04-D)
 # =======================
 @app.get("/erp2/subjects")
@@ -5589,6 +5630,41 @@ def erp2_static(fname):
 
 
 
+
+# =======================
+# XINYI_CONS_ACCESS_ROUTES
+# 合并授权接入：路由骨架
+# =======================
+@app.get("/api/consolidation/access-grants")
+def api_consolidation_access_grants_list():
+    return jsonify(list_access_grants())
+
+
+@app.post("/api/consolidation/access-grants")
+def api_consolidation_access_grants_create():
+    payload = request.get_json(silent=True) or {}
+    return jsonify(create_access_grant(payload))
+
+
+@app.get("/api/consolidation/access-grants/<int:grant_id>")
+def api_consolidation_access_grants_get(grant_id: int):
+    try:
+        item = get_access_grant(grant_id)
+        return jsonify({"status": "ok", "item": item})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.post("/api/consolidation/access-grants/<int:grant_id>/approve-and-activate")
+def api_consolidation_access_grants_approve_and_activate(grant_id: int):
+    payload = request.get_json(silent=True) or {}
+    return jsonify(approve_and_activate_access_grant(grant_id, payload))
+
+
+@app.post("/api/consolidation/access-grants/<int:grant_id>/revoke")
+def api_consolidation_access_grants_revoke(grant_id: int):
+    payload = request.get_json(silent=True) or {}
+    return jsonify(revoke_access_grant(grant_id, payload))
 
 @app.route("/")
 def home():

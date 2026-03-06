@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>股权关系维护</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:18px;background:#f6f7fb}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+h1{margin:0}
+.hint{color:#6b7280;font-size:12px;line-height:1.5;margin-top:6px}
+.btn{display:inline-block;padding:8px 12px;border-radius:10px;border:1px solid #ddd;background:#fff;color:#111;text-decoration:none;font-weight:700;margin-left:6px}
+.btn.primary{background:#111;color:#fff;border-color:#111}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:12px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12px;color:#6b7280;margin-top:10px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;margin-top:6px;box-sizing:border-box}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th{font-size:12px;color:#6b7280;text-align:left;padding:6px 8px}
+td{background:#fff;border:1px solid #e5e7eb;padding:10px 8px;font-size:13px}
+tr td:first-child{border-radius:12px 0 0 12px}
+tr td:last-child{border-radius:0 12px 12px 0}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+pre{background:#fafafa;border:1px solid #eee;border-radius:12px;padding:10px;white-space:pre-wrap}
+.badge{display:inline-block;padding:2px 8px;border:1px solid #ddd;border-radius:999px;font-size:12px;background:#fafafa}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1>股权关系维护</h1>
+    <div class="hint">
+      用于维护集团合并中的母子公司股权比例、控制关系与生效期间。<br/>
+      当前阶段先接入现有 <span class="mono">/api/consolidation/ownership</span>，形成 V2 可操作入口。
+    </div>
+  </div>
+  <div>
+    <a class="btn" href="/erp2/consolidation/access-grants">返回授权接入</a>
+    <a class="btn" href="/erp2/consolidation">返回合并工作台</a>
+  </div>
+</div>
+
+
+<div class="card" id="ownership-context-card">
+  <h3>来源上下文</h3>
+  <div class="grid">
+    <div>
+      <div class="label">来源授权单 ID</div>
+      <div id="ctx_grant_id" class="value"></div>
+    </div>
+    <div>
+      <div class="label">来源子公司账套 ID</div>
+      <div id="ctx_child_book_id" class="value"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>新增/维护股权关系</h3>
+  <div class="grid">
+    <div>
+      <label>合并主体 / Group ID</label>
+      <input id="group_id" placeholder="例如 1" />
+    </div>
+    <div>
+      <label>母成员 ID</label>
+      <input id="parent_member_id" placeholder="例如 10" />
+    </div>
+    <div>
+      <label>子成员 ID</label>
+      <input id="child_member_id" placeholder="例如 11" />
+    </div>
+    <div>
+      <label>持股比例 ownership_ratio</label>
+      <input id="ownership_ratio" placeholder="例如 0.80" />
+    </div>
+    <div>
+      <label>表决权比例 voting_ratio</label>
+      <input id="voting_ratio" placeholder="例如 0.80" />
+    </div>
+    <div>
+      <label>控制类型 control_type</label>
+      <select id="control_type">
+        <option value="control">control</option>
+        <option value="joint_control">joint_control</option>
+        <option value="significant_influence">significant_influence</option>
+      </select>
+    </div>
+    <div>
+      <label>生效开始</label>
+      <input id="effective_from" type="date" />
+    </div>
+    <div>
+      <label>生效结束</label>
+      <input id="effective_to" type="date" />
+    </div>
+  </div>
+
+  <div style="margin-top:12px;">
+    <a class="btn primary" href="javascript:void(0)" onclick="save()">保存股权关系</a>
+  </div>
+</div>
+
+
+<div class="card" id="ownership-next-run">
+  <h3>下一步</h3>
+  <div class="hint">完成股权关系后，建议直接进入合并运行页。</div>
+  <div style="margin-top:10px;">
+    <a class="btn primary" href="javascript:void(0)" onclick="goRun()">下一步：运行合并</a>
+  </div>
+</div>
+
+<div class="card">
+  <h3>股权关系列表</h3>
+  <div class="hint">数据源：<span class="mono">GET /api/consolidation/ownership</span></div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:80px;">ID</th>
+        <th style="width:100px;">Group</th>
+        <th style="width:120px;">母成员</th>
+        <th style="width:120px;">子成员</th>
+        <th style="width:120px;">持股比例</th>
+        <th style="width:120px;">表决权比例</th>
+        <th style="width:140px;">控制类型</th>
+        <th style="width:180px;">期间</th>
+      </tr>
+    </thead>
+    <tbody id="tb"><tr><td colspan="8">加载中...</td></tr></tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>提交结果</h3>
+  <pre id="out">等待操作…</pre>
+</div>
+
+<script src="/erp2/static/erp2_fetch.js"></script>
+<script>
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]))}
+function intv(id){
+  const v=document.getElementById(id).value.trim();
+  const n=parseInt(v,10);
+  return isNaN(n)?null:n;
+}
+function numv(id){
+  const v=document.getElementById(id).value.trim();
+  const n=parseFloat(v);
+  return isNaN(n)?null:n;
+}
+function strv(id){
+  return document.getElementById(id).value.trim();
+}
+function normalizeList(j){
+  if(Array.isArray(j)) return j;
+  if(j && Array.isArray(j.items)) return j.items;
+  if(j && Array.isArray(j.data)) return j.data;
+  return [];
+}
+
+function fillContextFromQuery(){
+  const qs = new URLSearchParams(location.search);
+  const grantId = qs.get("grant_id") || "";
+  const groupId = qs.get("group_id") || "";
+  const childBookId = qs.get("child_book_id") || "";
+
+  const grantEl = document.getElementById("ctx_grant_id");
+  const childBookEl = document.getElementById("ctx_child_book_id");
+
+  if(grantEl) grantEl.innerText = grantId;
+  if(childBookEl) childBookEl.innerText = childBookId;
+
+  if(groupId && document.getElementById("group_id")){
+    document.getElementById("group_id").value = groupId;
+  }
+}
+
+async function load(){
+  fillContextFromQuery();
+  const tb=document.getElementById("tb");
+  const r = await erp2FetchJson("GET","/api/consolidation/ownership");
+  const items = normalizeList(r.data);
+
+  if(items.length===0){
+    tb.innerHTML = `<tr><td colspan="8">暂无股权关系（也可能当前接口返回为空）</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = "";
+  items.forEach(it=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${esc(it.id)}</td>
+      <td class="mono">${esc(it.group_id)}</td>
+      <td class="mono">${esc(it.parent_member_id)}</td>
+      <td class="mono">${esc(it.child_member_id)}</td>
+      <td class="mono">${esc(it.ownership_ratio)}</td>
+      <td class="mono">${esc(it.voting_ratio)}</td>
+      <td><span class="badge">${esc(it.control_type)}</span></td>
+      <td class="mono">${esc(it.effective_from)} ~ ${esc(it.effective_to)}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+async function save(){
+  const payload = {
+    group_id: intv("group_id"),
+    parent_member_id: intv("parent_member_id"),
+    child_member_id: intv("child_member_id"),
+    ownership_ratio: numv("ownership_ratio"),
+    voting_ratio: numv("voting_ratio"),
+    control_type: strv("control_type"),
+    effective_from: strv("effective_from") || null,
+    effective_to: strv("effective_to") || null
+  };
+
+  const out=document.getElementById("out");
+  const r = await erp2FetchJson("POST","/api/consolidation/ownership", payload);
+  out.textContent = "HTTP " + r.status + "\n" + JSON.stringify(r.data,null,2);
+  await 
+function goRun(){
+  const qs = new URLSearchParams(location.search);
+  const grantId = qs.get("grant_id") || "";
+  const groupId = document.getElementById("group_id") ? document.getElementById("group_id").value.trim() : "";
+  const url = "/erp2/consolidation/run"
+    + "?grant_id=" + encodeURIComponent(grantId)
+    + "&group_id=" + encodeURIComponent(groupId);
+  location.href = url;
+}
+
+load();
+
+}
+
+load();
+</script>
+
+</body>
+</html>

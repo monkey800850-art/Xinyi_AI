@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>合并授权单详情</title>
+
+<style>
+body{font-family:system-ui;margin:18px;background:#f6f7fb}
+.top{display:flex;justify-content:space-between;margin-bottom:14px}
+.card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.label{font-size:12px;color:#6b7280}
+.value{font-weight:600;margin-top:4px}
+.badge{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:20px;
+  background:#eee;
+  font-size:12px
+}
+.badge.ok{background:#e8f7e8;color:#166534}
+.badge.warn{background:#fff7e6;color:#92400e}
+.badge.err{background:#fdeaea;color:#991b1b}
+.btn{
+  display:inline-block;
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  background:#fff;
+  cursor:pointer;
+  font-weight:600;
+}
+.btn.primary{
+  background:#111;
+  color:#fff;
+  border-color:#111;
+}
+.btn.danger{
+  background:#d33;
+  color:#fff;
+  border-color:#d33;
+}
+pre{
+  background:#fafafa;
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+}
+.flow-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+  <div>
+    <h2>合并授权单详情</h2>
+    <div class="label">授权单 ID：{{ grant_id }}</div>
+  </div>
+  <a class="btn" href="/erp2/consolidation/access-grants">返回列表</a>
+</div>
+
+<div class="card">
+  <h3>授权状态</h3>
+  <div>
+    状态： <span id="status" class="badge">加载中</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3>母公司信息</h3>
+  <div class="grid">
+    <div>
+      <div class="label">母公司租户</div>
+      <div id="parent_tenant_id" class="value"></div>
+    </div>
+    <div>
+      <div class="label">母公司账套</div>
+      <div id="parent_book_id" class="value"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>被合并公司</h3>
+  <div class="grid">
+    <div>
+      <div class="label">子公司租户</div>
+      <div id="child_tenant_id" class="value"></div>
+    </div>
+    <div>
+      <div class="label">子公司账套</div>
+      <div id="child_book_id" class="value"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>授权信息</h3>
+  <div class="grid">
+    <div>
+      <div class="label">授权模式</div>
+      <div id="grant_mode" class="value"></div>
+    </div>
+    <div>
+      <div class="label">虚拟合并主体</div>
+      <div id="virtual_entity_id" class="value"></div>
+    </div>
+    <div>
+      <div class="label">生效开始</div>
+      <div id="effective_from" class="value"></div>
+    </div>
+    <div>
+      <div class="label">生效结束</div>
+      <div id="effective_to" class="value"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>纳入合并体系结果</h3>
+  <div class="grid">
+    <div>
+      <div class="label">绑定状态</div>
+      <div><span id="bind_status" class="badge">未执行</span></div>
+    </div>
+    <div>
+      <div class="label">结果摘要</div>
+      <div id="bind_summary" class="value"></div>
+    </div>
+  </div>
+  <pre id="bind_result_raw">等待操作…</pre>
+</div>
+
+<div class="card" id="next-step-card">
+  <h3>下一步建议</h3>
+  <div id="next-step-hint" class="label">正在判断...</div>
+  <div id="next-step-actions" class="flow-actions"></div>
+</div>
+
+
+<div class="card">
+  <h3>最近动作证据</h3>
+  <div class="label">evidence_path</div>
+  <div id="evidence_path" class="value"></div>
+</div>
+
+<div class="card">
+  <h3>操作</h3>
+  <button class="btn primary" onclick="activate()">批准并纳入合并体系</button>
+  <button class="btn danger" onclick="revoke()">撤销授权</button>
+</div>
+
+<pre id="out"></pre>
+
+<script src="/erp2/static/erp2_fetch.js"></script>
+
+<script>
+const id="{{ grant_id }}";
+let currentGrantStatus = null;
+let currentBindStatus = null;
+
+function setText(id,v){
+  document.getElementById(id).innerText = v ?? "";
+}
+
+function setBadge(id,v){
+  const el = document.getElementById(id);
+  el.innerText = v ?? "";
+  el.className = "badge";
+  if(v === "ok" || v === "active" || v === "already_bound") el.classList.add("ok");
+  else if(v === "error" || v === "revoked") el.classList.add("err");
+  else el.classList.add("warn");
+}
+
+function renderBindResult(result){
+  if(!result){
+    currentBindStatus = null;
+    setBadge("bind_status", "未执行");
+    setText("bind_summary", "");
+    document.getElementById("bind_result_raw").innerText = "暂无 member_bind_result";
+    renderNextSteps();
+    return;
+  }
+
+  const status = result.status || "unknown";
+  currentBindStatus = status;
+  setBadge("bind_status", status);
+
+  let summary = "";
+  if(status === "ok") summary = "已成功纳入合并体系";
+  else if(status === "already_bound") summary = "已存在成员绑定（未重复纳入）";
+  else if(status === "error") summary = result.error || "成员绑定失败";
+  else summary = "已返回绑定结果";
+
+  setText("bind_summary", summary);
+  document.getElementById("bind_result_raw").innerText = JSON.stringify(result, null, 2);
+  renderNextSteps();
+}
+
+function renderNextSteps(){
+  const hint = document.getElementById("next-step-hint");
+  const actions = document.getElementById("next-step-actions");
+  actions.innerHTML = "";
+
+  const canMoveNext =
+    currentGrantStatus === "active" &&
+    (currentBindStatus === "ok" || currentBindStatus === "already_bound");
+
+  if(!canMoveNext){
+    hint.innerText = "需先完成“批准并纳入合并体系”，再继续后续集团合并流程。";
+    return;
+  }
+
+  hint.innerText = "当前授权单已具备进入集团合并主流程的条件，建议按以下顺序继续：";
+
+  const buttons = [
+    {
+      text: "维护股权关系",
+      url: "/erp2/consolidation/ownership"
+        + "?grant_id=" + encodeURIComponent(id)
+        + "&group_id=" + encodeURIComponent(document.getElementById("virtual_entity_id").innerText || "")
+        + "&child_book_id=" + encodeURIComponent(document.getElementById("child_book_id").innerText || "")
+    },
+    { text: "运行合并", url: "/erp2/consolidation/run" },
+    { text: "查看审计中心", url: "/erp2/consolidation/audit_center" }
+  ];
+
+  buttons.forEach(b => {
+    const el = document.createElement("button");
+    el.className = "btn";
+    el.innerText = b.text;
+    el.onclick = () => location.href = b.url;
+    actions.appendChild(el);
+  });
+}
+
+async function load(){
+  const r = await erp2FetchJson("GET", "/api/consolidation/access-grants/" + id);
+  const d = r.data?.item || {};
+
+  currentGrantStatus = d.status || null;
+
+  setBadge("status", d.status || "");
+  setText("parent_tenant_id", d.parent_tenant_id);
+  setText("parent_book_id", d.parent_book_id);
+  setText("child_tenant_id", d.child_tenant_id);
+  setText("child_book_id", d.child_book_id);
+  setText("grant_mode", d.grant_mode);
+  setText("virtual_entity_id", d.virtual_entity_id);
+  setText("effective_from", d.effective_from);
+  setText("effective_to", d.effective_to);
+
+  renderBindResult(null);
+}
+
+async function activate(){
+  const r = await erp2FetchJson(
+    "POST",
+    "/api/consolidation/access-grants/" + id + "/approve-and-activate",
+    { approved_by: 100 }
+  );
+
+  document.getElementById("out").innerText = JSON.stringify(r.data, null, 2);
+
+  const item = r.data?.item || {};
+  currentGrantStatus = item.status || currentGrantStatus;
+
+  renderBindResult(r.data?.member_bind_result || null);
+  setText("evidence_path", r.data?.evidence_path || "");
+
+  setBadge("status", currentGrantStatus || "");
+}
+
+async function revoke(){
+  const r = await erp2FetchJson(
+    "POST",
+    "/api/consolidation/access-grants/" + id + "/revoke",
+    { revoked_by: 100 }
+  );
+
+  document.getElementById("out").innerText = JSON.stringify(r.data, null, 2);
+
+  const item = r.data?.item || {};
+  currentGrantStatus = item.status || "revoked";
+  currentBindStatus = null;
+
+  setBadge("status", currentGrantStatus);
+  setText("evidence_path", r.data?.evidence_path || "");
+  renderBindResult(null);
+}
+
+load();
+</script>
+
+</body>
+</html>
